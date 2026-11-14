@@ -12,7 +12,7 @@ Selected decisions:
 - [x] Document development, physics and roadmap conventions.
 - [x] Add a test runner and CI test gate.
 - [x] Remove lockfile-dependent npm cache until a lockfile is committed.
-- [ ] Generate and commit package-lock.json; then use npm ci and restore npm caching.
+- [x] Generate and commit package-lock.json; use npm ci and restore npm caching.
 - [x] Enable GitHub Pages and verify a successful deployment on main.
 
 ## Phase 1 — 3D playable prototype
