@@ -142,6 +142,22 @@ export class PhysicsWorld {
     }
   }
 
+  clone(): PhysicsWorld {
+    const copy = new PhysicsWorld(this.config)
+    copy.balls = this.balls.map((ball) => ({
+      ...ball,
+      position: { ...ball.position },
+      previousPosition: { ...ball.previousPosition },
+      velocity: { ...ball.velocity },
+      angularVelocity: { ...ball.angularVelocity },
+      rotation: { ...ball.rotation },
+      previousRotation: { ...ball.previousRotation },
+      pocketTarget: ball.pocketTarget ? { ...ball.pocketTarget } : null,
+    }))
+    copy.shotTelemetry = this.getShotTelemetry()
+    return copy
+  }
+
   placeCueBall(position: Vec2): boolean {
     if (this.isMoving) return false
 
