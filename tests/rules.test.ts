@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createInitialEightBallState,
   EightBallRuleEngine,
+  type BallGroup,
   type ShotResult,
 } from '../src/game/EightBallRuleEngine'
 
@@ -69,7 +70,7 @@ describe('EightBallRuleEngine', () => {
     const state = {
       ...createInitialEightBallState(),
       phase: 'groups-assigned' as const,
-      playerGroups: ['solids', 'stripes'] as const,
+      playerGroups: ['solids', 'stripes'] as [BallGroup | null, BallGroup | null],
     }
     const result = rules.resolveShot(state, cleanShot({
       firstContactBallNumber: 10,
@@ -102,7 +103,7 @@ describe('EightBallRuleEngine', () => {
     const state = {
       ...createInitialEightBallState(),
       phase: 'groups-assigned' as const,
-      playerGroups: ['solids', 'stripes'] as const,
+      playerGroups: ['solids', 'stripes'] as [BallGroup | null, BallGroup | null],
       remainingBalls: [8, 9, 10, 11, 12, 13, 14, 15],
     }
     const result = rules.resolveShot(state, cleanShot({
@@ -117,7 +118,7 @@ describe('EightBallRuleEngine', () => {
     const state = {
       ...createInitialEightBallState(),
       phase: 'groups-assigned' as const,
-      playerGroups: ['solids', 'stripes'] as const,
+      playerGroups: ['solids', 'stripes'] as [BallGroup | null, BallGroup | null],
       remainingBalls: [3, 8, 9, 10, 11, 12, 13, 14, 15],
     }
     const result = rules.resolveShot(state, cleanShot({
@@ -132,7 +133,7 @@ describe('EightBallRuleEngine', () => {
     const state = {
       ...createInitialEightBallState(),
       phase: 'groups-assigned' as const,
-      playerGroups: ['solids', 'stripes'] as const,
+      playerGroups: ['solids', 'stripes'] as [BallGroup | null, BallGroup | null],
       remainingBalls: [3, 8, 9, 10, 11, 12, 13, 14, 15],
     }
     const result = rules.resolveShot(state, cleanShot({

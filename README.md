@@ -42,6 +42,7 @@ npm run build
 - [Development guide](docs/DEVELOPMENT.md)
 - [Physics model and validation](docs/PHYSICS.md)
 - [Roadmap](docs/ROADMAP.md)
+- [8-ball house rules](docs/RULES.md)
 
 ## Deployment
 

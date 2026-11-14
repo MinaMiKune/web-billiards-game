@@ -125,7 +125,7 @@ export class EightBallRuleEngine {
       return { state: nextState, foulReasons, rerack: false }
     }
 
-    const nextGroups: [BallGroup | null, BallGroup | null] = [...state.playerGroups]
+    const nextGroups: [BallGroup | null, BallGroup | null] = [state.playerGroups[0], state.playerGroups[1]]
     let assignedGroup: BallGroup | null = null
 
     if (state.phase === 'open-table' && ownGroup === null && foulReasons.length === 0) {
