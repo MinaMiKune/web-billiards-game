@@ -30,7 +30,9 @@ The cloth-contact slip velocity is computed from the ball's linear velocity and 
 - Rolling deceleration: configurable, initial value 0.32 m/s².
 - Vertical spin (follow/draw): initialized from the selected cue contact offset.
 - Side spin: represented as angular velocity about the vertical axis and gradually dissipated.
-- Ball-ball impacts currently apply a normal impulse through the centers; tangential spin transfer and throw remain future work.
+- Ball-ball impacts apply a normal impulse plus a Coulomb-limited tangential impulse at the contact point. This allows side spin to transfer into a small throw and angular-velocity change.
+- Cushion impacts use a Coulomb-limited tangential friction impulse; side spin can change the tangential rebound velocity.
+- The current contact model is still planar and simplified: it omits cushion height, vertical ball motion, jaw curvature and measured cloth calibration.
 
 This is a game-oriented approximation and is not calibrated to a specific cloth, ball set or table.
 
@@ -54,6 +56,8 @@ Maintain deterministic cases for:
 - follow and draw spin have opposite rotational signs;
 - side spin decays;
 - equal-mass head-on collision transfers normal velocity;
+- side spin creates a bounded tangential response in ball-ball contact;
+- side spin creates a tangential component on cushion rebound;
 - straight cushion reflection;
 - corner and side pocket captures;
 - pocket near-miss rebounds from the cushion.
