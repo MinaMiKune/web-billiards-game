@@ -6,13 +6,14 @@ The product direction is **game-realistic billiards**: accessible controls backe
 
 ## Current status
 
-- [x] Initial Canvas 2D prototype
-- [x] Technical baseline and modular architecture documented
-- [ ] Three-dimensional table and camera prototype
-- [ ] Deterministic billiards physics core
-- [ ] Shot controls and cue interaction
-- [ ] 8-ball rules and AI opponents
-- [ ] Online multiplayer (reserved for a later phase; not currently in development)
+- [x] Three.js table scene with top, angled, side and free cameras
+- [x] First-pass deterministic table-plane physics with friction, spin, ball/cushion contact and pocket capture
+- [x] Aim, power, cue-ball contact-point controls and pocket-drop presentation
+- [x] Local two-player American 8-ball house-rules flow, fouls and ball-in-hand
+- [ ] AI opponents (planned)
+- [ ] Online multiplayer (reserved; not currently in development)
+
+**[Play the GitHub Pages prototype](https://minamikune.github.io/web-billiards-game/)**
 
 See [ROADMAP](docs/ROADMAP.md) for the phase plan.
 
