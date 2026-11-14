@@ -24,7 +24,8 @@ app.innerHTML = `
       <div class="toolbar">
         <div class="status-block">
           <span class="section-label">TABLE STATUS</span>
-          <strong id="game-status" aria-live="polite">Ready to break</strong>
+          <strong id="game-status" aria-live="polite">Player 1 breaks</strong>
+          <span id="turn-status" class="turn-status">PLAYER 1 · BREAK</span>
         </div>
         <div class="toolbar-actions">
           <label class="power-control" for="shot-power">
@@ -74,7 +75,7 @@ app.innerHTML = `
     </section>
 
     <footer>
-      <span>PHASE 2 · CLOTH FRICTION + CUE BALL SPIN</span>
+      <span>PHASE 3 · AMERICAN 8-BALL RULES</span>
       <span>ONLINE PLAY IS RESERVED FOR A FUTURE PHASE</span>
     </footer>
   </main>
