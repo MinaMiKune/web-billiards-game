@@ -90,8 +90,21 @@ export class GameRenderer {
         this.scene.add(mesh)
       }
 
-      mesh.visible = ball.active
-      mesh.position.set(ball.position.x, ball.radius, ball.position.z)
+      const isDropping = ball.pocketed
+      const progress = ball.pocketProgress
+      mesh.visible = ball.active || (isDropping && progress < 1)
+
+      const renderX = isDropping && ball.pocketTarget
+        ? ball.position.x + (ball.pocketTarget.x - ball.position.x) * progress * 0.72
+        : ball.position.x
+      const renderZ = isDropping && ball.pocketTarget
+        ? ball.position.z + (ball.pocketTarget.z - ball.position.z) * progress * 0.72
+        : ball.position.z
+      const renderY = ball.radius - progress * 0.22
+      const renderScale = isDropping ? 1 - progress * 0.62 : 1
+
+      mesh.position.set(renderX, renderY, renderZ)
+      mesh.scale.setScalar(renderScale)
       mesh.rotation.set(ball.rotation.x, ball.rotation.y, ball.rotation.z)
     }
   }

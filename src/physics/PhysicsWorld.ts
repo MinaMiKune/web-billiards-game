@@ -28,6 +28,8 @@ export interface BallState {
   previousRotation: Vec3
   active: boolean
   pocketed: boolean
+  pocketedElapsedSeconds: number
+  pocketTarget: Vec2 | null
 }
 
 export interface PhysicsConfig {
@@ -49,6 +51,7 @@ export interface PhysicsConfig {
   cushionRestitution: number
   pocketCaptureRadius: number
   sidePocketHalfWidth: number
+  pocketDropDuration: number
   stopSpeed: number
   maxShotSpeed: number
 }
@@ -72,6 +75,7 @@ export const DEFAULT_PHYSICS_CONFIG: PhysicsConfig = {
   cushionRestitution: 0.88,
   pocketCaptureRadius: 0.098,
   sidePocketHalfWidth: 0.095,
+  pocketDropDuration: 0.42,
   stopSpeed: 0.008,
   maxShotSpeed: 2.8,
 }
@@ -90,6 +94,9 @@ export interface RenderBall {
   position: Vec2
   rotation: Vec3
   active: boolean
+  pocketed: boolean
+  pocketProgress: number
+  pocketTarget: Vec2 | null
 }
 
 const ZERO_VEC3 = (): Vec3 => ({ x: 0, y: 0, z: 0 })
@@ -169,6 +176,13 @@ export class PhysicsWorld {
     for (const ball of this.balls) {
       ball.previousPosition = { ...ball.position }
       ball.previousRotation = { ...ball.rotation }
+      if (ball.pocketed) {
+        ball.pocketedElapsedSeconds = Math.min(
+          this.config.pocketDropDuration,
+          ball.pocketedElapsedSeconds + deltaSeconds,
+        )
+        continue
+      }
       if (!ball.active) continue
 
       this.applyClothFriction(ball, deltaSeconds)
@@ -193,6 +207,11 @@ export class PhysicsWorld {
       color: ball.color,
       radius: ball.radius,
       active: ball.active,
+      pocketed: ball.pocketed,
+      pocketProgress: ball.pocketed
+        ? Math.max(0, Math.min(1, ball.pocketedElapsedSeconds / this.config.pocketDropDuration))
+        : 0,
+      pocketTarget: ball.pocketTarget ? { ...ball.pocketTarget } : null,
       position: {
         x: ball.previousPosition.x + (ball.position.x - ball.previousPosition.x) * blend,
         z: ball.previousPosition.z + (ball.position.z - ball.previousPosition.z) * blend,
@@ -226,6 +245,8 @@ export class PhysicsWorld {
       previousRotation: ZERO_VEC3(),
       active: true,
       pocketed: false,
+      pocketedElapsedSeconds: 0,
+      pocketTarget: null,
     })
 
     const balls: BallState[] = [
@@ -308,7 +329,7 @@ export class PhysicsWorld {
     const crossedZBoundary = Math.abs(ball.position.z) >= zLimit
 
     if (crossedXBoundary || crossedZBoundary) {
-      const cornerCaptured = cornerPockets.some((pocket) =>
+      const cornerPocket = cornerPockets.find((pocket) =>
         Math.hypot(ball.position.x - pocket.x, ball.position.z - pocket.z) <=
         this.config.pocketCaptureRadius,
       )
@@ -316,9 +337,13 @@ export class PhysicsWorld {
         crossedZBoundary &&
         Math.abs(ball.position.x) <= this.config.sidePocketHalfWidth
 
-      if (cornerCaptured || sidePocketCaptured) {
+      if (cornerPocket || sidePocketCaptured) {
         ball.active = false
         ball.pocketed = true
+        ball.pocketedElapsedSeconds = 0
+        ball.pocketTarget = cornerPocket
+          ? { x: cornerPocket.x, z: cornerPocket.z }
+          : { x: 0, z: Math.sign(ball.position.z || 1) * halfWidth }
         ball.velocity = { x: 0, z: 0 }
         ball.angularVelocity = ZERO_VEC3()
         return

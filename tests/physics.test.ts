@@ -112,6 +112,31 @@ describe('PhysicsWorld', () => {
     expect(cue.active).toBe(false)
   })
 
+  it('animates a pocketed ball into the pocket before hiding it', () => {
+    const world = new PhysicsWorld()
+    const cue = world.cueBall
+    const zLimit = world.config.tableWidth / 2 - cue.radius
+    cue.position = { x: 0, z: zLimit - 0.001 }
+    cue.previousPosition = { ...cue.position }
+    cue.velocity = { x: 0, z: 1 }
+
+    world.step(STEP)
+
+    let renderCue = world.getRenderBalls(1).find((ball) => ball.id === 'cue')
+    expect(cue.pocketed).toBe(true)
+    expect(renderCue?.active).toBe(false)
+    expect(renderCue?.pocketed).toBe(true)
+    expect(renderCue?.pocketProgress).toBe(0)
+
+    world.step(world.config.pocketDropDuration / 2)
+    renderCue = world.getRenderBalls(1).find((ball) => ball.id === 'cue')
+    expect(renderCue?.pocketProgress).toBeCloseTo(0.5, 6)
+
+    world.step(world.config.pocketDropDuration)
+    renderCue = world.getRenderBalls(1).find((ball) => ball.id === 'cue')
+    expect(renderCue?.pocketProgress).toBe(1)
+  })
+
   it('captures a ball in a corner pocket opening', () => {
     const world = new PhysicsWorld()
     const cue = world.cueBall

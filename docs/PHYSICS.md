@@ -41,7 +41,9 @@ This is a game-oriented approximation and is not calibrated to a specific cloth,
 - Four corner openings use circular capture regions.
 - Two side pockets use a configurable half-width.
 - Missed openings are caught by the cushion boundary.
-- Full pocket shelf, drop trajectory, jaw normals and spin-dependent cushion response remain future work.
+- Captured balls emit a pocket target and a normalized drop-progress value; rendering animates the ball down into the selected mouth and hides it when the animation completes.
+- The drop is presentation-only and does not feed back into the authoritative table-plane simulation.
+- Full pocket shelf, jaw normals and calibration against measured pocket geometry remain future work.
 
 ## State model
 
