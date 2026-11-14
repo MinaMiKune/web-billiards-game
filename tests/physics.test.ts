@@ -80,6 +80,8 @@ describe('PhysicsWorld', () => {
 
     expect(a.velocity.x).toBeLessThan(0.1)
     expect(b.velocity.x).toBeGreaterThan(0.8)
+    expect(Math.abs(a.velocity.z)).toBeLessThan(1e-8)
+    expect(Math.abs(b.velocity.z)).toBeLessThan(1e-8)
   })
 
   it('reflects a ball from the straight cushion', () => {

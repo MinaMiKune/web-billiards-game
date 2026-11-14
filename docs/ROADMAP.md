@@ -32,7 +32,7 @@ Selected decisions:
 - [x] Add a 2D cue-ball contact selector.
 - [x] Rotate numbered/striped ball textures with the simulated angular velocity.
 - [ ] Calibrate friction and spin parameters against reference shots.
-- [ ] Add tangential ball-ball collision impulses and spin-dependent cushion rebound.
+- [x] Add tangential ball-ball collision impulses and spin-dependent cushion rebound.
 - [ ] Implement full pocket jaws and falling/drop presentation.
 
 ## Phase 3 — Rules and game flow
