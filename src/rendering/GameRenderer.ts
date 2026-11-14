@@ -20,10 +20,16 @@ import {
   SRGBColorSpace,
 } from 'three'
 import type { Camera } from 'three'
+import type { Material } from 'three'
 import type { RenderBall } from '../physics/PhysicsWorld'
 
 const TABLE_LENGTH = 2.54
 const TABLE_WIDTH = 1.27
+
+function disposeMaterials(material: Material | Material[]): void {
+  const materials = Array.isArray(material) ? material as Material[] : [material as Material]
+  for (const entry of materials) entry.dispose()
+}
 
 export class GameRenderer {
   readonly renderer: WebGLRenderer
@@ -118,9 +124,9 @@ export class GameRenderer {
 
   dispose(): void {
     this.aimLine.geometry.dispose()
-    this.aimLine.material.dispose()
+    disposeMaterials(this.aimLine.material)
     this.cueLine.geometry.dispose()
-    this.cueLine.material.dispose()
+    disposeMaterials(this.cueLine.material)
     this.renderer.dispose()
     this.scene.traverse((object) => {
       if (object instanceof Mesh) {
