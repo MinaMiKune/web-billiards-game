@@ -3,6 +3,7 @@ import {
   AmbientLight,
   BoxGeometry,
   BufferGeometry,
+  CanvasTexture,
   CircleGeometry,
   Color,
   CylinderGeometry,
@@ -19,15 +20,22 @@ import {
   SRGBColorSpace,
 } from 'three'
 import type { Camera } from 'three'
+import type { Material } from 'three'
 import type { RenderBall } from '../physics/PhysicsWorld'
 
 const TABLE_LENGTH = 2.54
 const TABLE_WIDTH = 1.27
 
+function disposeMaterials(material: Material | Material[]): void {
+  const materials = Array.isArray(material) ? material as Material[] : [material as Material]
+  for (const entry of materials) entry.dispose()
+}
+
 export class GameRenderer {
   readonly renderer: WebGLRenderer
   readonly scene = new Scene()
   private readonly ballMeshes = new Map<string, Mesh<SphereGeometry, MeshStandardMaterial>>()
+  private readonly ballTextures = new Map<string, CanvasTexture>()
   private readonly aimLine: Line
   private readonly cueLine: Line
 
@@ -69,10 +77,11 @@ export class GameRenderer {
       let mesh = this.ballMeshes.get(ball.id)
       if (!mesh) {
         const geometry = new SphereGeometry(ball.radius, 32, 24)
+        const texture = this.createBallTexture(ball.number, ball.color)
         const material = new MeshStandardMaterial({
-          color: ball.color,
-          roughness: 0.24,
-          metalness: 0.02,
+          map: texture,
+          roughness: 0.22,
+          metalness: 0.01,
         })
         mesh = new Mesh(geometry, material)
         mesh.castShadow = true
@@ -83,6 +92,7 @@ export class GameRenderer {
 
       mesh.visible = ball.active
       mesh.position.set(ball.position.x, ball.radius, ball.position.z)
+      mesh.rotation.set(ball.rotation.x, ball.rotation.y, ball.rotation.z)
     }
   }
 
@@ -113,15 +123,62 @@ export class GameRenderer {
   }
 
   dispose(): void {
+    this.aimLine.geometry.dispose()
+    disposeMaterials(this.aimLine.material)
+    this.cueLine.geometry.dispose()
+    disposeMaterials(this.cueLine.material)
     this.renderer.dispose()
     this.scene.traverse((object) => {
       if (object instanceof Mesh) {
         object.geometry.dispose()
         const material = object.material
         if (Array.isArray(material)) material.forEach((entry) => entry.dispose())
-        else material.dispose()
+        else {
+          material.map?.dispose()
+          material.dispose()
+        }
       }
     })
+    this.ballTextures.clear()
+  }
+
+  private createBallTexture(number: number, color: string): CanvasTexture {
+    const key = number + ':' + color
+    const cached = this.ballTextures.get(key)
+    if (cached) return cached
+
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 256
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Could not create a canvas texture for a billiards ball')
+
+    const striped = number >= 9
+    context.fillStyle = striped ? '#f6f2e8' : color
+    context.fillRect(0, 0, canvas.width, canvas.height)
+
+    if (striped) {
+      context.fillStyle = color
+      context.fillRect(0, 82, canvas.width, 92)
+    }
+
+    if (number > 0) {
+      context.beginPath()
+      context.arc(256, 128, 49, 0, Math.PI * 2)
+      context.fillStyle = '#faf8ee'
+      context.fill()
+      context.fillStyle = '#111512'
+      context.font = 'bold 54px Arial, sans-serif'
+      context.textAlign = 'center'
+      context.textBaseline = 'middle'
+      context.fillText(String(number), 256, 130)
+    }
+
+    const texture = new CanvasTexture(canvas)
+    texture.colorSpace = SRGBColorSpace
+    texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy()
+    this.ballTextures.set(key, texture)
+    return texture
   }
 
   private addLighting(): void {

@@ -14,7 +14,7 @@ describe('PhysicsWorld', () => {
     expect(world.cueBall.position.z).toBeCloseTo(start.z, 8)
   })
 
-  it('decelerates a moving ball', () => {
+  it('converts sliding motion toward rolling through cloth friction', () => {
     const world = new PhysicsWorld()
     const cue = world.cueBall
     cue.velocity = { x: 1, z: 0 }
@@ -22,7 +22,44 @@ describe('PhysicsWorld', () => {
     world.step(STEP)
 
     expect(cue.velocity.x).toBeLessThan(1)
-    expect(cue.velocity.x).toBeGreaterThan(0)
+    expect(cue.angularVelocity.z).toBeLessThan(0)
+    expect(cue.rotation.z).toBeLessThan(0)
+  })
+
+  it('maintains the no-slip condition when the ball is already rolling', () => {
+    const world = new PhysicsWorld()
+    const cue = world.cueBall
+    cue.velocity = { x: 1, z: 0 }
+    cue.angularVelocity.z = -1 / cue.radius
+
+    world.step(STEP)
+
+    const contactSlip = cue.velocity.x + cue.radius * cue.angularVelocity.z
+    expect(Math.abs(contactSlip)).toBeLessThan(1e-8)
+    expect(cue.velocity.x).toBeLessThan(1)
+  })
+
+  it('applies follow and draw spin from the cue contact point', () => {
+    const followWorld = new PhysicsWorld()
+    const drawWorld = new PhysicsWorld()
+
+    followWorld.shootCueBall({ x: 1, z: 0 }, 0.7, { side: 0, vertical: 1 })
+    drawWorld.shootCueBall({ x: 1, z: 0 }, 0.7, { side: 0, vertical: -1 })
+
+    expect(followWorld.cueBall.angularVelocity.z).toBeLessThan(0)
+    expect(drawWorld.cueBall.angularVelocity.z).toBeGreaterThan(0)
+  })
+
+  it('applies and gradually dissipates side spin', () => {
+    const world = new PhysicsWorld()
+    world.shootCueBall({ x: 1, z: 0 }, 0.7, { side: 1, vertical: 0 })
+    const initialSideSpin = world.cueBall.angularVelocity.y
+
+    world.step(0.1)
+
+    expect(initialSideSpin).toBeGreaterThan(0)
+    expect(world.cueBall.angularVelocity.y).toBeGreaterThan(0)
+    expect(world.cueBall.angularVelocity.y).toBeLessThan(initialSideSpin)
   })
 
   it('transfers most of the normal velocity in a head-on equal-mass collision', () => {

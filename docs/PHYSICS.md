@@ -2,7 +2,7 @@
 
 ## Goals
 
-The goal is a credible and tunable game simulation. The first model should be stable, explainable and testable. Visual effects must never be used to conceal incorrect ball state.
+The goal is a credible and tunable game simulation. The model is intentionally staged: implement the most influential table physics first, document assumptions and test each behavior independently.
 
 ## Units and coordinate frame
 
@@ -12,6 +12,7 @@ The goal is a credible and tunable game simulation. The first model should be st
 - Ball center height in the render: one ball radius above the cloth.
 - Initial 9-foot table playing surface reference: approximately 2.54 m × 1.27 m.
 - Standard pool ball diameter reference: approximately 0.05715 m.
+- A solid sphere uses moment of inertia I = 2/5 m r².
 
 These are configurable starting dimensions. Table construction, cushion nose positions and pocket jaw geometry must be measured consistently against the chosen table model.
 
@@ -19,66 +20,42 @@ These are configurable starting dimensions. Table construction, cushion nose pos
 
 Use a fixed simulation step, initially 1/120 second. Rendering runs independently and interpolates between simulation snapshots. Clamp unusually large frame deltas and cap accumulated catch-up steps to prevent a tab-resume spiral.
 
-## Current first-pass model
+## Current motion model
 
-- Ball centers move in the table plane.
-- Rolling deceleration is approximated as a constant speed loss per second.
-- Ball-ball normal impulses use configurable restitution and mass.
-- Straight cushions clamp position and reverse the normal velocity component.
-- Six pocket mouths are represented by four corner capture circles and two side-pocket openings.
-- A ball that reaches an opening is marked pocketed; the rules layer will later interpret a cue-ball pocket as a scratch.
-- Balls that miss a mouth are caught by the cushion boundary.
+The physics layer stores planar position and velocity plus a 3D angular velocity and presentation rotation. Three.js is not imported by the physics domain.
 
-This is a playable first approximation, not a calibrated professional model. Cushion jaws, ball spin, cloth sliding/rolling transitions and pocket shelf dynamics remain future refinements.
+The cloth-contact slip velocity is computed from the ball's linear velocity and angular velocity at the bottom contact point. Kinetic friction applies a bounded impulse opposite that slip and transfers the corresponding torque to the sphere. Once slip falls below a small threshold, the model switches to rolling resistance and enforces the no-slip rolling relationship.
+
+- Sliding friction coefficient: configurable, initial value 0.20.
+- Rolling deceleration: configurable, initial value 0.32 m/s².
+- Vertical spin (follow/draw): initialized from the selected cue contact offset.
+- Side spin: represented as angular velocity about the vertical axis and gradually dissipated.
+- Ball-ball impacts currently apply a normal impulse through the centers; tangential spin transfer and throw remain future work.
+
+This is a game-oriented approximation and is not calibrated to a specific cloth, ball set or table.
+
+## Pocket and cushion model
+
+- Four corner openings use circular capture regions.
+- Two side pockets use a configurable half-width.
+- Missed openings are caught by the cushion boundary.
+- Full pocket shelf, drop trajectory, jaw normals and spin-dependent cushion response remain future work.
 
 ## State model
 
-A ball state contains:
-- stable ID and type/number;
-- planar position and linear velocity;
-- radius and mass;
-- activity and pocket state;
-- previous position for render interpolation.
-
-Angular velocity and contact spin will be introduced in a later physics increment. Do not embed Three.js Vector3, Mesh or scene references in domain state.
-
-## Motion model increments
-
-### First pass
-- Integrate planar position.
-- Apply deterministic rolling deceleration.
-- Clamp tiny residual velocities to zero using named tolerances.
-
-### Collision pass
-- Detect ball overlap.
-- Resolve penetration with mass-aware positional correction.
-- Apply normal impulse only when bodies approach.
-- Conserve momentum within configured restitution and numerical tolerances.
-
-### Later refinements
-- Distinguish sliding and rolling friction.
-- Couple translational and angular motion.
-- Model ball-ball tangential impulse and throw.
-- Model cushion restitution, jaw contacts and spin influence.
-- Model pocket shelf/rim collision and drop animation separately from rule events.
-
-Do not claim tournament-grade accuracy without calibration data and measured validation fixtures.
+A ball state contains stable ID/number/color, radius/mass, planar position and velocity, 3D angular velocity, orientation, previous state for render interpolation, and active/pocketed flags.
 
 ## Test fixtures
 
 Maintain deterministic cases for:
-- a stationary ball remains stationary;
-- a moving ball decelerates and stops;
+- stationary state remains stationary;
+- sliding contact velocity is reduced by cloth friction;
+- pure rolling remains no-slip under rolling resistance;
+- follow and draw spin have opposite rotational signs;
+- side spin decays;
 - equal-mass head-on collision transfers normal velocity;
-- glancing collision changes both balls' directions plausibly;
-- overlap correction separates balls without injecting excessive energy;
-- cushion reflection reverses the normal component;
-- corner and side pocket captures occur only inside the modeled mouth regions;
-- a ball just outside a pocket mouth rebounds from the cushion;
-- a cue-ball pocket event becomes a scratch event for the rules layer.
+- straight cushion reflection;
+- corner and side pocket captures;
+- pocket near-miss rebounds from the cushion.
 
-Use numeric tolerances and record expected invariants. Avoid brittle pixel-based assertions for physics behavior.
-
-## Diagnostics
-
-Expose optional debug values (velocity, contact normal, collision count and simulation step) behind a development-only toggle. Keep diagnostics out of production HUD unless explicitly enabled.
+Do not claim professional accuracy without calibration data and measured validation fixtures.

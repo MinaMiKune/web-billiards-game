@@ -36,6 +36,24 @@ app.innerHTML = `
         </div>
       </div>
 
+      <div class="spin-bar">
+        <div class="spin-copy">
+          <span class="section-label">CUE BALL CONTACT</span>
+          <strong id="spin-value">Center</strong>
+          <span class="spin-description">Choose where the cue strikes the white ball</span>
+        </div>
+        <div id="spin-pad" class="spin-pad" role="group" tabindex="0" aria-label="Cue ball contact point. Up for follow, down for draw, left and right for side spin. Use arrow keys or pointer. Home resets to center.">
+          <span class="spin-axis spin-axis-x"></span>
+          <span class="spin-axis spin-axis-y"></span>
+          <span class="spin-direction spin-top">FOLLOW</span>
+          <span class="spin-direction spin-bottom">DRAW</span>
+          <span class="spin-direction spin-left">L</span>
+          <span class="spin-direction spin-right">R</span>
+          <span id="spin-marker" class="spin-marker"></span>
+        </div>
+        <p class="spin-help">Drag the marker · Arrow keys also work · Home resets</p>
+      </div>
+
       <div class="scene-frame">
         <div id="scene-host" class="scene-host" aria-label="Interactive 3D billiards table"></div>
         <div class="scene-hint">DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT</div>
@@ -56,7 +74,7 @@ app.innerHTML = `
     </section>
 
     <footer>
-      <span>PHASE 1 · SCENE + CAMERA + FIRST-PASS PHYSICS</span>
+      <span>PHASE 2 · CLOTH FRICTION + CUE BALL SPIN</span>
       <span>ONLINE PLAY IS RESERVED FOR A FUTURE PHASE</span>
     </footer>
   </main>

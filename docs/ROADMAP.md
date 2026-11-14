@@ -13,7 +13,7 @@ Selected decisions:
 - [x] Add a test runner and CI test gate.
 - [x] Remove lockfile-dependent npm cache until a lockfile is committed.
 - [ ] Generate and commit package-lock.json; then use npm ci and restore npm caching.
-- [ ] Verify CI and GitHub Pages deployment after the pull request is opened.
+- [ ] Enable GitHub Pages in repository settings (owner action tracked in issue #3).
 
 ## Phase 1 — 3D playable prototype
 
@@ -23,22 +23,17 @@ Selected decisions:
 - [x] Implement a fixed-step physics world independent of Three.js.
 - [x] Add first-pass rolling deceleration, ball collision and straight cushion response.
 - [x] Add basic aim/power interaction and cue-line preview.
-- [ ] Validate the prototype in a real browser and tune table/camera proportions.
-- [ ] Extend the physical model with pocket capture tests, better cushion segments and contact spin.
-
-Phase 1 exit criteria:
-- The scene runs in the browser and resizes correctly.
-- All four camera modes inspect the same world.
-- A player can aim and shoot the cue ball.
-- Balls move, collide and settle without obvious tunneling or spontaneous acceleration.
-- Core physics tests and production build pass.
+- [x] Add circular corner-pocket and side-pocket capture regions with cushion near-miss tests.
 
 ## Phase 2 — Table behavior and controls
 
-- Correct pocket capture geometry, pocket jaws and scratch handling.
-- Sliding/rolling transitions and cue-ball contact offsets.
-- Improve cue animation, aim feedback and power controls.
-- Add reduced-motion and touch-friendly controls.
+- [x] Implement sliding-to-rolling contact friction.
+- [x] Add basic follow/draw and side-spin state.
+- [x] Add a 2D cue-ball contact selector.
+- [x] Rotate numbered/striped ball textures with the simulated angular velocity.
+- [ ] Calibrate friction and spin parameters against reference shots.
+- [ ] Add tangential ball-ball collision impulses and spin-dependent cushion rebound.
+- [ ] Implement full pocket jaws and falling/drop presentation.
 
 ## Phase 3 — Rules and game flow
 
