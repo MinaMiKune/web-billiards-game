@@ -28,6 +28,23 @@ app.innerHTML = `
           <span id="turn-status" class="turn-status">PLAYER 1 · BREAK</span>
         </div>
         <div class="toolbar-actions">
+          <label class="opponent-control" for="opponent-mode">
+            <span class="section-label">OPPONENT</span>
+            <select id="opponent-mode">
+              <option value="local">Local 2P</option>
+              <option value="ai">AI opponent</option>
+            </select>
+          </label>
+          <label class="opponent-control" for="ai-difficulty">
+            <span class="section-label">AI LEVEL</span>
+            <select id="ai-difficulty">
+              <option value="1">1 · Beginner</option>
+              <option value="2">2 · Amateur</option>
+              <option value="3" selected>3 · Advanced</option>
+              <option value="4">4 · Expert</option>
+              <option value="5">5 · Master</option>
+            </select>
+          </label>
           <label class="power-control" for="shot-power">
             <span class="section-label">SHOT POWER</span>
             <strong id="power-value">65%</strong>
@@ -75,7 +92,7 @@ app.innerHTML = `
     </section>
 
     <footer>
-      <span>PHASE 3 · AMERICAN 8-BALL RULES</span>
+      <span>PHASE 4 · PHYSICS-PLANNED AI OPPONENT</span>
       <span>ONLINE PLAY IS RESERVED FOR A FUTURE PHASE</span>
     </footer>
   </main>

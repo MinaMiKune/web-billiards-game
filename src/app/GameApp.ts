@@ -2,6 +2,7 @@ import { Plane, Raycaster, Vector2, Vector3 } from 'three'
 import { CameraManager, type CameraMode } from '../camera/CameraManager'
 import { PhysicsWorld, type BallSpin, type RenderBall } from '../physics/PhysicsWorld'
 import { GameRenderer } from '../rendering/GameRenderer'
+import { AIController, type AIDifficulty } from '../ai/AIController'
 import { createInitialEightBallState, EightBallRuleEngine, type EightBallState } from '../game/EightBallRuleEngine'
 
 const FIXED_STEP = 1 / 120
@@ -17,7 +18,11 @@ function requireElement<T extends HTMLElement>(root: HTMLElement, selector: stri
 export class GameApp {
   private readonly world = new PhysicsWorld()
   private readonly rules = new EightBallRuleEngine()
+  private readonly ai = new AIController()
   private ruleState: EightBallState = createInitialEightBallState()
+  private opponentMode: 'local' | 'ai' = 'local'
+  private aiDifficulty: AIDifficulty = 3
+  private aiTimer = 0
   private readonly renderer: GameRenderer
   private readonly cameras: CameraManager
   private readonly statusElement: HTMLElement
@@ -28,6 +33,8 @@ export class GameApp {
   private readonly spinPad: HTMLElement
   private readonly spinMarker: HTMLElement
   private readonly spinValue: HTMLElement
+  private readonly opponentModeInput: HTMLSelectElement
+  private readonly aiDifficultyInput: HTMLSelectElement
   private readonly raycaster = new Raycaster()
   private readonly groundPlane = new Plane(new Vector3(0, 1, 0), 0)
   private readonly intersection = new Vector3()
@@ -53,6 +60,8 @@ export class GameApp {
     this.spinPad = requireElement(root, '#spin-pad')
     this.spinMarker = requireElement(root, '#spin-marker')
     this.spinValue = requireElement(root, '#spin-value')
+    this.opponentModeInput = requireElement(root, '#opponent-mode')
+    this.aiDifficultyInput = requireElement(root, '#ai-difficulty')
 
     this.renderer = new GameRenderer(sceneHost)
     this.cameras = new CameraManager(this.renderer.canvas)
@@ -69,6 +78,7 @@ export class GameApp {
 
   dispose(): void {
     cancelAnimationFrame(this.frameHandle)
+    window.clearTimeout(this.aiTimer)
     this.resizeObserver.disconnect()
     this.cameras.dispose()
     this.renderer.dispose()
@@ -88,6 +98,7 @@ export class GameApp {
     }
 
     requireElement<HTMLButtonElement>(root, '#reset-rack').addEventListener('click', () => {
+      window.clearTimeout(this.aiTimer)
       this.world.resetRack()
       this.ruleState = createInitialEightBallState()
       this.renderer.updateBalls(this.world.getRenderBalls(1))
@@ -96,6 +107,19 @@ export class GameApp {
       this.statusElement.textContent = this.ruleState.lastMessage
       this.updateTurnStatus()
     })
+
+    this.opponentModeInput.addEventListener('change', () => {
+      this.opponentMode = this.opponentModeInput.value === 'ai' ? 'ai' : 'local'
+      this.aiDifficultyInput.disabled = this.opponentMode !== 'ai'
+      this.updateTurnStatus()
+      this.scheduleAiTurn()
+    })
+
+    this.aiDifficultyInput.addEventListener('change', () => {
+      const level = Number(this.aiDifficultyInput.value)
+      if (level >= 1 && level <= 5) this.aiDifficulty = level as AIDifficulty
+    })
+    this.aiDifficultyInput.disabled = true
 
     this.powerInput.addEventListener('input', () => {
       this.power = Number(this.powerInput.value) / 100
@@ -197,7 +221,7 @@ export class GameApp {
   }
 
   private onPointerDown = (event: PointerEvent): void => {
-    if (this.world.isMoving) return
+    if (this.world.isMoving || this.isAiTurn()) return
     const point = this.pickTablePoint(event)
     if (!point) return
 
@@ -207,6 +231,7 @@ export class GameApp {
         this.statusElement.textContent = this.ruleState.lastMessage
         this.updateTurnStatus()
         this.renderer.updateBalls(this.world.getRenderBalls(1))
+        this.scheduleAiTurn()
       } else {
         this.statusElement.textContent = 'Choose a clear spot away from balls and pockets'
       }
@@ -330,14 +355,69 @@ export class GameApp {
     const groupLabel = currentGroup ? ` · ${currentGroup}` : ''
     const ballInHandLabel = this.ruleState.ballInHand ? ' · BALL IN HAND — CLICK TO PLACE' : ''
     const winnerLabel = this.ruleState.winner === null ? '' : ` · WINNER: PLAYER ${this.ruleState.winner + 1}`
+    const playerLabel = this.opponentMode === 'ai' && this.ruleState.currentPlayer === 1
+      ? 'AI OPPONENT'
+      : `PLAYER ${this.ruleState.currentPlayer + 1}`
+    const modeLabel = this.opponentMode === 'ai' ? ' · VS AI' : ' · LOCAL 2P'
     this.turnElement.textContent =
-      `PLAYER ${this.ruleState.currentPlayer + 1}${groupLabel} · ${phaseLabel.toUpperCase()}${ballInHandLabel}${winnerLabel}`
+      `${playerLabel}${groupLabel} · ${phaseLabel.toUpperCase()}${ballInHandLabel}${winnerLabel}${modeLabel}`
 
     this.interactionHint.textContent = this.ruleState.ballInHand
       ? 'CLICK A CLEAR SPOT ON THE TABLE TO PLACE THE CUE BALL'
       : this.ruleState.phase === 'game-over'
         ? 'GAME OVER · START A NEW RACK TO PLAY AGAIN'
-        : 'DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT'
+        : this.isAiTurn()
+          ? 'AI OPPONENT IS ANALYZING THE TABLE'
+          : 'DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT'
+  }
+
+  private isAiTurn(): boolean {
+    return this.opponentMode === 'ai' &&
+      this.ruleState.currentPlayer === 1 &&
+      this.ruleState.phase !== 'game-over'
+  }
+
+  private scheduleAiTurn(): void {
+    window.clearTimeout(this.aiTimer)
+    if (!this.isAiTurn() || this.world.isMoving) return
+
+    this.aiTimer = window.setTimeout(() => {
+      this.runAiTurn()
+    }, 420)
+  }
+
+  private runAiTurn(): void {
+    if (!this.isAiTurn() || this.world.isMoving) return
+
+    if (this.ruleState.ballInHand) {
+      const position = this.ai.chooseBallInHandPlacement(this.world, this.ruleState)
+      if (!position || !this.world.placeCueBall(position)) {
+        this.statusElement.textContent = 'AI could not find a legal cue-ball position'
+        return
+      }
+      this.ruleState = this.rules.placeBallInHand(this.ruleState)
+      this.renderer.updateBalls(this.world.getRenderBalls(1))
+      this.updateTurnStatus()
+    }
+
+    const plan = this.ai.planShot(this.world, this.ruleState, this.aiDifficulty)
+    if (!plan) {
+      this.statusElement.textContent = 'AI could not find a legal target'
+      return
+    }
+
+    if (!this.world.shootCueBall(
+      plan.command.direction,
+      plan.command.power,
+      plan.command.spin,
+    )) {
+      this.statusElement.textContent = 'AI shot was rejected by the physics world'
+      return
+    }
+
+    this.statusElement.textContent =
+      `AI · ${plan.style === 'pot' ? 'pot attempt' : 'safety attempt'} · target ${plan.targetBallNumber}`
+    this.wasMoving = true
   }
 
   private resize(): void {
@@ -373,6 +453,7 @@ export class GameApp {
       }
       this.statusElement.textContent = resolution.state.lastMessage
       this.updateTurnStatus()
+      this.scheduleAiTurn()
     }
 
     this.cameras.update()
