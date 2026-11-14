@@ -22,6 +22,7 @@ export class GameApp {
   private readonly cameras: CameraManager
   private readonly statusElement: HTMLElement
   private readonly turnElement: HTMLElement
+  private readonly interactionHint: HTMLElement
   private readonly powerInput: HTMLInputElement
   private readonly powerValue: HTMLElement
   private readonly spinPad: HTMLElement
@@ -46,6 +47,7 @@ export class GameApp {
     const sceneHost = requireElement<HTMLDivElement>(root, '#scene-host')
     this.statusElement = requireElement(root, '#game-status')
     this.turnElement = requireElement(root, '#turn-status')
+    this.interactionHint = requireElement(root, '#interaction-hint')
     this.powerInput = requireElement<HTMLInputElement>(root, '#shot-power')
     this.powerValue = requireElement(root, '#power-value')
     this.spinPad = requireElement(root, '#spin-pad')
@@ -195,7 +197,7 @@ export class GameApp {
   }
 
   private onPointerDown = (event: PointerEvent): void => {
-    if (this.world.isMoving || !this.world.cueBall.active) return
+    if (this.world.isMoving) return
     const point = this.pickTablePoint(event)
     if (!point) return
 
@@ -210,6 +212,8 @@ export class GameApp {
       }
       return
     }
+
+    if (this.ruleState.phase === 'game-over' || !this.world.cueBall.active) return
 
     const cue = this.world.cueBall.position
     if (Math.hypot(point.x - cue.x, point.z - cue.z) > 0.16) return
@@ -328,6 +332,12 @@ export class GameApp {
     const winnerLabel = this.ruleState.winner === null ? '' : ` · WINNER: PLAYER ${this.ruleState.winner + 1}`
     this.turnElement.textContent =
       `PLAYER ${this.ruleState.currentPlayer + 1}${groupLabel} · ${phaseLabel.toUpperCase()}${ballInHandLabel}${winnerLabel}`
+
+    this.interactionHint.textContent = this.ruleState.ballInHand
+      ? 'CLICK A CLEAR SPOT ON THE TABLE TO PLACE THE CUE BALL'
+      : this.ruleState.phase === 'game-over'
+        ? 'GAME OVER · START A NEW RACK TO PLAY AGAIN'
+        : 'DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT'
   }
 
   private resize(): void {

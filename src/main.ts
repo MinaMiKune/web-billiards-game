@@ -57,7 +57,7 @@ app.innerHTML = `
 
       <div class="scene-frame">
         <div id="scene-host" class="scene-host" aria-label="Interactive 3D billiards table"></div>
-        <div class="scene-hint">DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT</div>
+        <div id="interaction-hint" class="scene-hint">DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT</div>
       </div>
 
       <div class="camera-bar">
