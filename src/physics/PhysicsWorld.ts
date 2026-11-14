@@ -24,6 +24,8 @@ export interface PhysicsConfig {
   rollingDeceleration: number
   ballRestitution: number
   cushionRestitution: number
+  pocketCaptureRadius: number
+  sidePocketHalfWidth: number
   stopSpeed: number
   maxShotSpeed: number
 }
@@ -36,6 +38,8 @@ export const DEFAULT_PHYSICS_CONFIG: PhysicsConfig = {
   rollingDeceleration: 0.28,
   ballRestitution: 0.96,
   cushionRestitution: 0.88,
+  pocketCaptureRadius: 0.098,
+  sidePocketHalfWidth: 0.095,
   stopSpeed: 0.008,
   maxShotSpeed: 4.8,
 }
@@ -184,24 +188,39 @@ export class PhysicsWorld {
   private resolvePocketAndCushion(ball: BallState): void {
     const halfLength = this.config.tableLength / 2
     const halfWidth = this.config.tableWidth / 2
-    const radius = ball.radius
-    const nearCornerPocket =
-      Math.abs(ball.position.x) > halfLength - 0.14 &&
-      Math.abs(ball.position.z) > halfWidth - 0.14
-    const nearSidePocket =
-      Math.abs(ball.position.z) > halfWidth - 0.12 &&
-      Math.abs(ball.position.x) < 0.085
+    const xLimit = halfLength - ball.radius
+    const zLimit = halfWidth - ball.radius
+    const cornerPockets = [
+      { x: -halfLength, z: -halfWidth },
+      { x: -halfLength, z: halfWidth },
+      { x: halfLength, z: -halfWidth },
+      { x: halfLength, z: halfWidth },
+    ]
 
-    if (nearCornerPocket || nearSidePocket) {
-      ball.active = false
-      ball.pocketed = true
-      ball.velocity = { x: 0, z: 0 }
-      return
+    const crossedXBoundary = Math.abs(ball.position.x) >= xLimit
+    const crossedZBoundary = Math.abs(ball.position.z) >= zLimit
+
+    // A corner pocket is only active near its circular mouth after the ball reaches
+    // at least one adjacent cushion plane. This avoids the old broad rectangular trigger.
+    if (crossedXBoundary || crossedZBoundary) {
+      const cornerCaptured = cornerPockets.some((pocket) =>
+        Math.hypot(ball.position.x - pocket.x, ball.position.z - pocket.z) <=
+        this.config.pocketCaptureRadius,
+      )
+
+      const sidePocketCaptured =
+        crossedZBoundary &&
+        Math.abs(ball.position.x) <= this.config.sidePocketHalfWidth
+
+      if (cornerCaptured || sidePocketCaptured) {
+        ball.active = false
+        ball.pocketed = true
+        ball.velocity = { x: 0, z: 0 }
+        return
+      }
     }
 
-    const xLimit = halfLength - radius
-    const zLimit = halfWidth - radius
-
+    // If the ball missed the pocket opening, the cushion/jaw catches it.
     if (ball.position.x > xLimit) {
       ball.position.x = xLimit
       ball.velocity.x = -Math.abs(ball.velocity.x) * this.config.cushionRestitution
