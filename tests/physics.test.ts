@@ -55,14 +55,15 @@ describe('PhysicsWorld', () => {
 
     world.step(STEP)
 
-    expect(cue.position.x).toBeLessThanOrEqual(limit)
+    expect(cue.position.x).toBe(limit)
     expect(cue.velocity.x).toBeLessThan(0)
   })
 
-  it('captures a ball in the middle side pocket opening', () => {
+  it('captures a ball in a middle side pocket', () => {
     const world = new PhysicsWorld()
     const cue = world.cueBall
-    cue.position = { x: 0, z: world.config.tableWidth / 2 - cue.radius - 0.001 }
+    const zLimit = world.config.tableWidth / 2 - cue.radius
+    cue.position = { x: 0, z: zLimit - 0.001 }
     cue.previousPosition = { ...cue.position }
     cue.velocity = { x: 0, z: 1 }
 
@@ -70,6 +71,37 @@ describe('PhysicsWorld', () => {
 
     expect(cue.pocketed).toBe(true)
     expect(cue.active).toBe(false)
+  })
+
+  it('captures a ball in a corner pocket opening', () => {
+    const world = new PhysicsWorld()
+    const cue = world.cueBall
+    const xLimit = world.config.tableLength / 2 - cue.radius
+    const zLimit = world.config.tableWidth / 2 - cue.radius
+    cue.position = { x: xLimit - 0.001, z: zLimit - 0.001 }
+    cue.previousPosition = { ...cue.position }
+    cue.velocity = { x: 1, z: 1 }
+
+    world.step(STEP)
+
+    expect(cue.pocketed).toBe(true)
+    expect(cue.active).toBe(false)
+  })
+
+  it('treats a ball outside the side-pocket mouth as a cushion hit', () => {
+    const world = new PhysicsWorld()
+    const cue = world.cueBall
+    const zLimit = world.config.tableWidth / 2 - cue.radius
+    cue.position = { x: world.config.sidePocketHalfWidth + 0.025, z: zLimit - 0.001 }
+    cue.previousPosition = { ...cue.position }
+    cue.velocity = { x: 0, z: 1 }
+
+    world.step(STEP)
+
+    expect(cue.pocketed).toBe(false)
+    expect(cue.active).toBe(true)
+    expect(cue.position.z).toBe(zLimit)
+    expect(cue.velocity.z).toBeLessThan(0)
   })
 
   it('stops a slow ball without reversing it', () => {
