@@ -3,7 +3,6 @@ import {
   AmbientLight,
   BoxGeometry,
   BufferGeometry,
-  Camera,
   CircleGeometry,
   Color,
   CylinderGeometry,
@@ -19,6 +18,7 @@ import {
   WebGLRenderer,
   SRGBColorSpace,
 } from 'three'
+import type { Camera } from 'three'
 import type { RenderBall } from '../physics/PhysicsWorld'
 
 const TABLE_LENGTH = 2.54
