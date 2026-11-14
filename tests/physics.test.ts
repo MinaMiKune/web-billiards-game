@@ -59,6 +59,19 @@ describe('PhysicsWorld', () => {
     expect(cue.velocity.x).toBeLessThan(0)
   })
 
+  it('captures a ball in the middle side pocket opening', () => {
+    const world = new PhysicsWorld()
+    const cue = world.cueBall
+    cue.position = { x: 0, z: world.config.tableWidth / 2 - cue.radius - 0.001 }
+    cue.previousPosition = { ...cue.position }
+    cue.velocity = { x: 0, z: 1 }
+
+    world.step(STEP)
+
+    expect(cue.pocketed).toBe(true)
+    expect(cue.active).toBe(false)
+  })
+
   it('stops a slow ball without reversing it', () => {
     const world = new PhysicsWorld()
     const cue = world.cueBall

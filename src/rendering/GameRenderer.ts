@@ -2,11 +2,12 @@ import {
   ACESFilmicToneMapping,
   AmbientLight,
   BoxGeometry,
+  BufferGeometry,
+  Camera,
   CircleGeometry,
   Color,
   CylinderGeometry,
   DirectionalLight,
-  Group,
   Line,
   LineBasicMaterial,
   Mesh,
@@ -22,7 +23,6 @@ import type { RenderBall } from '../physics/PhysicsWorld'
 
 const TABLE_LENGTH = 2.54
 const TABLE_WIDTH = 1.27
-const BALL_RADIUS = 0.028575
 
 export class GameRenderer {
   readonly renderer: WebGLRenderer
@@ -39,7 +39,7 @@ export class GameRenderer {
     this.renderer.toneMapping = ACESFilmicToneMapping
     this.renderer.toneMappingExposure = 1.12
     this.renderer.shadowMap.enabled = true
-    this.renderer.setSize(host.clientWidth, host.clientHeight)
+    this.renderer.setSize(host.clientWidth, host.clientHeight, false)
     this.renderer.domElement.setAttribute('aria-label', '3D pool table. Drag backwards from the cue ball to aim and release to shoot.')
     host.append(this.renderer.domElement)
 
@@ -108,7 +108,7 @@ export class GameRenderer {
     this.cueLine.geometry = new BufferGeometry().setFromPoints([cueStart, cueEnd])
   }
 
-  render(camera: Parameters<WebGLRenderer['render']>[1]): void {
+  render(camera: Camera): void {
     this.renderer.render(this.scene, camera)
   }
 
