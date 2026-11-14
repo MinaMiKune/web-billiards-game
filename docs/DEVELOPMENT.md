@@ -67,4 +67,4 @@ docs: document simulation units
 
 ## Dependencies and lockfile
 
-The repository currently has no committed package-lock.json. Until it is generated and committed, CI uses npm install and does not enable npm dependency caching. Once the lockfile is committed, switch to npm ci and re-enable setup-node npm caching.
+Commit package.json and package-lock.json together whenever dependencies change. CI and GitHub Pages deployment use npm ci with setup-node npm caching. Regenerate the lockfile with npm install, review the dependency diff, and commit both files in the same change.
