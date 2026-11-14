@@ -140,9 +140,14 @@ export class EightBallRuleEngine {
     const effectiveGroup = ownGroup ?? assignedGroup
     const ownBallPocketed = effectiveGroup !== null &&
       objectBallsPocketed.some((number) => isGroupBall(number, effectiveGroup))
+    // On the break groups are not assigned, but pocketing an object ball keeps
+    // the breaker at the table for the next shot.
+    const keepsTurn = state.phase === 'break'
+      ? objectBallsPocketed.length > 0
+      : ownBallPocketed
 
     const isFoul = foulReasons.length > 0
-    const nextPlayer = isFoul || !ownBallPocketed ? oppositePlayer(player) : player
+    const nextPlayer = isFoul || !keepsTurn ? oppositePlayer(player) : player
     const nextPhase: EightBallPhase = nextGroups[0] && nextGroups[1]
       ? 'groups-assigned'
       : 'open-table'
