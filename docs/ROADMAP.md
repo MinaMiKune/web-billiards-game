@@ -13,7 +13,7 @@ Selected decisions:
 - [x] Add a test runner and CI test gate.
 - [x] Remove lockfile-dependent npm cache until a lockfile is committed.
 - [ ] Generate and commit package-lock.json; then use npm ci and restore npm caching.
-- [ ] Enable GitHub Pages in repository settings (owner action tracked in issue #3).
+- [x] Enable GitHub Pages and verify a successful deployment on main.
 
 ## Phase 1 — 3D playable prototype
 
