@@ -17,13 +17,14 @@ Selected decisions:
 
 ## Phase 1 — 3D playable prototype
 
-1. Build a responsive Three.js scene and 3D pool table.
-2. Add balls, six pocket visuals and table materials.
-3. Implement top, angled, side and free camera modes.
-4. Add a fixed-step physics world independent of Three.js.
-5. Add first-pass motion, ball-ball collision and cushion response.
-6. Add basic aim/power interaction and a cue presentation.
-7. Add deterministic regression tests and browser verification.
+- [x] Create a Three.js scene and 3D pool table.
+- [x] Add six pocket visuals and ball models.
+- [x] Add top, angled, side and free camera modes.
+- [x] Implement a fixed-step physics world independent of Three.js.
+- [x] Add first-pass rolling deceleration, ball collision and straight cushion response.
+- [x] Add basic aim/power interaction and cue-line preview.
+- [ ] Validate the prototype in a real browser and tune table/camera proportions.
+- [ ] Extend the physical model with pocket capture tests, better cushion segments and contact spin.
 
 Phase 1 exit criteria:
 - The scene runs in the browser and resizes correctly.
@@ -34,7 +35,7 @@ Phase 1 exit criteria:
 
 ## Phase 2 — Table behavior and controls
 
-- Correct pocket capture, pocket jaws and scratch handling.
+- Correct pocket capture geometry, pocket jaws and scratch handling.
 - Sliding/rolling transitions and cue-ball contact offsets.
 - Improve cue animation, aim feedback and power controls.
 - Add reduced-motion and touch-friendly controls.
