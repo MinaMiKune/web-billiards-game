@@ -82,6 +82,14 @@ Document model assumptions and test fixtures in PHYSICS.md.
 - Cue-ball placement is validated by the physics domain against table bounds, pocket exclusion zones and other active balls.
 - Call-shot/tournament variations remain future rule-profile options.
 
+## AI decision boundary
+
+- AI consumes a cloned physics world and game-state snapshot.
+- Candidate generation uses ghost-ball geometry and unobstructed path tests.
+- Each candidate is simulated through the same PhysicsWorld implementation as human shots.
+- Difficulty changes candidate budget, aim error and power error; it does not change physical laws.
+- Current planning covers direct-pot candidates and a simple safety fallback. Bank/kick shots, deeper planning and worker offload remain future work.
+
 ## Future multiplayer boundary
 
 Use commands and snapshots at the session boundary. Do not add sockets, a server, matchmaking or account infrastructure now. Before online play, define server authority, command validation, simulation-version compatibility, event ordering and resynchronization.

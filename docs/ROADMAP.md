@@ -47,9 +47,15 @@ Selected decisions:
 
 ## Phase 4 — AI opponents
 
-- Candidate shot generation and physics-based prediction.
-- Five difficulty levels using constrained planning depth, aim error and shot selection quality.
-- Human and AI share the same shot-command and physics interfaces.
+- [x] Add a physics-world clone for isolated deterministic shot evaluation.
+- [x] Generate direct-pot candidates using ghost-ball geometry and path obstruction checks.
+- [x] Evaluate candidates by simulating the same PhysicsWorld used by human play.
+- [x] Add five difficulty profiles controlling candidate budget, aim error and power consistency.
+- [x] Add AI opponent mode and automatic turn execution.
+- [x] Add legal ball-in-hand position search for the AI.
+- [ ] Add bank-shot, kick-shot and multi-rail planning.
+- [ ] Move deeper searches into a Web Worker after profiling.
+- [ ] Improve safety-ball and cue-ball position evaluation.
 
 ## Phase 5 — Polish and performance
 

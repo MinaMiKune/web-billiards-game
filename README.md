@@ -10,7 +10,7 @@ The product direction is **game-realistic billiards**: accessible controls backe
 - [x] First-pass deterministic table-plane physics with friction, spin, ball/cushion contact and pocket capture
 - [x] Aim, power, cue-ball contact-point controls and pocket-drop presentation
 - [x] Local two-player American 8-ball house-rules flow, fouls and ball-in-hand
-- [ ] AI opponents (planned)
+- [x] Five-level AI opponent with physics-simulated direct-shot planning
 - [ ] Online multiplayer (reserved; not currently in development)
 
 **[Play the GitHub Pages prototype](https://minamikune.github.io/web-billiards-game/)**

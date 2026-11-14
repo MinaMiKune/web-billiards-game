@@ -220,6 +220,20 @@ describe('PhysicsWorld', () => {
 })
 
 
+describe('PhysicsWorld clone', () => {
+  it('creates an independent simulation copy', () => {
+    const world = new PhysicsWorld()
+    world.cueBall.velocity = { x: 1, z: 0 }
+
+    const copy = world.clone()
+    copy.step(STEP)
+
+    expect(copy.cueBall.position.x).toBeGreaterThan(world.cueBall.position.x)
+    expect(world.cueBall.position.x).toBeCloseTo(-0.72, 8)
+    expect(copy.cueBall.velocity.x).toBeLessThan(world.cueBall.velocity.x)
+  })
+})
+
 describe('Shot telemetry and ball placement', () => {
   it('records the first cue-ball contact and pocket events', () => {
     const world = new PhysicsWorld()
