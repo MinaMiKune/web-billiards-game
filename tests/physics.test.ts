@@ -100,7 +100,7 @@ describe('PhysicsWorld', () => {
     const world = new PhysicsWorld()
     const cue = world.cueBall
     const zLimit = world.config.tableWidth / 2 - cue.radius
-    cue.position = { x: 0, z: zLimit - 0.001 }
+    cue.position = { x: 0.2, z: zLimit - 0.001 }
     cue.previousPosition = { ...cue.position }
     cue.velocity = { x: 0, z: 1 }
 
