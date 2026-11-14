@@ -141,6 +141,45 @@ describe('PhysicsWorld', () => {
     expect(cue.velocity.z).toBeLessThan(0)
   })
 
+  it('transfers side spin into a small throw during ball contact', () => {
+    const world = new PhysicsWorld()
+    const [cue, target] = world.balls
+    for (const ball of world.balls) ball.active = false
+
+    cue.active = true
+    cue.position = { x: -0.03, z: 0 }
+    cue.previousPosition = { ...cue.position }
+    cue.velocity = { x: 1, z: 0 }
+    cue.angularVelocity.y = 30
+
+    target.active = true
+    target.position = { x: 0.03, z: 0 }
+    target.previousPosition = { ...target.position }
+    target.velocity = { x: 0, z: 0 }
+
+    world.step(STEP)
+
+    expect(Math.abs(target.velocity.z)).toBeGreaterThan(0.02)
+    expect(cue.angularVelocity.y).toBeLessThan(30)
+    expect(Math.abs(target.angularVelocity.y)).toBeGreaterThan(0)
+  })
+
+  it('converts side spin into a tangential rebound from the cushion', () => {
+    const world = new PhysicsWorld()
+    const cue = world.cueBall
+    const zLimit = world.config.tableWidth / 2 - cue.radius
+    cue.position = { x: 0, z: zLimit - 0.001 }
+    cue.previousPosition = { ...cue.position }
+    cue.velocity = { x: 0, z: 1 }
+    cue.angularVelocity.y = 15
+
+    world.step(STEP)
+
+    expect(cue.velocity.z).toBeLessThan(0)
+    expect(Math.abs(cue.velocity.x)).toBeGreaterThan(0.05)
+    expect(Math.abs(cue.angularVelocity.y)).toBeLessThan(15)
+  })
+
   it('stops a slow ball without reversing it', () => {
     const world = new PhysicsWorld()
     const cue = world.cueBall

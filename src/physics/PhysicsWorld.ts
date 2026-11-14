@@ -43,6 +43,8 @@ export interface PhysicsConfig {
   spinStopSpeed: number
   verticalSpinRatio: number
   maxSideSpin: number
+  ballCollisionFriction: number
+  cushionFriction: number
   ballRestitution: number
   cushionRestitution: number
   pocketCaptureRadius: number
@@ -64,6 +66,8 @@ export const DEFAULT_PHYSICS_CONFIG: PhysicsConfig = {
   spinStopSpeed: 0.25,
   verticalSpinRatio: 0.7,
   maxSideSpin: 30,
+  ballCollisionFriction: 0.07,
+  cushionFriction: 0.12,
   ballRestitution: 0.96,
   cushionRestitution: 0.88,
   pocketCaptureRadius: 0.098,
@@ -89,6 +93,18 @@ export interface RenderBall {
 }
 
 const ZERO_VEC3 = (): Vec3 => ({ x: 0, y: 0, z: 0 })
+
+function momentOfInertia(ball: BallState): number {
+  return 0.4 * ball.mass * ball.radius * ball.radius
+}
+
+function crossProduct(a: Vec3, b: Vec3): Vec3 {
+  return {
+    x: a.y * b.z - a.z * b.y,
+    y: a.z * b.x - a.x * b.z,
+    z: a.x * b.y - a.y * b.x,
+  }
+}
 
 export class PhysicsWorld {
   readonly config: PhysicsConfig
@@ -311,19 +327,123 @@ export class PhysicsWorld {
 
     if (ball.position.x > xLimit) {
       ball.position.x = xLimit
-      ball.velocity.x = -Math.abs(ball.velocity.x) * this.config.cushionRestitution
+      this.resolveCushionImpact(ball, 'x', 1)
     } else if (ball.position.x < -xLimit) {
       ball.position.x = -xLimit
-      ball.velocity.x = Math.abs(ball.velocity.x) * this.config.cushionRestitution
+      this.resolveCushionImpact(ball, 'x', -1)
     }
 
     if (ball.position.z > zLimit) {
       ball.position.z = zLimit
-      ball.velocity.z = -Math.abs(ball.velocity.z) * this.config.cushionRestitution
+      this.resolveCushionImpact(ball, 'z', 1)
     } else if (ball.position.z < -zLimit) {
       ball.position.z = -zLimit
-      ball.velocity.z = Math.abs(ball.velocity.z) * this.config.cushionRestitution
+      this.resolveCushionImpact(ball, 'z', -1)
     }
+  }
+
+  private resolveCushionImpact(
+    ball: BallState,
+    axis: 'x' | 'z',
+    outwardSign: number,
+  ): void {
+    const normalSpeed = axis === 'x' ? ball.velocity.x : ball.velocity.z
+    const normalImpulse = (1 + this.config.cushionRestitution) *
+      ball.mass * Math.abs(normalSpeed)
+
+    if (axis === 'x') {
+      ball.velocity.x = -outwardSign * Math.abs(normalSpeed) * this.config.cushionRestitution
+    } else {
+      ball.velocity.z = -outwardSign * Math.abs(normalSpeed) * this.config.cushionRestitution
+    }
+
+    if (normalImpulse <= 0) return
+
+    const inertia = momentOfInertia(ball)
+    const effectiveInverseMass = (1 / ball.mass) +
+      (ball.radius * ball.radius / inertia)
+
+    if (axis === 'x') {
+      // Contact at (outwardSign * r, 0, 0); side spin creates tangential z slip.
+      const tangentialSlip = ball.velocity.z -
+        ball.angularVelocity.y * outwardSign * ball.radius
+      const requestedImpulse = -tangentialSlip / effectiveInverseMass
+      const maximumImpulse = this.config.cushionFriction * normalImpulse
+      const tangentImpulse = Math.sign(requestedImpulse) *
+        Math.min(Math.abs(requestedImpulse), maximumImpulse)
+      ball.velocity.z += tangentImpulse / ball.mass
+      ball.angularVelocity.y +=
+        (-outwardSign * ball.radius * tangentImpulse) / inertia
+    } else {
+      // Contact at (0, 0, outwardSign * r); side spin creates tangential x slip.
+      const tangentialSlip = ball.velocity.x +
+        ball.angularVelocity.y * outwardSign * ball.radius
+      const requestedImpulse = -tangentialSlip / effectiveInverseMass
+      const maximumImpulse = this.config.cushionFriction * normalImpulse
+      const tangentImpulse = Math.sign(requestedImpulse) *
+        Math.min(Math.abs(requestedImpulse), maximumImpulse)
+      ball.velocity.x += tangentImpulse / ball.mass
+      ball.angularVelocity.y +=
+        (outwardSign * ball.radius * tangentImpulse) / inertia
+    }
+  }
+
+  private applyBallContactFriction(
+    a: BallState,
+    b: BallState,
+    normal: Vec2,
+    normalImpulse: number,
+  ): void {
+    const radiusA = a.radius
+    const radiusB = b.radius
+    const inertiaA = momentOfInertia(a)
+    const inertiaB = momentOfInertia(b)
+    const armA: Vec3 = { x: normal.x * radiusA, y: 0, z: normal.z * radiusA }
+    const armB: Vec3 = { x: -normal.x * radiusB, y: 0, z: -normal.z * radiusB }
+    const surfaceA = crossProduct(a.angularVelocity, armA)
+    const surfaceB = crossProduct(b.angularVelocity, armB)
+
+    const relativeX = (b.velocity.x + surfaceB.x) - (a.velocity.x + surfaceA.x)
+    const relativeY = surfaceB.y - surfaceA.y
+    const relativeZ = (b.velocity.z + surfaceB.z) - (a.velocity.z + surfaceA.z)
+    const tangent: Vec2 = { x: -normal.z, z: normal.x }
+    const tangentialSlip = relativeX * tangent.x + relativeZ * tangent.z
+
+    const effectiveInverseMass =
+      (1 / a.mass) + (1 / b.mass) +
+      (radiusA * radiusA / inertiaA) +
+      (radiusB * radiusB / inertiaB)
+
+    let impulseTangent = -tangentialSlip / effectiveInverseMass
+    let impulseVertical = -relativeY / effectiveInverseMass
+    const requestedMagnitude = Math.hypot(impulseTangent, impulseVertical)
+    const maximumMagnitude = this.config.ballCollisionFriction * normalImpulse
+
+    if (requestedMagnitude > maximumMagnitude && requestedMagnitude > 0) {
+      const scale = maximumMagnitude / requestedMagnitude
+      impulseTangent *= scale
+      impulseVertical *= scale
+    }
+
+    const impulse: Vec3 = {
+      x: tangent.x * impulseTangent,
+      y: impulseVertical,
+      z: tangent.z * impulseTangent,
+    }
+
+    a.velocity.x -= impulse.x / a.mass
+    a.velocity.z -= impulse.z / a.mass
+    b.velocity.x += impulse.x / b.mass
+    b.velocity.z += impulse.z / b.mass
+
+    const torqueA = crossProduct(armA, impulse)
+    const torqueB = crossProduct(armB, impulse)
+    a.angularVelocity.x -= torqueA.x / inertiaA
+    a.angularVelocity.y -= torqueA.y / inertiaA
+    a.angularVelocity.z -= torqueA.z / inertiaA
+    b.angularVelocity.x += torqueB.x / inertiaB
+    b.angularVelocity.y += torqueB.y / inertiaB
+    b.angularVelocity.z += torqueB.z / inertiaB
   }
 
   private resolveBallCollisions(): void {
@@ -365,6 +485,7 @@ export class PhysicsWorld {
         a.velocity.z -= (impulse / a.mass) * normal.z
         b.velocity.x += (impulse / b.mass) * normal.x
         b.velocity.z += (impulse / b.mass) * normal.z
+        this.applyBallContactFriction(a, b, normal, impulse)
       }
     }
   }
