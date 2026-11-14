@@ -113,7 +113,9 @@ export class PhysicsWorld {
     return this.balls.some((ball) => {
       if (!ball.active) return false
       const linearSpeed = Math.hypot(ball.velocity.x, ball.velocity.z)
+      const rollSpinSpeed = Math.hypot(ball.angularVelocity.x, ball.angularVelocity.z) * ball.radius
       return linearSpeed > this.config.stopSpeed ||
+        rollSpinSpeed > this.config.stopSpeed ||
         Math.abs(ball.angularVelocity.y) > this.config.spinStopSpeed
     })
   }

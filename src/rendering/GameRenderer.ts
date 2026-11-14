@@ -4,7 +4,6 @@ import {
   BoxGeometry,
   BufferGeometry,
   CanvasTexture,
-  Camera,
   CircleGeometry,
   Color,
   CylinderGeometry,
@@ -20,6 +19,7 @@ import {
   WebGLRenderer,
   SRGBColorSpace,
 } from 'three'
+import type { Camera } from 'three'
 import type { RenderBall } from '../physics/PhysicsWorld'
 
 const TABLE_LENGTH = 2.54
@@ -117,6 +117,10 @@ export class GameRenderer {
   }
 
   dispose(): void {
+    this.aimLine.geometry.dispose()
+    this.aimLine.material.dispose()
+    this.cueLine.geometry.dispose()
+    this.cueLine.material.dispose()
     this.renderer.dispose()
     this.scene.traverse((object) => {
       if (object instanceof Mesh) {
@@ -129,7 +133,6 @@ export class GameRenderer {
         }
       }
     })
-    for (const texture of this.ballTextures.values()) texture.dispose()
     this.ballTextures.clear()
   }
 
