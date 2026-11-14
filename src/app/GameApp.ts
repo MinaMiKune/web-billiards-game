@@ -261,6 +261,9 @@ export class GameApp {
       position: cue.position,
       rotation: cue.rotation,
       active: cue.active,
+      pocketed: cue.pocketed,
+      pocketProgress: 0,
+      pocketTarget: cue.pocketTarget,
     }
   }
 

@@ -33,7 +33,8 @@ Selected decisions:
 - [x] Rotate numbered/striped ball textures with the simulated angular velocity.
 - [ ] Calibrate friction and spin parameters against reference shots.
 - [x] Add tangential ball-ball collision impulses and spin-dependent cushion rebound.
-- [ ] Implement full pocket jaws and falling/drop presentation.
+- [x] Add presentation-only ball drop animation after pocket capture.
+- [ ] Model full pocket jaw geometry and validate capture/near-miss trajectories against a measured table.
 
 ## Phase 3 — Rules and game flow
 
