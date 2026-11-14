@@ -1,0 +1,252 @@
+import { Plane, Raycaster, Vector2, Vector3 } from 'three'
+import { CameraManager, type CameraMode } from '../camera/CameraManager'
+import { PhysicsWorld } from '../physics/PhysicsWorld'
+import { GameRenderer } from '../rendering/GameRenderer'
+
+const FIXED_STEP = 1 / 120
+const MAX_FRAME_DELTA = 0.1
+const MAX_SUBSTEPS = 12
+
+function requireElement<T extends HTMLElement>(root: HTMLElement, selector: string): T {
+  const element = root.querySelector<T>(selector)
+  if (!element) throw new Error('Required UI element not found: ' + selector)
+  return element
+}
+
+export class GameApp {
+  private readonly world = new PhysicsWorld()
+  private readonly renderer: GameRenderer
+  private readonly cameras: CameraManager
+  private readonly statusElement: HTMLElement
+  private readonly powerInput: HTMLInputElement
+  private readonly powerValue: HTMLElement
+  private readonly raycaster = new Raycaster()
+  private readonly groundPlane = new Plane(new Vector3(0, 1, 0), 0)
+  private readonly intersection = new Vector3()
+  private readonly pointerNdc = new Vector2()
+  private readonly resizeObserver: ResizeObserver
+  private aiming = false
+  private aimPoint: { x: number; z: number } | null = null
+  private power = 0.65
+  private accumulator = 0
+  private previousTime = 0
+  private wasMoving = false
+  private frameHandle = 0
+
+  constructor(root: HTMLElement) {
+    const sceneHost = requireElement<HTMLDivElement>(root, '#scene-host')
+    this.statusElement = requireElement(root, '#game-status')
+    this.powerInput = requireElement<HTMLInputElement>(root, '#shot-power')
+    this.powerValue = requireElement(root, '#power-value')
+
+    this.renderer = new GameRenderer(sceneHost)
+    this.cameras = new CameraManager(this.renderer.canvas)
+    this.cameras.setMode('top')
+    this.renderer.updateBalls(this.world.getRenderBalls(1))
+
+    this.bindControls(root)
+    this.resizeObserver = new ResizeObserver(() => this.resize())
+    this.resizeObserver.observe(sceneHost)
+    this.resize()
+    this.frameHandle = requestAnimationFrame(this.frame)
+  }
+
+  dispose(): void {
+    cancelAnimationFrame(this.frameHandle)
+    this.resizeObserver.disconnect()
+    this.cameras.dispose()
+    this.renderer.dispose()
+  }
+
+  private bindControls(root: HTMLElement): void {
+    const canvas = this.renderer.canvas
+    canvas.addEventListener('pointerdown', this.onPointerDown)
+    canvas.addEventListener('pointermove', this.onPointerMove)
+    canvas.addEventListener('pointerup', this.onPointerUp)
+    canvas.addEventListener('pointercancel', this.onPointerCancel)
+
+    for (const button of root.querySelectorAll<HTMLButtonElement>('[data-camera]')) {
+      button.addEventListener('click', () => {
+        this.setCamera(button.dataset.camera as CameraMode)
+      })
+    }
+
+    requireElement<HTMLButtonElement>(root, '#reset-rack').addEventListener('click', () => {
+      this.world.resetRack()
+      this.renderer.updateBalls(this.world.getRenderBalls(1))
+      this.setAimVisible(false)
+      this.statusElement.textContent = 'Ready to break'
+    })
+
+    this.powerInput.addEventListener('input', () => {
+      this.power = Number(this.powerInput.value) / 100
+      this.powerValue.textContent = this.powerInput.value + '%'
+    })
+
+    window.addEventListener('keydown', this.onKeyDown)
+  }
+
+  private setCamera(mode: CameraMode): void {
+    if (!['top', 'angled', 'side', 'free'].includes(mode)) return
+    this.cameras.setMode(mode)
+    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-camera]')) {
+      const active = button.dataset.camera === mode
+      button.classList.toggle('is-active', active)
+      button.setAttribute('aria-pressed', String(active))
+    }
+  }
+
+  private onKeyDown = (event: KeyboardEvent): void => {
+    if (event.target instanceof HTMLInputElement) return
+    const modes: Record<string, CameraMode> = {
+      '1': 'top',
+      '2': 'angled',
+      '3': 'side',
+      '4': 'free',
+    }
+    const mode = modes[event.key]
+    if (mode) this.setCamera(mode)
+  }
+
+  private onPointerDown = (event: PointerEvent): void => {
+    if (this.world.isMoving || !this.world.cueBall.active) return
+    const point = this.pickTablePoint(event)
+    if (!point) return
+
+    const cue = this.world.cueBall.position
+    if (Math.hypot(point.x - cue.x, point.z - cue.z) > 0.16) return
+
+    event.preventDefault()
+    this.aiming = true
+    this.aimPoint = point
+    this.renderer.canvas.setPointerCapture(event.pointerId)
+    this.updateAimPreview()
+  }
+
+  private onPointerMove = (event: PointerEvent): void => {
+    if (!this.aiming) return
+    this.aimPoint = this.pickTablePoint(event)
+    this.updateAimPreview()
+  }
+
+  private onPointerUp = (event: PointerEvent): void => {
+    if (!this.aiming) return
+    this.aimPoint = this.pickTablePoint(event) ?? this.aimPoint
+    const cue = this.world.cueBall.position
+    if (this.aimPoint) {
+      const dx = cue.x - this.aimPoint.x
+      const dz = cue.z - this.aimPoint.z
+      const length = Math.hypot(dx, dz)
+      if (length > 0.045 && this.world.shootCueBall({ x: dx / length, z: dz / length }, this.power)) {
+        this.statusElement.textContent = 'Balls in motion'
+        this.wasMoving = true
+      }
+    }
+    this.aiming = false
+    this.aimPoint = null
+    this.setAimVisible(false)
+    if (this.renderer.canvas.hasPointerCapture(event.pointerId)) {
+      this.renderer.canvas.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  private onPointerCancel = (): void => {
+    this.aiming = false
+    this.aimPoint = null
+    this.setAimVisible(false)
+  }
+
+  private pickTablePoint(event: PointerEvent): { x: number; z: number } | null {
+    const rect = this.renderer.canvas.getBoundingClientRect()
+    if (!rect.width || !rect.height) return null
+
+    this.pointerNdc.set(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+    )
+    this.raycaster.setFromCamera(this.pointerNdc, this.cameras.camera)
+    const point = this.raycaster.ray.intersectPlane(this.groundPlane, this.intersection)
+    return point ? { x: point.x, z: point.z } : null
+  }
+
+  private updateAimPreview(): void {
+    const cue = this.world.cueBall
+    if (!this.aiming || !this.aimPoint || !cue.active) {
+      this.setAimVisible(false)
+      return
+    }
+
+    const dx = cue.position.x - this.aimPoint.x
+    const dz = cue.position.z - this.aimPoint.z
+    const length = Math.hypot(dx, dz)
+    if (length < 1e-5) {
+      this.setAimVisible(false)
+      return
+    }
+
+    this.renderer.setAimPreview(
+      {
+        id: cue.id,
+        number: cue.number,
+        color: cue.color,
+        radius: cue.radius,
+        position: cue.position,
+        active: cue.active,
+      },
+      { x: dx / length, z: dz / length },
+      Math.min(length, 0.8),
+      true,
+    )
+  }
+
+  private setAimVisible(visible: boolean): void {
+    const cue = this.world.cueBall
+    this.renderer.setAimPreview(
+      {
+        id: cue.id,
+        number: cue.number,
+        color: cue.color,
+        radius: cue.radius,
+        position: cue.position,
+        active: cue.active,
+      },
+      { x: 1, z: 0 },
+      0,
+      visible,
+    )
+  }
+
+  private resize(): void {
+    const canvas = this.renderer.canvas
+    const rect = canvas.parentElement?.getBoundingClientRect()
+    if (!rect) return
+    this.renderer.resize(rect.width, rect.height)
+    this.cameras.resize(rect.width, rect.height)
+  }
+
+  private frame = (time: number): void => {
+    if (this.previousTime === 0) this.previousTime = time
+    const frameDelta = Math.min((time - this.previousTime) / 1000, MAX_FRAME_DELTA)
+    this.previousTime = time
+    this.accumulator += frameDelta
+
+    let steps = 0
+    while (this.accumulator >= FIXED_STEP && steps < MAX_SUBSTEPS) {
+      this.world.step(FIXED_STEP)
+      this.accumulator -= FIXED_STEP
+      steps += 1
+    }
+    if (steps === MAX_SUBSTEPS) this.accumulator = 0
+
+    const moving = this.world.isMoving
+    if (this.wasMoving && !moving) {
+      this.wasMoving = false
+      this.statusElement.textContent = 'Shot settled · ready'
+    }
+
+    this.cameras.update()
+    this.renderer.updateBalls(this.world.getRenderBalls(this.accumulator / FIXED_STEP))
+    this.renderer.render(this.cameras.camera)
+    this.frameHandle = requestAnimationFrame(this.frame)
+  }
+}

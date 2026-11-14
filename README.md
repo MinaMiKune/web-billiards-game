@@ -1,36 +1,58 @@
 # Web Billiards
 
-A lightweight browser billiards game built with TypeScript, HTML Canvas and Vite.
+A browser-based billiards simulation project built with TypeScript, Vite and Three.js.
 
-## Play locally
+The product direction is **game-realistic billiards**: accessible controls backed by a credible, testable physics model. The long-term experience combines a top-down playing view with angled, side and free-observation cameras.
 
-```bash
+## Current status
+
+- [x] Initial Canvas 2D prototype
+- [x] Technical baseline and modular architecture documented
+- [ ] Three-dimensional table and camera prototype
+- [ ] Deterministic billiards physics core
+- [ ] Shot controls and cue interaction
+- [ ] 8-ball rules and AI opponents
+- [ ] Online multiplayer (reserved for a later phase; not currently in development)
+
+See [ROADMAP](docs/ROADMAP.md) for the phase plan.
+
+## Requirements
+
+- Node.js 22
+- npm 10 or newer
+
+## Local development
+
+~~~bash
 npm install
 npm run dev
-```
+~~~
 
-## Build and check
+## Quality checks
 
-```bash
+~~~bash
 npm run typecheck
+npm test
 npm run build
-npm run preview
-```
+~~~
 
-## Controls
+## Architecture
 
-- Drag backwards from the white cue ball to aim.
-- Release to shoot.
-- Adjust shot power with the slider.
-- Choose **New rack** to reset the table.
+- [Architecture](docs/ARCHITECTURE.md)
+- [Development guide](docs/DEVELOPMENT.md)
+- [Physics model and validation](docs/PHYSICS.md)
+- [Roadmap](docs/ROADMAP.md)
 
 ## Deployment
 
-The GitHub Actions workflow builds the app and publishes `dist/` to GitHub Pages whenever changes are pushed to `main`. In the repository settings, set **Pages → Build and deployment → Source** to **GitHub Actions**.
+The deployment workflow builds dist/ and publishes it to GitHub Pages on pushes to main. In repository settings, configure **Pages → Build and deployment → Source → GitHub Actions**.
 
-## Tech
+The workflows currently use npm install without npm cache because the initial repository did not contain a lockfile. Add and commit package-lock.json before re-enabling setup-node's npm cache and switching CI to npm ci.
 
-- TypeScript
-- HTML Canvas 2D
-- Vite
-- GitHub Actions
+## Project principles
+
+1. Physics state is independent of rendering state.
+2. Every camera observes the same simulation world.
+3. Human and AI players submit the same shot-command format.
+4. Rules, input, rendering and sessions do not own or mutate physics internals directly.
+5. Physics changes require automated tests and reproducible scenarios.
