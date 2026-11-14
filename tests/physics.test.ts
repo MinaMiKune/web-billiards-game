@@ -218,3 +218,35 @@ describe('PhysicsWorld', () => {
     expect(cue.velocity.z).toBe(0)
   })
 })
+
+
+describe('Shot telemetry and ball placement', () => {
+  it('records the first cue-ball contact and pocket events', () => {
+    const world = new PhysicsWorld()
+    world.shootCueBall({ x: 1, z: 0 }, 1)
+    const [cue, target] = world.balls
+    cue.position = { x: -0.04, z: 0 }
+    cue.previousPosition = { ...cue.position }
+    cue.velocity = { x: 1, z: 0 }
+    target.position = { x: 0.02, z: 0 }
+    target.previousPosition = { ...target.position }
+    target.velocity = { x: 0, z: 0 }
+
+    world.step(STEP)
+
+    expect(world.getShotTelemetry().firstContactBallNumber).toBe(1)
+  })
+
+  it('places the cue ball only at a clear legal table position', () => {
+    const world = new PhysicsWorld()
+    const cue = world.cueBall
+    cue.active = false
+    cue.pocketed = true
+
+    expect(world.placeCueBall({ x: 0.4, z: 0.3 })).toBe(true)
+    expect(cue.active).toBe(true)
+    expect(cue.pocketed).toBe(false)
+    expect(world.placeCueBall({ x: 0.5, z: 0 })).toBe(false)
+    expect(world.placeCueBall({ x: 1.26, z: 0.6 })).toBe(false)
+  })
+})

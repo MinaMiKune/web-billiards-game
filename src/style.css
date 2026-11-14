@@ -28,6 +28,7 @@ h1 span { color:#d9bb7d; }
 .toolbar { min-height:80px; padding:15px 20px; gap:20px; border-bottom:1px solid rgba(119,157,136,.18); }
 .status-block { display:grid; gap:5px; }
 .status-block strong { font-size:16px; font-weight:600; }
+.turn-status { color:#d4bd8c; font:500 9px 'DM Mono',monospace; letter-spacing:.08em; }
 .section-label { font-size:9px; color:#7f9c8e; }
 .toolbar-actions { gap:18px; }
 .power-control { display:grid; grid-template-columns:auto auto; gap:6px 14px; align-items:center; min-width:180px; }

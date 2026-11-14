@@ -38,9 +38,12 @@ Selected decisions:
 
 ## Phase 3 — Rules and game flow
 
-- American 8-ball rack and break.
-- Ball group assignment, turn flow, fouls and win conditions.
-- Rule tests independent from rendering.
+- [x] Add a pure, deterministic American 8-ball rules engine.
+- [x] Track first cue-ball contact, pocket events and rail contact in the physics layer.
+- [x] Support break/open-table/group assignment, turn switching, fouls and 8-ball win/loss.
+- [x] Add ball-in-hand placement with collision and pocket-area validation.
+- [ ] Add call-shot options and the full rule variations used by tournament rule sets.
+- [ ] Add game-flow UI for rack history, player groups and result summary.
 
 ## Phase 4 — AI opponents
 

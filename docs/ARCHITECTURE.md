@@ -26,7 +26,7 @@
 - Rendering reads simulation snapshots and interpolates presentation.
 - Input produces typed intent or a ShotCommand.
 - Game validates turn/rule constraints before accepting a shot.
-- Physics applies the accepted shot and emits deterministic events.
+- Physics applies the accepted shot and emits deterministic shot telemetry: first cue-ball contact, pocketed ball numbers, cue-ball scratch and rail contact after first hit.
 - Game consumes physics events after the simulation settles.
 - AI reads the same public state snapshot as a human-facing aiming system and submits the same ShotCommand type.
 - LocalSession is the only session implementation in current scope. A future NetworkSession is an extension point, not current work.
@@ -74,6 +74,13 @@ First increments:
 5. spin/tangential impulses and refined cushion response.
 
 Document model assumptions and test fixtures in PHYSICS.md.
+
+## Rules and session flow
+
+- The 8-ball rules engine is a pure domain module. It consumes a completed-shot result and returns a new game state; it never mutates physics or rendering objects.
+- The current ruleset is a documented game-oriented house-rules subset: break, open table, group assignment, first-contact fouls, no-rail foul, scratch/ball-in-hand, 8-ball win/loss and re-rack on 8-ball break.
+- Cue-ball placement is validated by the physics domain against table bounds, pocket exclusion zones and other active balls.
+- Call-shot/tournament variations remain future rule-profile options.
 
 ## Future multiplayer boundary
 

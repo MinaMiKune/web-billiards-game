@@ -9,6 +9,13 @@ export interface Vec3 {
   z: number
 }
 
+export interface ShotTelemetry {
+  firstContactBallNumber: number | null
+  pocketedBallNumbers: number[]
+  cueBallPocketed: boolean
+  railContactAfterFirstHit: boolean
+}
+
 export interface BallSpin {
   side: number
   vertical: number
@@ -116,6 +123,7 @@ function crossProduct(a: Vec3, b: Vec3): Vec3 {
 export class PhysicsWorld {
   readonly config: PhysicsConfig
   balls: BallState[]
+  private shotTelemetry: ShotTelemetry = this.createEmptyShotTelemetry()
 
   constructor(config: PhysicsConfig = DEFAULT_PHYSICS_CONFIG) {
     this.config = { ...config }
@@ -124,6 +132,62 @@ export class PhysicsWorld {
 
   resetRack(): void {
     this.balls = this.createRack()
+    this.shotTelemetry = this.createEmptyShotTelemetry()
+  }
+
+  getShotTelemetry(): ShotTelemetry {
+    return {
+      ...this.shotTelemetry,
+      pocketedBallNumbers: [...this.shotTelemetry.pocketedBallNumbers],
+    }
+  }
+
+  placeCueBall(position: Vec2): boolean {
+    if (this.isMoving) return false
+
+    const cue = this.cueBall
+    const halfLength = this.config.tableLength / 2
+    const halfWidth = this.config.tableWidth / 2
+    const xLimit = halfLength - cue.radius
+    const zLimit = halfWidth - cue.radius
+
+    if (Math.abs(position.x) > xLimit || Math.abs(position.z) > zLimit) return false
+
+    const nearCornerPocket = [
+      { x: -halfLength, z: -halfWidth },
+      { x: -halfLength, z: halfWidth },
+      { x: halfLength, z: -halfWidth },
+      { x: halfLength, z: halfWidth },
+    ].some((pocket) =>
+      Math.hypot(position.x - pocket.x, position.z - pocket.z) <
+      this.config.pocketCaptureRadius + cue.radius,
+    )
+    const nearSidePocket =
+      Math.abs(position.z) > zLimit - cue.radius &&
+      Math.abs(position.x) < this.config.sidePocketHalfWidth + cue.radius
+    if (nearCornerPocket || nearSidePocket) return false
+
+    const overlapsBall = this.balls.some((ball) => {
+      if (!ball.active || ball.number === cue.number) return false
+      const distance = Math.hypot(
+        position.x - ball.position.x,
+        position.z - ball.position.z,
+      )
+      return distance < cue.radius + ball.radius + 0.001
+    })
+    if (overlapsBall) return false
+
+    cue.position = { ...position }
+    cue.previousPosition = { ...position }
+    cue.velocity = { x: 0, z: 0 }
+    cue.angularVelocity = ZERO_VEC3()
+    cue.rotation = ZERO_VEC3()
+    cue.previousRotation = ZERO_VEC3()
+    cue.active = true
+    cue.pocketed = false
+    cue.pocketedElapsedSeconds = 0
+    cue.pocketTarget = null
+    return true
   }
 
   get cueBall(): BallState {
@@ -150,6 +214,7 @@ export class PhysicsWorld {
     const strength = Math.max(0, Math.min(1, power))
     if (length < 1e-6 || strength <= 0) return false
 
+    this.shotTelemetry = this.createEmptyShotTelemetry()
     const unit = { x: direction.x / length, z: direction.z / length }
     const speed = strength * this.config.maxShotSpeed
     const side = Math.max(-1, Math.min(1, spin.side))
@@ -222,6 +287,15 @@ export class PhysicsWorld {
         z: ball.previousRotation.z + (ball.rotation.z - ball.previousRotation.z) * blend,
       },
     }))
+  }
+
+  private createEmptyShotTelemetry(): ShotTelemetry {
+    return {
+      firstContactBallNumber: null,
+      pocketedBallNumbers: [],
+      cueBallPocketed: false,
+      railContactAfterFirstHit: false,
+    }
   }
 
   private createRack(): BallState[] {
@@ -346,6 +420,10 @@ export class PhysicsWorld {
           : { x: 0, z: Math.sign(ball.position.z || 1) * halfWidth }
         ball.velocity = { x: 0, z: 0 }
         ball.angularVelocity = ZERO_VEC3()
+        if (!this.shotTelemetry.pocketedBallNumbers.includes(ball.number)) {
+          this.shotTelemetry.pocketedBallNumbers.push(ball.number)
+        }
+        if (ball.number === 0) this.shotTelemetry.cueBallPocketed = true
         return
       }
     }
@@ -375,6 +453,9 @@ export class PhysicsWorld {
     const normalSpeed = axis === 'x' ? ball.velocity.x : ball.velocity.z
     const normalImpulse = (1 + this.config.cushionRestitution) *
       ball.mass * Math.abs(normalSpeed)
+    if (this.shotTelemetry.firstContactBallNumber !== null) {
+      this.shotTelemetry.railContactAfterFirstHit = true
+    }
 
     if (axis === 'x') {
       ball.velocity.x = -outwardSign * Math.abs(normalSpeed) * this.config.cushionRestitution
@@ -502,6 +583,14 @@ export class PhysicsWorld {
           (b.velocity.z - a.velocity.z) * normal.z
 
         if (relativeNormalSpeed >= 0) continue
+
+        if (this.shotTelemetry.firstContactBallNumber === null) {
+          if (a.number === 0 && b.number !== 0) {
+            this.shotTelemetry.firstContactBallNumber = b.number
+          } else if (b.number === 0 && a.number !== 0) {
+            this.shotTelemetry.firstContactBallNumber = a.number
+          }
+        }
 
         const impulse = -((1 + this.config.ballRestitution) * relativeNormalSpeed) /
           ((1 / a.mass) + (1 / b.mass))

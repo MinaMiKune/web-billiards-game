@@ -24,7 +24,8 @@ app.innerHTML = `
       <div class="toolbar">
         <div class="status-block">
           <span class="section-label">TABLE STATUS</span>
-          <strong id="game-status" aria-live="polite">Ready to break</strong>
+          <strong id="game-status" aria-live="polite">Player 1 breaks</strong>
+          <span id="turn-status" class="turn-status">PLAYER 1 · BREAK</span>
         </div>
         <div class="toolbar-actions">
           <label class="power-control" for="shot-power">
@@ -56,7 +57,7 @@ app.innerHTML = `
 
       <div class="scene-frame">
         <div id="scene-host" class="scene-host" aria-label="Interactive 3D billiards table"></div>
-        <div class="scene-hint">DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT</div>
+        <div id="interaction-hint" class="scene-hint">DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT</div>
       </div>
 
       <div class="camera-bar">
@@ -74,7 +75,7 @@ app.innerHTML = `
     </section>
 
     <footer>
-      <span>PHASE 2 · CLOTH FRICTION + CUE BALL SPIN</span>
+      <span>PHASE 3 · AMERICAN 8-BALL RULES</span>
       <span>ONLINE PLAY IS RESERVED FOR A FUTURE PHASE</span>
     </footer>
   </main>

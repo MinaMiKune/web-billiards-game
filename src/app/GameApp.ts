@@ -2,6 +2,7 @@ import { Plane, Raycaster, Vector2, Vector3 } from 'three'
 import { CameraManager, type CameraMode } from '../camera/CameraManager'
 import { PhysicsWorld, type BallSpin, type RenderBall } from '../physics/PhysicsWorld'
 import { GameRenderer } from '../rendering/GameRenderer'
+import { createInitialEightBallState, EightBallRuleEngine, type EightBallState } from '../game/EightBallRuleEngine'
 
 const FIXED_STEP = 1 / 120
 const MAX_FRAME_DELTA = 0.1
@@ -15,9 +16,13 @@ function requireElement<T extends HTMLElement>(root: HTMLElement, selector: stri
 
 export class GameApp {
   private readonly world = new PhysicsWorld()
+  private readonly rules = new EightBallRuleEngine()
+  private ruleState: EightBallState = createInitialEightBallState()
   private readonly renderer: GameRenderer
   private readonly cameras: CameraManager
   private readonly statusElement: HTMLElement
+  private readonly turnElement: HTMLElement
+  private readonly interactionHint: HTMLElement
   private readonly powerInput: HTMLInputElement
   private readonly powerValue: HTMLElement
   private readonly spinPad: HTMLElement
@@ -41,6 +46,8 @@ export class GameApp {
   constructor(root: HTMLElement) {
     const sceneHost = requireElement<HTMLDivElement>(root, '#scene-host')
     this.statusElement = requireElement(root, '#game-status')
+    this.turnElement = requireElement(root, '#turn-status')
+    this.interactionHint = requireElement(root, '#interaction-hint')
     this.powerInput = requireElement<HTMLInputElement>(root, '#shot-power')
     this.powerValue = requireElement(root, '#power-value')
     this.spinPad = requireElement(root, '#spin-pad')
@@ -53,6 +60,7 @@ export class GameApp {
     this.renderer.updateBalls(this.world.getRenderBalls(1))
 
     this.bindControls(root)
+    this.updateTurnStatus()
     this.resizeObserver = new ResizeObserver(() => this.resize())
     this.resizeObserver.observe(sceneHost)
     this.resize()
@@ -81,10 +89,12 @@ export class GameApp {
 
     requireElement<HTMLButtonElement>(root, '#reset-rack').addEventListener('click', () => {
       this.world.resetRack()
+      this.ruleState = createInitialEightBallState()
       this.renderer.updateBalls(this.world.getRenderBalls(1))
       this.resetSpin()
       this.setAimVisible(false)
-      this.statusElement.textContent = 'Ready to break'
+      this.statusElement.textContent = this.ruleState.lastMessage
+      this.updateTurnStatus()
     })
 
     this.powerInput.addEventListener('input', () => {
@@ -187,9 +197,23 @@ export class GameApp {
   }
 
   private onPointerDown = (event: PointerEvent): void => {
-    if (this.world.isMoving || !this.world.cueBall.active) return
+    if (this.world.isMoving) return
     const point = this.pickTablePoint(event)
     if (!point) return
+
+    if (this.ruleState.ballInHand) {
+      if (this.world.placeCueBall(point)) {
+        this.ruleState = this.rules.placeBallInHand(this.ruleState)
+        this.statusElement.textContent = this.ruleState.lastMessage
+        this.updateTurnStatus()
+        this.renderer.updateBalls(this.world.getRenderBalls(1))
+      } else {
+        this.statusElement.textContent = 'Choose a clear spot away from balls and pockets'
+      }
+      return
+    }
+
+    if (this.ruleState.phase === 'game-over' || !this.world.cueBall.active) return
 
     const cue = this.world.cueBall.position
     if (Math.hypot(point.x - cue.x, point.z - cue.z) > 0.16) return
@@ -294,6 +318,28 @@ export class GameApp {
     this.renderer.setAimPreview(this.cueRenderBall(), { x: 1, z: 0 }, 0, visible)
   }
 
+  private updateTurnStatus(): void {
+    const currentGroup = this.ruleState.playerGroups[this.ruleState.currentPlayer]
+    const phaseLabel = this.ruleState.phase === 'break'
+      ? 'Break'
+      : this.ruleState.phase === 'open-table'
+        ? 'Open table'
+        : this.ruleState.phase === 'game-over'
+          ? 'Game over'
+          : 'Groups assigned'
+    const groupLabel = currentGroup ? ` · ${currentGroup}` : ''
+    const ballInHandLabel = this.ruleState.ballInHand ? ' · BALL IN HAND — CLICK TO PLACE' : ''
+    const winnerLabel = this.ruleState.winner === null ? '' : ` · WINNER: PLAYER ${this.ruleState.winner + 1}`
+    this.turnElement.textContent =
+      `PLAYER ${this.ruleState.currentPlayer + 1}${groupLabel} · ${phaseLabel.toUpperCase()}${ballInHandLabel}${winnerLabel}`
+
+    this.interactionHint.textContent = this.ruleState.ballInHand
+      ? 'CLICK A CLEAR SPOT ON THE TABLE TO PLACE THE CUE BALL'
+      : this.ruleState.phase === 'game-over'
+        ? 'GAME OVER · START A NEW RACK TO PLAY AGAIN'
+        : 'DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT'
+  }
+
   private resize(): void {
     const canvas = this.renderer.canvas
     const rect = canvas.parentElement?.getBoundingClientRect()
@@ -319,7 +365,14 @@ export class GameApp {
     const moving = this.world.isMoving
     if (this.wasMoving && !moving) {
       this.wasMoving = false
-      this.statusElement.textContent = 'Shot settled · ready'
+      const resolution = this.rules.resolveShot(this.ruleState, this.world.getShotTelemetry())
+      this.ruleState = resolution.state
+      if (resolution.rerack) {
+        this.world.resetRack()
+        this.resetSpin()
+      }
+      this.statusElement.textContent = resolution.state.lastMessage
+      this.updateTurnStatus()
     }
 
     this.cameras.update()
