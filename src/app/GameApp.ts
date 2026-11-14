@@ -1,6 +1,6 @@
 import { Plane, Raycaster, Vector2, Vector3 } from 'three'
 import { CameraManager, type CameraMode } from '../camera/CameraManager'
-import { PhysicsWorld } from '../physics/PhysicsWorld'
+import { PhysicsWorld, type BallSpin, type RenderBall } from '../physics/PhysicsWorld'
 import { GameRenderer } from '../rendering/GameRenderer'
 
 const FIXED_STEP = 1 / 120
@@ -20,6 +20,9 @@ export class GameApp {
   private readonly statusElement: HTMLElement
   private readonly powerInput: HTMLInputElement
   private readonly powerValue: HTMLElement
+  private readonly spinPad: HTMLElement
+  private readonly spinMarker: HTMLElement
+  private readonly spinValue: HTMLElement
   private readonly raycaster = new Raycaster()
   private readonly groundPlane = new Plane(new Vector3(0, 1, 0), 0)
   private readonly intersection = new Vector3()
@@ -27,6 +30,8 @@ export class GameApp {
   private readonly resizeObserver: ResizeObserver
   private aiming = false
   private aimPoint: { x: number; z: number } | null = null
+  private spin: BallSpin = { side: 0, vertical: 0 }
+  private spinDragging = false
   private power = 0.65
   private accumulator = 0
   private previousTime = 0
@@ -38,6 +43,9 @@ export class GameApp {
     this.statusElement = requireElement(root, '#game-status')
     this.powerInput = requireElement<HTMLInputElement>(root, '#shot-power')
     this.powerValue = requireElement(root, '#power-value')
+    this.spinPad = requireElement(root, '#spin-pad')
+    this.spinMarker = requireElement(root, '#spin-marker')
+    this.spinValue = requireElement(root, '#spin-value')
 
     this.renderer = new GameRenderer(sceneHost)
     this.cameras = new CameraManager(this.renderer.canvas)
@@ -74,6 +82,7 @@ export class GameApp {
     requireElement<HTMLButtonElement>(root, '#reset-rack').addEventListener('click', () => {
       this.world.resetRack()
       this.renderer.updateBalls(this.world.getRenderBalls(1))
+      this.resetSpin()
       this.setAimVisible(false)
       this.statusElement.textContent = 'Ready to break'
     })
@@ -83,6 +92,11 @@ export class GameApp {
       this.powerValue.textContent = this.powerInput.value + '%'
     })
 
+    this.spinPad.addEventListener('pointerdown', this.onSpinPointerDown)
+    this.spinPad.addEventListener('pointermove', this.onSpinPointerMove)
+    this.spinPad.addEventListener('pointerup', this.onSpinPointerUp)
+    this.spinPad.addEventListener('pointercancel', this.onSpinPointerUp)
+    this.spinPad.addEventListener('keydown', this.onSpinKeyDown)
     window.addEventListener('keydown', this.onKeyDown)
   }
 
@@ -106,6 +120,70 @@ export class GameApp {
     }
     const mode = modes[event.key]
     if (mode) this.setCamera(mode)
+  }
+
+  private onSpinPointerDown = (event: PointerEvent): void => {
+    this.spinDragging = true
+    this.spinPad.setPointerCapture(event.pointerId)
+    this.updateSpinFromPointer(event)
+  }
+
+  private onSpinPointerMove = (event: PointerEvent): void => {
+    if (this.spinDragging) this.updateSpinFromPointer(event)
+  }
+
+  private onSpinPointerUp = (event: PointerEvent): void => {
+    this.spinDragging = false
+    if (this.spinPad.hasPointerCapture(event.pointerId)) {
+      this.spinPad.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  private onSpinKeyDown = (event: KeyboardEvent): void => {
+    const amount = 0.1
+    let { side, vertical } = this.spin
+    if (event.key === 'ArrowLeft') side -= amount
+    else if (event.key === 'ArrowRight') side += amount
+    else if (event.key === 'ArrowUp') vertical += amount
+    else if (event.key === 'ArrowDown') vertical -= amount
+    else if (event.key === 'Home') {
+      this.resetSpin()
+      event.preventDefault()
+      return
+    } else return
+
+    event.preventDefault()
+    this.setSpin(side, vertical)
+  }
+
+  private updateSpinFromPointer(event: PointerEvent): void {
+    const rect = this.spinPad.getBoundingClientRect()
+    if (!rect.width || !rect.height) return
+    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+    const y = 1 - ((event.clientY - rect.top) / rect.height) * 2
+    this.setSpin(x, y)
+  }
+
+  private setSpin(side: number, vertical: number): void {
+    const length = Math.hypot(side, vertical)
+    const scale = length > 1 ? 1 / length : 1
+    this.spin = {
+      side: side * scale,
+      vertical: vertical * scale,
+    }
+    this.spinMarker.style.left = ((this.spin.side + 1) / 2 * 100) + '%'
+    this.spinMarker.style.top = ((1 - this.spin.vertical) / 2 * 100) + '%'
+
+    const labels: string[] = []
+    if (this.spin.vertical > 0.22) labels.push('Follow')
+    else if (this.spin.vertical < -0.22) labels.push('Draw')
+    if (this.spin.side > 0.22) labels.push('Right')
+    else if (this.spin.side < -0.22) labels.push('Left')
+    this.spinValue.textContent = labels.length ? labels.join(' · ') : 'Center'
+  }
+
+  private resetSpin(): void {
+    this.setSpin(0, 0)
   }
 
   private onPointerDown = (event: PointerEvent): void => {
@@ -137,7 +215,11 @@ export class GameApp {
       const dx = cue.x - this.aimPoint.x
       const dz = cue.z - this.aimPoint.z
       const length = Math.hypot(dx, dz)
-      if (length > 0.045 && this.world.shootCueBall({ x: dx / length, z: dz / length }, this.power)) {
+      if (length > 0.045 && this.world.shootCueBall(
+        { x: dx / length, z: dz / length },
+        this.power,
+        this.spin,
+      )) {
         this.statusElement.textContent = 'Balls in motion'
         this.wasMoving = true
       }
@@ -169,6 +251,19 @@ export class GameApp {
     return point ? { x: point.x, z: point.z } : null
   }
 
+  private cueRenderBall(): RenderBall {
+    const cue = this.world.cueBall
+    return {
+      id: cue.id,
+      number: cue.number,
+      color: cue.color,
+      radius: cue.radius,
+      position: cue.position,
+      rotation: cue.rotation,
+      active: cue.active,
+    }
+  }
+
   private updateAimPreview(): void {
     const cue = this.world.cueBall
     if (!this.aiming || !this.aimPoint || !cue.active) {
@@ -185,14 +280,7 @@ export class GameApp {
     }
 
     this.renderer.setAimPreview(
-      {
-        id: cue.id,
-        number: cue.number,
-        color: cue.color,
-        radius: cue.radius,
-        position: cue.position,
-        active: cue.active,
-      },
+      this.cueRenderBall(),
       { x: dx / length, z: dz / length },
       Math.min(length, 0.8),
       true,
@@ -200,20 +288,7 @@ export class GameApp {
   }
 
   private setAimVisible(visible: boolean): void {
-    const cue = this.world.cueBall
-    this.renderer.setAimPreview(
-      {
-        id: cue.id,
-        number: cue.number,
-        color: cue.color,
-        radius: cue.radius,
-        position: cue.position,
-        active: cue.active,
-      },
-      { x: 1, z: 0 },
-      0,
-      visible,
-    )
+    this.renderer.setAimPreview(this.cueRenderBall(), { x: 1, z: 0 }, 0, visible)
   }
 
   private resize(): void {

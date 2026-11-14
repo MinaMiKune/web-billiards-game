@@ -3,6 +3,17 @@ export interface Vec2 {
   z: number
 }
 
+export interface Vec3 {
+  x: number
+  y: number
+  z: number
+}
+
+export interface BallSpin {
+  side: number
+  vertical: number
+}
+
 export interface BallState {
   id: string
   number: number
@@ -12,6 +23,9 @@ export interface BallState {
   position: Vec2
   previousPosition: Vec2
   velocity: Vec2
+  angularVelocity: Vec3
+  rotation: Vec3
+  previousRotation: Vec3
   active: boolean
   pocketed: boolean
 }
@@ -21,7 +35,14 @@ export interface PhysicsConfig {
   tableWidth: number
   ballRadius: number
   ballMass: number
+  gravity: number
+  slidingFriction: number
   rollingDeceleration: number
+  sideSpinDecay: number
+  rollingSlipThreshold: number
+  spinStopSpeed: number
+  verticalSpinRatio: number
+  maxSideSpin: number
   ballRestitution: number
   cushionRestitution: number
   pocketCaptureRadius: number
@@ -35,13 +56,20 @@ export const DEFAULT_PHYSICS_CONFIG: PhysicsConfig = {
   tableWidth: 1.27,
   ballRadius: 0.028575,
   ballMass: 0.17,
-  rollingDeceleration: 0.28,
+  gravity: 9.81,
+  slidingFriction: 0.2,
+  rollingDeceleration: 0.32,
+  sideSpinDecay: 2.2,
+  rollingSlipThreshold: 0.025,
+  spinStopSpeed: 0.25,
+  verticalSpinRatio: 0.7,
+  maxSideSpin: 30,
   ballRestitution: 0.96,
   cushionRestitution: 0.88,
   pocketCaptureRadius: 0.098,
   sidePocketHalfWidth: 0.095,
   stopSpeed: 0.008,
-  maxShotSpeed: 4.8,
+  maxShotSpeed: 2.8,
 }
 
 const BALL_COLORS = [
@@ -56,8 +84,11 @@ export interface RenderBall {
   color: string
   radius: number
   position: Vec2
+  rotation: Vec3
   active: boolean
 }
+
+const ZERO_VEC3 = (): Vec3 => ({ x: 0, y: 0, z: 0 })
 
 export class PhysicsWorld {
   readonly config: PhysicsConfig
@@ -79,22 +110,37 @@ export class PhysicsWorld {
   }
 
   get isMoving(): boolean {
-    return this.balls.some((ball) =>
-      ball.active && Math.hypot(ball.velocity.x, ball.velocity.z) > this.config.stopSpeed,
-    )
+    return this.balls.some((ball) => {
+      if (!ball.active) return false
+      const linearSpeed = Math.hypot(ball.velocity.x, ball.velocity.z)
+      return linearSpeed > this.config.stopSpeed ||
+        Math.abs(ball.angularVelocity.y) > this.config.spinStopSpeed
+    })
   }
 
-  shootCueBall(direction: Vec2, power: number): boolean {
+  shootCueBall(direction: Vec2, power: number, spin: BallSpin = { side: 0, vertical: 0 }): boolean {
     if (this.isMoving || !this.cueBall.active) return false
 
     const length = Math.hypot(direction.x, direction.z)
     const strength = Math.max(0, Math.min(1, power))
     if (length < 1e-6 || strength <= 0) return false
 
+    const unit = { x: direction.x / length, z: direction.z / length }
     const speed = strength * this.config.maxShotSpeed
+    const side = Math.max(-1, Math.min(1, spin.side))
+    const vertical = Math.max(-1, Math.min(1, spin.vertical))
+    const verticalSpin = (speed / this.cueBall.radius) *
+      vertical * this.config.verticalSpinRatio
+
     this.cueBall.velocity = {
-      x: (direction.x / length) * speed,
-      z: (direction.z / length) * speed,
+      x: unit.x * speed,
+      z: unit.z * speed,
+    }
+    // Positive vertical input is follow/top spin. The rolling axis is up × travel direction.
+    this.cueBall.angularVelocity = {
+      x: unit.z * verticalSpin,
+      y: side * this.config.maxSideSpin * strength,
+      z: -unit.x * verticalSpin,
     }
     return true
   }
@@ -104,20 +150,15 @@ export class PhysicsWorld {
 
     for (const ball of this.balls) {
       ball.previousPosition = { ...ball.position }
+      ball.previousRotation = { ...ball.rotation }
       if (!ball.active) continue
 
-      const speed = Math.hypot(ball.velocity.x, ball.velocity.z)
-      const speedLoss = this.config.rollingDeceleration * deltaSeconds
-      if (speed <= Math.max(speedLoss, this.config.stopSpeed)) {
-        ball.velocity = { x: 0, z: 0 }
-      } else {
-        const scale = (speed - speedLoss) / speed
-        ball.velocity.x *= scale
-        ball.velocity.z *= scale
-      }
-
+      this.applyClothFriction(ball, deltaSeconds)
       ball.position.x += ball.velocity.x * deltaSeconds
       ball.position.z += ball.velocity.z * deltaSeconds
+      ball.rotation.x += ball.angularVelocity.x * deltaSeconds
+      ball.rotation.y += ball.angularVelocity.y * deltaSeconds
+      ball.rotation.z += ball.angularVelocity.z * deltaSeconds
       this.resolvePocketAndCushion(ball)
     }
 
@@ -138,25 +179,40 @@ export class PhysicsWorld {
         x: ball.previousPosition.x + (ball.position.x - ball.previousPosition.x) * blend,
         z: ball.previousPosition.z + (ball.position.z - ball.previousPosition.z) * blend,
       },
+      rotation: {
+        x: ball.previousRotation.x + (ball.rotation.x - ball.previousRotation.x) * blend,
+        y: ball.previousRotation.y + (ball.rotation.y - ball.previousRotation.y) * blend,
+        z: ball.previousRotation.z + (ball.rotation.z - ball.previousRotation.z) * blend,
+      },
     }))
   }
 
   private createRack(): BallState[] {
     const radius = this.config.ballRadius
-    const cue: BallState = {
-      id: 'cue',
-      number: 0,
-      color: '#f4f1e8',
+    const createBall = (
+      id: string,
+      number: number,
+      color: string,
+      position: Vec2,
+    ): BallState => ({
+      id,
+      number,
+      color,
       radius,
       mass: this.config.ballMass,
-      position: { x: -0.72, z: 0 },
-      previousPosition: { x: -0.72, z: 0 },
+      position,
+      previousPosition: { ...position },
       velocity: { x: 0, z: 0 },
+      angularVelocity: ZERO_VEC3(),
+      rotation: ZERO_VEC3(),
+      previousRotation: ZERO_VEC3(),
       active: true,
       pocketed: false,
-    }
+    })
 
-    const balls: BallState[] = [cue]
+    const balls: BallState[] = [
+      createBall('cue', 0, '#f4f1e8', { x: -0.72, z: 0 }),
+    ]
     const spacing = radius * 2.04
     const rackStartX = 0.48
     let number = 1
@@ -167,22 +223,55 @@ export class PhysicsWorld {
           x: rackStartX + row * spacing * Math.sqrt(3) / 2,
           z: (column - row / 2) * spacing,
         }
-        balls.push({
-          id: 'ball-' + number,
-          number,
-          color: BALL_COLORS[number - 1],
-          radius,
-          mass: this.config.ballMass,
-          position,
-          previousPosition: { ...position },
-          velocity: { x: 0, z: 0 },
-          active: true,
-          pocketed: false,
-        })
+        balls.push(createBall('ball-' + number, number, BALL_COLORS[number - 1], position))
         number += 1
       }
     }
     return balls
+  }
+
+  private applyClothFriction(ball: BallState, deltaSeconds: number): void {
+    const radius = ball.radius
+    const inertia = 0.4 * ball.mass * radius * radius
+    // Velocity of the cloth-contact point: v + omega × (0, -r, 0).
+    const slipX = ball.velocity.x + radius * ball.angularVelocity.z
+    const slipZ = ball.velocity.z - radius * ball.angularVelocity.x
+    const slipSpeed = Math.hypot(slipX, slipZ)
+
+    if (slipSpeed > this.config.rollingSlipThreshold) {
+      const maximumImpulse = this.config.slidingFriction * ball.mass *
+        this.config.gravity * deltaSeconds
+      const impulseToStopSlip = slipSpeed / ((1 / ball.mass) + (radius * radius / inertia))
+      const impulseMagnitude = Math.min(maximumImpulse, impulseToStopSlip)
+      const impulseX = -(slipX / slipSpeed) * impulseMagnitude
+      const impulseZ = -(slipZ / slipSpeed) * impulseMagnitude
+
+      ball.velocity.x += impulseX / ball.mass
+      ball.velocity.z += impulseZ / ball.mass
+      // Torque from the contact impulse about the sphere center.
+      ball.angularVelocity.x += (-radius * impulseZ) / inertia
+      ball.angularVelocity.z += (radius * impulseX) / inertia
+    } else {
+      const speed = Math.hypot(ball.velocity.x, ball.velocity.z)
+      const speedLoss = this.config.rollingDeceleration * deltaSeconds
+      if (speed <= Math.max(speedLoss, this.config.stopSpeed)) {
+        ball.velocity = { x: 0, z: 0 }
+        ball.angularVelocity.x = 0
+        ball.angularVelocity.z = 0
+      } else {
+        const scale = (speed - speedLoss) / speed
+        ball.velocity.x *= scale
+        ball.velocity.z *= scale
+        // Enforce the no-slip rolling condition after rolling resistance.
+        ball.angularVelocity.x = ball.velocity.z / radius
+        ball.angularVelocity.z = -ball.velocity.x / radius
+      }
+    }
+
+    ball.angularVelocity.y *= Math.exp(-this.config.sideSpinDecay * deltaSeconds)
+    if (Math.abs(ball.angularVelocity.y) < this.config.spinStopSpeed * 0.05) {
+      ball.angularVelocity.y = 0
+    }
   }
 
   private resolvePocketAndCushion(ball: BallState): void {
@@ -200,14 +289,11 @@ export class PhysicsWorld {
     const crossedXBoundary = Math.abs(ball.position.x) >= xLimit
     const crossedZBoundary = Math.abs(ball.position.z) >= zLimit
 
-    // A corner pocket is only active near its circular mouth after the ball reaches
-    // at least one adjacent cushion plane. This avoids the old broad rectangular trigger.
     if (crossedXBoundary || crossedZBoundary) {
       const cornerCaptured = cornerPockets.some((pocket) =>
         Math.hypot(ball.position.x - pocket.x, ball.position.z - pocket.z) <=
         this.config.pocketCaptureRadius,
       )
-
       const sidePocketCaptured =
         crossedZBoundary &&
         Math.abs(ball.position.x) <= this.config.sidePocketHalfWidth
@@ -216,11 +302,11 @@ export class PhysicsWorld {
         ball.active = false
         ball.pocketed = true
         ball.velocity = { x: 0, z: 0 }
+        ball.angularVelocity = ZERO_VEC3()
         return
       }
     }
 
-    // If the ball missed the pocket opening, the cushion/jaw catches it.
     if (ball.position.x > xLimit) {
       ball.position.x = xLimit
       ball.velocity.x = -Math.abs(ball.velocity.x) * this.config.cushionRestitution
