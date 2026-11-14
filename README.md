@@ -49,7 +49,7 @@ npm run build
 
 The deployment workflow builds dist/ and publishes it to GitHub Pages on pushes to main. In repository settings, configure **Pages → Build and deployment → Source → GitHub Actions**.
 
-The workflows currently use npm install without npm cache because the initial repository did not contain a lockfile. Add and commit package-lock.json before re-enabling setup-node's npm cache and switching CI to npm ci.
+Both CI and Pages deployment use npm ci with the committed package-lock.json and setup-node npm caching to ensure repeatable installs.
 
 ## Project principles
 
