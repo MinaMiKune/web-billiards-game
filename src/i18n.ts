@@ -70,6 +70,8 @@ const messages: Record<string, [string, string, string]> = {
   'PHASE 4 · PHYSICS-PLANNED AI OPPONENT': ['阶段 4 · 基于物理规划的 AI 对手', '階段 4 · 基於物理規劃的 AI 對手', 'フェーズ 4 · 物理ベースの AI 対戦相手'],
   'ONLINE PLAY IS RESERVED FOR A FUTURE PHASE': ['在线对战将在后续阶段开发', '線上對戰將於後續階段開發', 'オンライン対戦は今後のフェーズで実装予定'],
   'Choose a clear spot away from balls and pockets': ['请选择远离其他球和袋口的空位', '請選擇遠離其他球與袋口的空位', '他のボールやポケットから離れた場所を選択してください'],
+  'Ball in hand · behind head string': ['自由球：母球必须放在开球线后方', '自由球：母球必須放在開球線後方', 'フリーボール：手球はヘッドストリングの後方'],
+  'Cue ball must stay behind the head string': ['母球必须放在开球线后方', '母球必須放在開球線後方', '手球はヘッドストリングの後方に置いてください'],
   'Balls in motion': ['球正在滚动', '球正在移動', 'ボールが動いています'],
   'AI is reading the table…': ['AI 正在分析球台…', 'AI 正在分析球桌…', 'AI がテーブルを分析中…'],
   'AI could not find a legal cue-ball position': ['AI 无法找到合法的母球位置', 'AI 無法找到合法的母球位置', 'AI は合法な手球位置を見つけられませんでした'],
