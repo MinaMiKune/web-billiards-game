@@ -36,6 +36,29 @@ The cloth-contact slip velocity is computed from the ball's linear velocity and 
 
 This is a game-oriented approximation and is not calibrated to a specific cloth, ball set or table.
 
+## Calibration baseline (software reference, not physical validation)
+
+The current default parameters are treated as a reproducible software baseline, not as measured real-world coefficients:
+
+| Parameter | Baseline | Interpretation |
+| --- | ---: | --- |
+| Sliding friction | 0.20 | Coulomb cloth friction coefficient |
+| Rolling deceleration | 0.32 m/s² | Constant planar speed loss while rolling |
+| Side-spin decay | 2.2 s⁻¹ | Exponential angular-velocity decay |
+| Ball restitution | 0.96 | Normal relative speed ratio after ball contact |
+| Cushion restitution | 0.88 | Normal speed ratio after cushion contact |
+| Ball collision friction | 0.07 | Tangential contact friction coefficient |
+| Cushion friction | 0.12 | Tangential cushion contact friction coefficient |
+
+Deterministic calibration fixtures verify the equations independently of rendering:
+
+- Rolling baseline: after a 0.1 s interval from 1 m/s, speed is reduced by the configured rolling deceleration, and angular velocity remains in the no-slip relationship.
+- Side-spin baseline: angular velocity follows omega(t) = omega0 * exp(-k * t) for the configured decay constant.
+- Sliding baseline: the contact slip change matches the Coulomb-limited impulse and solid-sphere inertia.
+- Equal-mass, frictionless head-on impacts preserve linear momentum.
+
+These fixtures detect regressions and parameter changes; they do not prove that the chosen values match a physical table. Replace or supplement them with measured reference-shot data before claiming physical calibration.
+
 ## Pocket and cushion model
 
 - Four corner openings use circular capture regions; two side pockets use a configurable half-width.
@@ -63,6 +86,7 @@ Maintain deterministic cases for:
 - straight cushion reflection;
 - corner and side pocket captures;
 - angled jaw deflections for corner and side-pocket near-misses;
-- pocket near-miss rebounds from the straight cushion fallback.
+- pocket near-miss rebounds from the straight cushion fallback;
+- rolling deceleration, exponential side-spin decay, Coulomb sliding impulse and frictionless collision momentum match deterministic calibration baselines.
 
 Do not claim professional accuracy without calibration data and measured validation fixtures.
