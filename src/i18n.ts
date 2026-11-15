@@ -10,6 +10,13 @@ export const LOCALES: { value: Locale; label: string }[] = [
 const messages: Record<string, [string, string, string]> = {
   'PHYSICS PLAYGROUND': ['物理实验场', '物理實驗場', '物理シミュレーション'],
   'TABLE STATUS': ['球台状态', '球桌狀態', 'テーブル状態'],
+  'SHOT HISTORY': ['击球记录', '擊球紀錄', 'ショット履歴'],
+  'No shots recorded yet': ['暂无击球记录', '尚無擊球紀錄', 'ショット履歴はありません'],
+  'MATCH COMPLETE': ['本局结束', '本局結束', 'ゲーム終了'],
+  'Shot': ['第', '第', 'ショット'],
+  'First contact': ['首次碰球', '首次碰球', '最初の接触'],
+  'Pocketed': ['落袋', '落袋', 'ポケットイン'],
+  'None': ['无', '無', 'なし'],
   'Player 1 breaks': ['玩家 1 开球', '玩家 1 開球', 'プレイヤー 1 のブレイク'],
   'PLAYER 1 · BREAK': ['玩家 1 · 开球', '玩家 1 · 開球', 'プレイヤー 1 · ブレイク'],
   'OPPONENT': ['对手', '對手', '対戦相手'],

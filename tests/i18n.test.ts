@@ -55,6 +55,15 @@ describe('dynamic game message localization', () => {
     expect(translateGameMessage(message, 'ja')).toBe('AI · ポット狙い · マルチレールショット · ターゲット 11')
   })
 
+  it('translates match history labels in all supported locales', () => {
+    expect(translateGameMessage('SHOT HISTORY', 'zh-CN')).toBe('击球记录')
+    expect(translateGameMessage('No shots recorded yet', 'zh-CN')).toBe('暂无击球记录')
+    expect(translateGameMessage('MATCH COMPLETE', 'zh-CN')).toBe('本局结束')
+    expect(translateGameMessage('First contact', 'zh-CN')).toBe('首次碰球')
+    expect(translateGameMessage('Pocketed', 'zh-CN')).toBe('落袋')
+    expect(translateGameMessage('None', 'zh-CN')).toBe('无')
+  })
+
   it('translates winner and rerack messages', () => {
     expect(translateGameMessage('Player 2 wins · 8-ball', 'zh-CN'))
       .toBe('玩家 2 获胜 · 8 号球')
