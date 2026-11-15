@@ -344,16 +344,24 @@ export class PhysicsWorld {
     ]
     const spacing = radius * 2.04
     const rackStartX = 0.48
-    let number = 1
+    // Standard 8-ball rack: the 8 sits in the center and the rear corners
+    // contain one solid and one stripe.
+    const rackNumbers = [
+      [1],
+      [9, 2],
+      [3, 8, 10],
+      [11, 4, 12, 5],
+      [6, 13, 7, 14, 15],
+    ]
 
-    for (let row = 0; row < 5; row += 1) {
-      for (let column = 0; column <= row; column += 1) {
+    for (let row = 0; row < rackNumbers.length; row += 1) {
+      for (let column = 0; column < rackNumbers[row].length; column += 1) {
+        const number = rackNumbers[row][column]
         const position = {
           x: rackStartX + row * spacing * Math.sqrt(3) / 2,
           z: (column - row / 2) * spacing,
         }
         balls.push(createBall('ball-' + number, number, BALL_COLORS[number - 1], position))
-        number += 1
       }
     }
     return balls
