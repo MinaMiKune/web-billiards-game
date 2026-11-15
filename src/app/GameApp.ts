@@ -124,6 +124,16 @@ export class GameApp {
     this.spinValue = requireElement(root, '#spin-value')
     this.opponentModeInput = requireElement(root, '#opponent-mode')
     this.aiDifficultyInput = requireElement(root, '#ai-difficulty')
+    const savedMode = window.localStorage.getItem('billiards-opponent-mode')
+    if (savedMode === 'local' || savedMode === 'ai') {
+      this.opponentMode = savedMode
+      this.opponentModeInput.value = savedMode
+    }
+    const savedDifficulty = Number(window.localStorage.getItem('billiards-ai-difficulty'))
+    if (Number.isInteger(savedDifficulty) && savedDifficulty >= 1 && savedDifficulty <= 5) {
+      this.aiDifficulty = savedDifficulty as AIDifficulty
+      this.aiDifficultyInput.value = String(savedDifficulty)
+    }
     this.callShotToggle = requireElement<HTMLInputElement>(root, '#call-shot-toggle')
     this.callBallInput = requireElement<HTMLSelectElement>(root, '#call-ball')
     this.callPocketInput = requireElement<HTMLSelectElement>(root, '#call-pocket')
@@ -185,6 +195,7 @@ export class GameApp {
     this.opponentModeInput.addEventListener('change', () => {
       this.invalidateAiRequest()
       this.opponentMode = this.opponentModeInput.value === 'ai' ? 'ai' : 'local'
+      window.localStorage.setItem('billiards-opponent-mode', this.opponentMode)
       this.aiDifficultyInput.disabled = this.opponentMode !== 'ai'
       this.statusElement.classList.remove('is-thinking')
       this.statusElement.textContent = translateGameMessage(this.ruleState.lastMessage)
@@ -194,9 +205,12 @@ export class GameApp {
 
     this.aiDifficultyInput.addEventListener('change', () => {
       const level = Number(this.aiDifficultyInput.value)
-      if (level >= 1 && level <= 5) this.aiDifficulty = level as AIDifficulty
+      if (level >= 1 && level <= 5) {
+        this.aiDifficulty = level as AIDifficulty
+        window.localStorage.setItem('billiards-ai-difficulty', String(level))
+      }
     })
-    this.aiDifficultyInput.disabled = true
+    this.aiDifficultyInput.disabled = this.opponentMode !== 'ai'
 
     this.soundToggle.addEventListener('change', () => {
       this.soundEffects.setEnabled(this.soundToggle.checked)
