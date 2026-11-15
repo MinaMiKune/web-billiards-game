@@ -133,7 +133,11 @@ export class GameApp {
 
     this.renderer = new GameRenderer(sceneHost)
     this.cameras = new CameraManager(this.renderer.canvas)
-    this.cameras.setMode('top')
+    const savedCamera = window.localStorage.getItem('billiards-camera-mode')
+    const initialCamera: CameraMode = savedCamera && ['top', 'angled', 'side', 'free'].includes(savedCamera)
+      ? savedCamera as CameraMode
+      : 'top'
+    this.setCamera(initialCamera)
     this.renderer.updateBalls(this.world.getRenderBalls(1))
 
     this.bindControls(root)
@@ -271,6 +275,7 @@ export class GameApp {
   private setCamera(mode: CameraMode): void {
     if (!['top', 'angled', 'side', 'free'].includes(mode)) return
     this.cameras.setMode(mode)
+    window.localStorage.setItem('billiards-camera-mode', mode)
     for (const button of document.querySelectorAll<HTMLButtonElement>('[data-camera]')) {
       const active = button.dataset.camera === mode
       button.classList.toggle('is-active', active)
