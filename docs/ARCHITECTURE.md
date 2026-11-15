@@ -18,6 +18,7 @@
 | Input | pointer/keyboard interpretation and shot intent | direct physics mutation |
 | Game | rules, turns, fouls and win conditions | rendering details |
 | AI | candidate shots and decision scoring | a separate physics model |
+| Audio | procedural presentation-only sound effects | simulation state |
 | Session | local player orchestration and command boundary | simulation internals |
 | UI | HUD, menus and settings | authoritative game state |
 
@@ -26,9 +27,10 @@
 - Rendering reads simulation snapshots and interpolates presentation.
 - Input produces typed intent or a ShotCommand.
 - Game validates turn/rule constraints before accepting a shot.
-- Physics applies the accepted shot and emits deterministic shot telemetry: first cue-ball contact, pocketed ball numbers, cue-ball scratch and rail contact after first hit.
+- Physics applies the accepted shot and emits deterministic telemetry: first cue-ball contact, pocketed ball numbers and pocket indices, cue-ball scratch and rail contact after first hit.
 - Game consumes physics events after the simulation settles.
-- AI reads the same public state snapshot as a human-facing aiming system and submits the same ShotCommand type.
+- AI reads a cloned physics world and game-state snapshot, then submits the same ShotCommand type as a human player.
+- Audio reacts to accepted shots and pocket events but never changes physics.
 - LocalSession is the only session implementation in current scope. A future NetworkSession is an extension point, not current work.
 
 ## Coordinate and unit convention
@@ -44,61 +46,59 @@
 
 1. Input updates the current interaction intent.
 2. A fixed-step accumulator advances physics at 120 Hz initially.
-3. Physics emits events and publishes immutable/read-only snapshots.
+3. Physics emits events and publishes snapshots.
 4. Renderer interpolates between the previous and current snapshots.
 5. UI reads game/session state and never changes a ball body directly.
+6. AI shot search runs in a module Web Worker using a structured-cloned physics snapshot; the main thread applies the returned ShotCommand to the authoritative world.
 
-The 120 Hz value is an initial engineering target, not a proven optimum. Validate it on desktop and mobile hardware. Large frame gaps must be clamped and handled without unbounded catch-up loops.
+The 120 Hz value is an initial engineering target, not a proven optimum. Large frame gaps are clamped and catch-up steps are capped.
 
 ## Rendering and cameras
 
 One Three.js scene contains one table, one set of balls and one authoritative simulation state. CameraManager switches camera configurations; it does not duplicate scenes or balls.
 
-Planned modes:
+Modes:
 - Top: overhead playing view, optimized for aiming.
 - Angled: elevated perspective for spatial understanding.
 - Side: low side view for observing cue contact and ball movement.
 - Free: orbit, pan and zoom for inspection.
 
-The top camera may use orthographic projection. Perspective cameras are used for the other modes. All views must preserve a clear route back to the default playing view.
+The interactive canvas is keyboard-focusable. Reduced-motion preferences disable orbit damping and reduce CSS animation/transition durations.
 
 ## Physics strategy
 
-Implement a billiards-specific planar rigid-body model first. Ball centers move on the table plane; 3D sphere meshes are presentation. Track linear and angular velocity so sliding, rolling and spin can be introduced in stages. Avoid using a generic rigid-body engine as the sole source of billiards behavior.
+The physics layer is a billiards-specific planar rigid-body approximation. Ball centers move on the table plane; 3D sphere meshes are presentation. Linear and angular velocity are tracked to model sliding, rolling, spin and tangential impacts.
 
-First increments:
-1. stationary state, fixed-step integration and friction deceleration;
-2. equal-mass ball-ball collision and overlap correction;
-3. cushion segments and collision response;
-4. pocket geometry and scratch handling;
-5. spin/tangential impulses and refined cushion response.
+The model includes sliding-to-rolling friction, rolling resistance, follow/draw and side spin, tangential ball-ball impulses, cushion friction, finite angled pocket jaws, pocket capture and pocket-index telemetry. It does not yet include cushion height, vertical ball motion, curved jaw profiles or measured cloth/table calibration.
 
-Document model assumptions and test fixtures in PHYSICS.md.
+See PHYSICS.md for parameter baselines and explicit validation limits.
 
 ## Rules and session flow
 
-- The 8-ball rules engine is a pure domain module. It consumes a completed-shot result and returns a new game state; it never mutates physics or rendering objects.
-- The current ruleset is a documented game-oriented house-rules subset: break, open table, group assignment, first-contact fouls, no-rail foul, scratch/ball-in-hand, 8-ball win/loss and re-rack on 8-ball break.
-- Cue-ball placement is validated by the physics domain against table bounds, pocket exclusion zones and other active balls.
-- Call-shot/tournament variations remain future rule-profile options.
+- The 8-ball rules engine is a pure domain module. It consumes a completed-shot result and returns a new game state.
+- The current ruleset supports break, open table, group assignment, first-contact fouls, no-rail foul, scratch/ball-in-hand and 8-ball win/loss.
+- Optional call-shot mode validates the called ball and pocket using physics pocket-index telemetry.
+- The 8-ball-on-break option supports re-rack (default) or breaker wins.
+- Cue-ball placement is validated against table bounds, pocket exclusion zones and other active balls.
+- GameApp presents recent shot history, scoreboard, turn state and winner summary.
 
 ## AI decision boundary
 
 - AI consumes a cloned physics world and game-state snapshot.
-- Candidate generation uses ghost-ball geometry and unobstructed path tests.
-- Each candidate is simulated through the same PhysicsWorld implementation as human shots.
-- Difficulty changes candidate budget, aim error and power error; it does not change physical laws.
-- Current planning covers direct-pot candidates and a simple safety fallback. Bank/kick shots, deeper planning and worker offload remain future work.
+- Candidate generation covers direct pots, single-cushion bank shots, cue-ball kick shots and two-rail object-ball routes using reflected geometry.
+- Candidates are evaluated through the same PhysicsWorld implementation as human shots.
+- Safety scoring considers cue-ball distance and whether the opponent has an unobstructed reply.
+- Difficulty changes candidate budget, aim error and power consistency; it does not change physical laws.
+- AI search runs off the rendering thread in a Web Worker, with a synchronous fallback if workers are unavailable or fail.
 
 ## Future multiplayer boundary
 
 Use commands and snapshots at the session boundary. Do not add sockets, a server, matchmaking or account infrastructure now. Before online play, define server authority, command validation, simulation-version compatibility, event ordering and resynchronization.
 
-## Non-goals for the first prototype
+## Current non-goals
 
-- Full 8-ball rule set
-- AI opponents
-- Online play
-- Jump shots and full cue elevation dynamics
-- Realistic cloth/felt deformation
-- Advanced post-processing or expensive cinematic effects
+- Full WPA/BCA tournament rules and match formats.
+- Physical calibration against measured table/shot data.
+- Jump shots and full cue-elevation dynamics.
+- Realistic cloth/felt deformation.
+- Online play before local gameplay and validation are stable.
