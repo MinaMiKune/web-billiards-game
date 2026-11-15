@@ -27,11 +27,13 @@ npm run preview
 - Prefer small modules with one responsibility.
 - Use descriptive names and explicit return types for public APIs.
 - Avoid hidden global state; inject configuration/dependencies where useful.
+- Route all user-facing dynamic game messages through the localization helpers; do not write raw rule-engine messages directly into the UI.
 - Do not add placeholder modules without a concrete caller or test.
 
 ## Testing policy
 
-- Unit-test math, collision response, friction and game rules.
+- Unit-test math, collision response, friction, game rules and dynamic localization.
+- Add regression cases for each supported locale when adding interpolated UI messages.
 - Use fixed initial conditions and explicit expected tolerances.
 - Add regression fixtures for every corrected physics defect.
 - Keep rendering tests separate from deterministic physics tests.

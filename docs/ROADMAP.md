@@ -68,6 +68,12 @@ Selected decisions:
 - [ ] Review touch controls, reduced motion and small-screen layouts in real browsers.
 - [ ] Add browser compatibility and repeatable performance benchmarks.
 
+## Cross-cutting — Localization
+
+- [x] Support English, Simplified Chinese, Traditional Chinese and Japanese.
+- [x] Translate dynamic rule-engine, foul, winner and AI shot status messages.
+- [x] Add locale regression tests for runtime-interpolated messages.
+
 ## Phase 6 — Multiplayer (not active)
 
 - Revisit only when local gameplay is stable.
