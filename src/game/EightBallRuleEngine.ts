@@ -17,8 +17,11 @@ export interface PocketedBallEvent {
   pocketIndex: number
 }
 
+export type EightBallOnBreakRule = 'rerack' | 'breaker-wins'
+
 export interface EightBallRulesOptions {
   callShotRequired: boolean
+  eightBallOnBreak: EightBallOnBreakRule
 }
 
 export interface ShotResult {
@@ -72,7 +75,7 @@ export class EightBallRuleEngine {
   private options: EightBallRulesOptions
 
   constructor(options: Partial<EightBallRulesOptions> = {}) {
-    this.options = { callShotRequired: false, ...options }
+    this.options = { callShotRequired: false, eightBallOnBreak: 'rerack', ...options }
   }
 
   setOptions(options: Partial<EightBallRulesOptions>): void {
@@ -105,8 +108,24 @@ export class EightBallRuleEngine {
       : objectBallsPocketed
     const player = state.currentPlayer
 
-    // This first playable ruleset uses a simple re-rack house rule if the 8 is made on the break.
     if (state.phase === 'break' && eightPocketed) {
+      if (this.options.eightBallOnBreak === 'breaker-wins') {
+        const winner = shot.cueBallPocketed ? oppositePlayer(player) : player
+        const foulReasons = shot.cueBallPocketed ? ['Cue ball pocketed'] : []
+        const nextState: EightBallState = {
+          ...state,
+          phase: 'game-over',
+          currentPlayer: player,
+          remainingBalls: removePocketedBalls(state.remainingBalls, pocketed),
+          ballInHand: false,
+          winner,
+          lastMessage: shot.cueBallPocketed
+            ? `Player ${winner + 1} wins · foul on the 8-ball`
+            : `Player ${winner + 1} wins · 8-ball on the break`,
+        }
+        return { state: nextState, foulReasons, rerack: false }
+      }
+
       const rerackState = createInitialEightBallState(player)
       rerackState.lastMessage = '8-ball on the break · re-rack'
       return { state: rerackState, foulReasons: [], rerack: true }

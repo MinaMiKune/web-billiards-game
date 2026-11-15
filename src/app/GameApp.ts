@@ -70,6 +70,7 @@ export class GameApp {
   private readonly callShotToggle: HTMLInputElement
   private readonly callBallInput: HTMLSelectElement
   private readonly callPocketInput: HTMLSelectElement
+  private readonly breakEightRuleInput: HTMLSelectElement
   private readonly raycaster = new Raycaster()
   private readonly groundPlane = new Plane(new Vector3(0, 1, 0), 0)
   private readonly intersection = new Vector3()
@@ -118,6 +119,7 @@ export class GameApp {
     this.callShotToggle = requireElement<HTMLInputElement>(root, '#call-shot-toggle')
     this.callBallInput = requireElement<HTMLSelectElement>(root, '#call-ball')
     this.callPocketInput = requireElement<HTMLSelectElement>(root, '#call-pocket')
+    this.breakEightRuleInput = requireElement<HTMLSelectElement>(root, '#break-eight-rule')
 
     this.renderer = new GameRenderer(sceneHost)
     this.cameras = new CameraManager(this.renderer.canvas)
@@ -193,6 +195,13 @@ export class GameApp {
     })
     this.aiDifficultyInput.disabled = true
 
+    this.breakEightRuleInput.addEventListener('change', () => {
+      this.rules.setOptions({
+        eightBallOnBreak: this.breakEightRuleInput.value === 'breaker-wins'
+          ? 'breaker-wins'
+          : 'rerack',
+      })
+    })
     this.callShotToggle.addEventListener('change', () => {
       this.callShotRequired = this.callShotToggle.checked
       this.rules.setOptions({ callShotRequired: this.callShotRequired })

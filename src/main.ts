@@ -47,6 +47,13 @@ app.innerHTML = `
               <option value="5">5 · Master</option>
             </select>
           </label>
+          <label class="opponent-control" for="break-eight-rule">
+            <span class="section-label">8-BALL ON BREAK</span>
+            <select id="break-eight-rule">
+              <option value="rerack">Re-rack</option>
+              <option value="breaker-wins">Breaker wins</option>
+            </select>
+          </label>
           <label class="call-shot-toggle" for="call-shot-toggle">
             <input id="call-shot-toggle" type="checkbox" />
             <span class="section-label">CALL SHOT</span>

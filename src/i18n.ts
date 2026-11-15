@@ -30,6 +30,10 @@ const messages: Record<string, [string, string, string]> = {
   'Master': ['大师', '大師', 'マスター'],
   'SHOT POWER': ['击球力度', '擊球力度', 'ショットの強さ'],
   'CALL SHOT': ['叫球规则', '叫球規則', 'コールショット'],
+  '8-BALL ON BREAK': ['开球时 8 号球规则', '開球時 8 號球規則', 'ブレイク時の 8 ボール'],
+  'Re-rack': ['重新摆球', '重新擺球', '再ラック'],
+  'Breaker wins': ['开球方获胜', '開球方獲勝', 'ブレイク側の勝利'],
+  '8-ball on the break': ['开球时 8 号球落袋', '開球時 8 號球落袋', 'ブレイクで 8 ボールがポケットイン'],
   'CALL BALL': ['指定球', '指定球', 'コールするボール'],
   'CALL POCKET': ['指定袋口', '指定袋口', 'コールするポケット'],
   'Select ball': ['选择球', '選擇球', 'ボールを選択'],
@@ -163,6 +167,9 @@ export function translateGameMessage(message: string, target: Locale = locale): 
 
   match = message.match(/^Player (\d+) wins · 8-ball$/)
   if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('wins', target)} · ${translateForLocale('8-ball', target)}`
+
+  match = message.match(/^Player (\d+) wins · 8-ball on the break$/)
+  if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('wins', target)} · ${translateForLocale('8-ball on the break', target)}`
 
   match = message.match(/^Player (\d+) wins · foul on the 8-ball$/)
   if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('wins', target)} · ${translateForLocale('Foul', target)} · ${translateForLocale('8-ball', target)}`

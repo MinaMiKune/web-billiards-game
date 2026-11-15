@@ -42,6 +42,28 @@ describe('EightBallRuleEngine', () => {
     expect(result.state.phase).toBe('open-table')
   })
 
+  it('supports the breaker-wins option when the 8-ball is pocketed on the break', () => {
+    const breakRules = new EightBallRuleEngine({ eightBallOnBreak: 'breaker-wins' })
+    const result = breakRules.resolveShot(
+      createInitialEightBallState(),
+      cleanShot({ pocketedBallNumbers: [8] }),
+    )
+    expect(result.rerack).toBe(false)
+    expect(result.state.phase).toBe('game-over')
+    expect(result.state.winner).toBe(0)
+  })
+
+  it('awards the opponent when the breaker pockets the 8-ball and scratches', () => {
+    const breakRules = new EightBallRuleEngine({ eightBallOnBreak: 'breaker-wins' })
+    const result = breakRules.resolveShot(
+      createInitialEightBallState(),
+      cleanShot({ pocketedBallNumbers: [8], cueBallPocketed: true }),
+    )
+    expect(result.state.phase).toBe('game-over')
+    expect(result.state.winner).toBe(1)
+    expect(result.foulReasons).toContain('Cue ball pocketed')
+  })
+
   it('re-racks if the 8-ball is pocketed on the break', () => {
     const result = rules.resolveShot(
       createInitialEightBallState(),
