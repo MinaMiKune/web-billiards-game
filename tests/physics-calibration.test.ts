@@ -18,7 +18,13 @@ describe('Physics calibration baselines', () => {
     expect(cue.velocity.x).toBeCloseTo(expectedSpeed, 8)
     expect(cue.velocity.z).toBeCloseTo(0, 8)
     expect(cue.angularVelocity.z).toBeCloseTo(-expectedSpeed / cue.radius, 8)
-    expect(cue.position.x).toBeCloseTo(expectedSpeed * duration, 8)
+    const substepCount = Math.ceil(duration / (1 / 120))
+    const substepDuration = duration / substepCount
+    const expectedDistance = duration * (
+      initialSpeed - world.config.rollingDeceleration * substepDuration *
+      (substepCount + 1) / 2
+    )
+    expect(cue.position.x).toBeCloseTo(expectedDistance, 8)
   })
 
   it('matches the exponential side-spin decay baseline', () => {
