@@ -79,6 +79,7 @@ See PHYSICS.md for parameter baselines and explicit validation limits.
 - The current ruleset supports break, open table, group assignment, first-contact fouls, no-rail foul, scratch/ball-in-hand and 8-ball win/loss.
 - Optional call-shot mode validates the called ball and pocket using physics pocket-index telemetry.
 - The 8-ball-on-break option supports re-rack (default) or breaker wins.
+- An optional dry-break requirement checks that four distinct object balls reach a cushion after first contact.
 - Cue-ball placement is validated against table bounds, pocket exclusion zones and other active balls.
 - GameApp presents recent shot history, scoreboard, turn state and winner summary.
 
