@@ -9,6 +9,7 @@ export const LOCALES: { value: Locale; label: string }[] = [
 
 const messages: Record<string, [string, string, string]> = {
   'PHYSICS PLAYGROUND': ['物理实验场', '物理實驗場', '物理シミュレーション'],
+  '8-BALL MATCH': ['8 球对局', '8 球對局', '8 ボール対戦'],
   'TABLE STATUS': ['球台状态', '球桌狀態', 'テーブル状態'],
   'SHOT HISTORY': ['击球记录', '擊球紀錄', 'ショット履歴'],
   'No shots recorded yet': ['暂无击球记录', '尚無擊球紀錄', 'ショット履歴はありません'],
