@@ -21,10 +21,11 @@ import {
 } from 'three'
 import type { Camera } from 'three'
 import type { Material } from 'three'
-import type { RenderBall } from '../physics/PhysicsWorld'
+import { DEFAULT_PHYSICS_CONFIG } from '../physics/PhysicsWorld'
+import type { RenderBall, Vec2 } from '../physics/PhysicsWorld'
 
-const TABLE_LENGTH = 2.54
-const TABLE_WIDTH = 1.27
+const TABLE_LENGTH = DEFAULT_PHYSICS_CONFIG.tableLength
+const TABLE_WIDTH = DEFAULT_PHYSICS_CONFIG.tableWidth
 
 function disposeMaterials(material: Material | Material[]): void {
   const materials = Array.isArray(material) ? material as Material[] : [material as Material]
@@ -247,10 +248,13 @@ export class GameRenderer {
     const railHeight = 0.13
     const railDepth = 0.14
     const railY = 0.045
-    const longSegmentLength = halfL - 0.16
+    const sideJawInnerX = DEFAULT_PHYSICS_CONFIG.sidePocketHalfWidth +
+      DEFAULT_PHYSICS_CONFIG.ballRadius
+    const sideJawOuterX = sideJawInnerX + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
+    const longSegmentLength = halfL - sideJawOuterX
 
     for (const side of [-1, 1]) {
-      for (const segmentCenter of [-(halfL - longSegmentLength / 2 - 0.08), halfL - longSegmentLength / 2 - 0.08]) {
+      for (const segmentCenter of [-(halfL - longSegmentLength / 2), halfL - longSegmentLength / 2]) {
         this.addBox(railWood, longSegmentLength, railHeight, railDepth, segmentCenter, railY, side * (halfW + 0.065))
         this.addBox(cushion, longSegmentLength, 0.045, 0.035, segmentCenter, railY + 0.035, side * (halfW + 0.005))
       }
@@ -258,6 +262,8 @@ export class GameRenderer {
       this.addBox(railWood, railDepth, railHeight, TABLE_WIDTH - 0.24, side * (halfL + 0.065), railY, 0)
       this.addBox(cushion, 0.035, 0.045, TABLE_WIDTH - 0.24, side * (halfL + 0.005), railY + 0.035, 0)
     }
+
+    this.addPocketJaws(railWood, cushion, halfL, halfW, railY)
 
     const pocketPositions = [
       [-halfL, -halfW], [0, -halfW], [halfL, -halfW],
@@ -283,6 +289,76 @@ export class GameRenderer {
     const outerTrim = new Mesh(new BoxGeometry(TABLE_LENGTH + 0.46, 0.035, TABLE_WIDTH + 0.46), railWood)
     outerTrim.position.y = -0.225
     this.scene.add(outerTrim)
+  }
+
+  private addPocketJaws(
+    railWood: MeshStandardMaterial,
+    cushion: MeshStandardMaterial,
+    halfLength: number,
+    halfWidth: number,
+    railY: number,
+  ): void {
+    const { pocketCaptureRadius, sidePocketHalfWidth, pocketJawDepth, ballRadius } =
+      DEFAULT_PHYSICS_CONFIG
+    const innerCornerOffset = Math.max(0, pocketCaptureRadius - pocketJawDepth)
+
+    for (const xSign of [-1, 1]) {
+      for (const zSign of [-1, 1]) {
+        const innerTip = {
+          x: xSign * (halfLength - innerCornerOffset),
+          z: zSign * (halfWidth - innerCornerOffset),
+        }
+        const longRailJawStart = {
+          x: xSign * (halfLength - pocketCaptureRadius),
+          z: zSign * halfWidth,
+        }
+        const endRailJawStart = {
+          x: xSign * halfLength,
+          z: zSign * (halfWidth - pocketCaptureRadius),
+        }
+        this.addAngledJaw(railWood, longRailJawStart, innerTip, railY, 0.13, 0.09)
+        this.addAngledJaw(cushion, longRailJawStart, innerTip, railY + 0.035, 0.045, 0.035)
+        this.addAngledJaw(railWood, endRailJawStart, innerTip, railY, 0.13, 0.09)
+        this.addAngledJaw(cushion, endRailJawStart, innerTip, railY + 0.035, 0.045, 0.035)
+      }
+    }
+
+    const sideJawInnerX = sidePocketHalfWidth + ballRadius
+    for (const zSign of [-1, 1]) {
+      for (const xSign of [-1, 1]) {
+        const start = {
+          x: xSign * sideJawInnerX,
+          z: zSign * (halfWidth - pocketJawDepth),
+        }
+        const end = {
+          x: xSign * (sideJawInnerX + pocketJawDepth),
+          z: zSign * halfWidth,
+        }
+        this.addAngledJaw(railWood, start, end, railY, 0.13, 0.09)
+        this.addAngledJaw(cushion, start, end, railY + 0.035, 0.045, 0.035)
+      }
+    }
+  }
+
+  private addAngledJaw(
+    material: MeshStandardMaterial,
+    start: Vec2,
+    end: Vec2,
+    y: number,
+    height: number,
+    width: number,
+  ): void {
+    const dx = end.x - start.x
+    const dz = end.z - start.z
+    const length = Math.hypot(dx, dz)
+    if (length <= 1e-6) return
+
+    const jaw = new Mesh(new BoxGeometry(length, height, width), material)
+    jaw.position.set((start.x + end.x) / 2, y, (start.z + end.z) / 2)
+    jaw.rotation.y = Math.atan2(-dz, dx)
+    jaw.castShadow = true
+    jaw.receiveShadow = true
+    this.scene.add(jaw)
   }
 
   private addBox(
