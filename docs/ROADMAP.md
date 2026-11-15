@@ -70,7 +70,8 @@ Selected decisions:
 - [x] Highlight the active player and match winner.
 - [x] Show an explicit AI-thinking state while the opponent is preparing a shot.
 - [x] Add procedural cue/pocket sound effects with a mute toggle.
-- [ ] Refine lighting and add richer shot feedback.
+- [x] Refine table lighting with a soft overhead pool-hall spotlight.
+- [x] Add richer shot feedback through AI route status, shot history and procedural audio.
 - [x] Add reduced-motion support and keyboard focus visibility for the interactive table.
 - [ ] Review touch controls and small-screen layouts in real browsers.
 - [x] Add repeatable AI and fixed-step physics performance benchmarks.
