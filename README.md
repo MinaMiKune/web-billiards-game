@@ -1,23 +1,26 @@
 # Web Billiards
 
-A browser-based billiards simulation project built with TypeScript, Vite and Three.js.
+A browser-based billiards simulation built with TypeScript, Vite and Three.js.
 
-The product direction is **game-realistic billiards**: accessible controls backed by a credible, testable physics model. The long-term experience combines a top-down playing view with angled, side and free-observation cameras.
+The product direction is **game-realistic billiards**: accessible controls backed by a credible, deterministic and testable physics model. One simulation is shared by the top-down, angled, side and free-observation cameras.
 
 ## Current status
 
-- [x] Three.js table scene with top, angled, side and free cameras
-- [x] First-pass deterministic table-plane physics with friction, spin, ball/cushion contact and pocket capture
-- [x] Aim, power, cue-ball contact-point controls and pocket-drop presentation
-- [x] Local two-player American 8-ball house-rules flow, fouls and ball-in-hand
-- [x] Five-level AI opponent with physics-simulated direct-shot planning
-- [x] Four-language UI selection: English, Simplified Chinese, Traditional Chinese and Japanese
-- [x] Live player scoreboard, group assignment and turn/winner highlighting
-- [ ] Online multiplayer (reserved; not currently in development)
+- [x] Three.js table scene, numbered/striped ball models and four camera modes
+- [x] Fixed-step 120 Hz physics with sliding/rolling friction, follow/draw, side spin, ball collisions, cushion friction, pocket jaws and pocket capture
+- [x] Aim, power, cue-ball contact-point controls and ball-in-hand placement
+- [x] Local two-player American 8-ball and five-level physics-planned AI opponent
+- [x] AI direct, bank, kick and two-rail shot candidates, safety evaluation and Web Worker planning
+- [x] Optional called-ball/called-pocket mode for human and AI players
+- [x] Configurable 8-ball-on-break outcome: re-rack or breaker wins
+- [x] Shot history, player groups, remaining-ball scoreboard and match winner summary
+- [x] Procedural cue/pocket sound effects with a mute toggle
+- [x] Reduced-motion support and keyboard-focusable table canvas
+- [x] English, Simplified Chinese, Traditional Chinese and Japanese UI
 
 **[Play the GitHub Pages prototype](https://minamikune.github.io/web-billiards-game/)**
 
-See [ROADMAP](docs/ROADMAP.md) for the phase plan.
+The physics model is game-oriented and has deterministic software baselines, but it is **not yet calibrated against measured reference shots or a specific physical table**. See [PHYSICS](docs/PHYSICS.md) and [ROADMAP](docs/ROADMAP.md) for remaining validation work.
 
 ## Requirements
 
@@ -45,13 +48,13 @@ npm run build
 - [Development guide](docs/DEVELOPMENT.md)
 - [Physics model and validation](docs/PHYSICS.md)
 - [Roadmap](docs/ROADMAP.md)
-- [8-ball house rules](docs/RULES.md)
+- [8-ball rules and options](docs/RULES.md)
 
 ## Deployment
 
-The deployment workflow builds dist/ and publishes it to GitHub Pages on pushes to main. In repository settings, configure **Pages → Build and deployment → Source → GitHub Actions**.
+The deployment workflow builds `dist/` and publishes it to GitHub Pages on pushes to `main`. In repository settings, configure **Pages → Build and deployment → Source → GitHub Actions**.
 
-Both CI and Pages deployment use npm ci with the committed package-lock.json and setup-node npm caching to ensure repeatable installs.
+CI and Pages deployment use `npm ci` with the committed `package-lock.json` and setup-node npm caching.
 
 ## Project principles
 
@@ -60,3 +63,8 @@ Both CI and Pages deployment use npm ci with the committed package-lock.json and
 3. Human and AI players submit the same shot-command format.
 4. Rules, input, rendering and sessions do not own or mutate physics internals directly.
 5. Physics changes require automated tests and reproducible scenarios.
+6. Game-realistic behavior must not be described as physically calibrated until measured validation is complete.
+
+## Current boundaries
+
+Online multiplayer remains reserved for a later phase. Full tournament rules, behind-the-head-string placement, measured cushion/pocket calibration, real-browser device testing and repeatable performance benchmarks remain open work.

@@ -64,7 +64,8 @@ These fixtures detect regressions and parameter changes; they do not prove that 
 - Four corner openings use circular capture regions; two side pockets use a configurable half-width.
 - A first-pass planar jaw model adds finite angled segments at the corner and side-pocket mouths. Ball-to-segment contacts use the same restitution and tangential-friction response as straight cushions.
 - Clean captures are resolved before jaw contacts. Near-misses can be deflected by the angled jaws, with the straight cushion boundary retained as a fallback.
-- Captured balls emit a pocket target and a normalized drop-progress value; rendering animates the ball down into the selected mouth and hides it when the animation completes.
+- Captured balls emit a pocket target, a normalized drop-progress value and a stable pocket index (corner and side pockets share the six-pocket order used by the game UI).
+- Shot telemetry preserves `{ ballNumber, pocketIndex }` for each pocketed ball so optional call-shot rules can validate the actual pocket.
 - The drop is presentation-only and does not feed back into the authoritative table-plane simulation.
 - The jaw segments are an initial, configurable game approximation rather than measured table geometry. Pocket shelves, rounded/curved jaws and calibration of opening width, jaw depth and trajectories against a physical table remain future work.
 
