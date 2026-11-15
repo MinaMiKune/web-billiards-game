@@ -244,11 +244,14 @@ export class GameApp {
 
   private syncCallShotControls(): void {
     const gameActive = this.ruleState.phase !== 'game-over'
-    const enabled = this.callShotRequired && this.ruleState.phase !== 'break' &&
-      gameActive && !this.world.isMoving
-    this.callShotToggle.disabled = !gameActive || this.world.isMoving
-    this.callBallInput.disabled = !enabled
-    this.callPocketInput.disabled = !enabled
+    const rulesEditable = gameActive && !this.world.isMoving
+    const calledShotEnabled = this.callShotRequired &&
+      this.ruleState.phase !== 'break' && rulesEditable
+    this.callShotToggle.disabled = !rulesEditable
+    this.callBallInput.disabled = !calledShotEnabled
+    this.callPocketInput.disabled = !calledShotEnabled
+    this.breakEightRuleInput.disabled = !rulesEditable
+    this.breakRequirementInput.disabled = !rulesEditable
   }
 
   private setCamera(mode: CameraMode): void {
