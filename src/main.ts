@@ -18,7 +18,7 @@ app.innerHTML = `
       <div class="topbar-meta">
         <span class="live-dot"></span>
         <span>PHYSICS PLAYGROUND</span>
-        <label class="language-control" for="language-select"><span class="section-label">LANGUAGE</span><select id="language-select" aria-label="Language"><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option><option value="ja">日本語</option></select></label>
+        <label class="language-control" for="language-select"><span class="section-label">LANGUAGE</span><select id="language-select" aria-label="Language"><option value="en">English</option><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option><option value="ja">日本語</option></select></label>
       </div>
     </header>
 
