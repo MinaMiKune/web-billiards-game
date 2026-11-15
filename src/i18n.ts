@@ -65,6 +65,35 @@ const messages: Record<string, [string, string, string]> = {
   'GAME OVER · START A NEW RACK TO PLAY AGAIN': ['比赛结束 · 重新摆球再来一局', '比賽結束 · 重新擺球再玩一局', 'ゲーム終了 · ラックをリセットして再開'],
   'CLICK A CLEAR SPOT ON THE TABLE TO PLACE THE CUE BALL': ['点击球台空位放置母球', '點擊球桌空位放置母球', 'テーブルの空き場所をクリックして手球を置く'],
   'AI OPPONENT IS ANALYZING THE TABLE': ['AI 对手正在分析球台', 'AI 對手正在分析球桌', 'AI 対戦相手がテーブルを分析中'],
+  'Player': ['玩家', '玩家', 'プレイヤー'],
+  'breaks': ['开球', '開球', 'ブレイク'],
+  'wins': ['获胜', '獲勝', 'の勝利'],
+  '8-ball': ['8 号球', '8 號球', '8 ボール'],
+  'Foul': ['犯规', '犯規', 'ファウル'],
+  'ball in hand': ['自由球', '自由球', 'フリーボール'],
+  'Cue ball pocketed': ['母球落袋', '母球落袋', '手球がポケットに入りました'],
+  'No object ball contacted': ['未碰到目标球', '未碰到目標球', '的球に当たりませんでした'],
+  '8-ball contacted before the group was cleared': ['尚未清空本方球组就碰到了 8 号球', '尚未清空己方球組就碰到了 8 號球', '自分のグループをクリアする前に 8 ボールに接触しました'],
+  'Wrong group contacted first': ['首先碰到错误球组', '首先碰到錯誤球組', '最初に相手グループのボールに接触しました'],
+  'No ball reached a cushion after contact': ['碰球后没有球碰到库边', '碰球後沒有球碰到庫邊', '接触後にボールがクッションに届きませんでした'],
+  '8-ball on the break · re-rack': ['开球时 8 号球落袋 · 重新摆球', '開球時 8 號球落袋 · 重新擺球', 'ブレイクで 8 ボールがポケットイン · 再ラック'],
+  'Groups set': ['球组已确定', '球組已確定', 'グループ決定'],
+  'continues': ['继续击球', '繼續擊球', '続けてプレー'],
+  'to play': ['准备击球', '準備擊球', 'のプレーです'],
+  'ball placed': ['已放置母球', '已放置母球', '手球を配置しました'],
+  'pot attempt': ['进球尝试', '進球嘗試', 'ポット狙い'],
+  'safety attempt': ['防守尝试', '防守嘗試', 'セーフティ狙い'],
+  'target': ['目标球', '目標球', 'ターゲット'],
+  'OPEN TABLE': ['开放球台', '開放球桌', 'オープンテーブル'],
+  'UNASSIGNED': ['未分配', '未分配', '未割り当て'],
+  'BALL IN HAND — CLICK TO PLACE': ['自由球 — 点击放置母球', '自由球 — 點擊放置母球', 'フリーボール — クリックして手球を配置'],
+  'WINNER:': ['获胜者：', '獲勝者：', '勝者：'],
+  'VS AI': ['对战 AI', '對戰 AI', 'AI 対戦'],
+  'LOCAL 2P': ['本地双人', '本機雙人', 'ローカル 2 人対戦'],
+  'CLICK A CLEAR SPOT ON THE TABLE TO PLACE THE CUE BALL': ['点击球台空位放置母球', '點擊球桌空位放置母球', 'テーブルの空き場所をクリックして手球を置く'],
+  'GAME OVER · START A NEW RACK TO PLAY AGAIN': ['比赛结束 · 重新摆球再来一局', '比賽結束 · 重新擺球再玩一局', 'ゲーム終了 · ラックをリセットして再開'],
+  'AI OPPONENT IS ANALYZING THE TABLE': ['AI 对手正在分析球台', 'AI 對手正在分析球桌', 'AI 対戦相手がテーブルを分析中'],
+  'DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT': ['从母球向后拖动瞄准 · 松开击球', '從母球向後拖曳瞄準 · 放開即可擊球', '手球から後ろにドラッグして照準 · 離してショット'],
 }
 
 let locale: Locale | 'en' = 'en'
@@ -100,4 +129,52 @@ export function t(english: string): string {
 
 export function getLocale(): Locale | 'en' {
   return locale
+}
+
+function translateForLocale(english: string, target: Locale): string {
+  if (target === 'en') return english
+  const index = target === 'zh-CN' ? 0 : target === 'zh-TW' ? 1 : 2
+  return messages[english]?.[index] ?? english
+}
+
+/** Translate rule-engine and AI status messages that contain runtime values. */
+export function translateGameMessage(message: string, target: Locale = locale): string {
+  if (target === 'en') return message
+
+  let match = message.match(/^Player (\\d+) breaks$/)
+  if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('breaks', target)}`
+
+  match = message.match(/^Player (\\d+) wins · 8-ball$/)
+  if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('wins', target)} · ${translateForLocale('8-ball', target)}`
+
+  match = message.match(/^Player (\\d+) wins · foul on the 8-ball$/)
+  if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('wins', target)} · ${translateForLocale('Foul', target)} · ${translateForLocale('8-ball', target)}`
+
+  match = message.match(/^Foul · (.+) · Player (\\d+) ball in hand$/)
+  if (match) {
+    const reasons = match[1].split(' · ').map((reason) => translateForLocale(reason, target))
+    return `${translateForLocale('Foul', target)} · ${reasons.join(' · ')} · ${translateForLocale('Player', target)} ${match[2]} ${translateForLocale('ball in hand', target)}`
+  }
+
+  match = message.match(/^Groups set · Player (\\d+): (solids|stripes)$/)
+  if (match) {
+    const group = match[2] === 'solids' ? 'SOLIDS' : 'STRIPES'
+    return `${translateForLocale('Groups set', target)} · ${translateForLocale('Player', target)} ${match[1]}: ${translateForLocale(group, target)}`
+  }
+
+  match = message.match(/^Player (\\d+) continues$/)
+  if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('continues', target)}`
+
+  match = message.match(/^Player (\\d+) to play$/)
+  if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('to play', target)}`
+
+  match = message.match(/^Player (\\d+) · ball placed$/)
+  if (match) return `${translateForLocale('Player', target)} ${match[1]} · ${translateForLocale('ball placed', target)}`
+
+  match = message.match(/^AI · (pot attempt|safety attempt) · target (\\d+)$/)
+  if (match) {
+    return `AI · ${translateForLocale(match[1], target)} · ${translateForLocale('target', target)} ${match[2]}`
+  }
+
+  return translateForLocale(message, target)
 }
