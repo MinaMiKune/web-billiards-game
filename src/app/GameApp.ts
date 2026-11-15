@@ -16,6 +16,7 @@ interface AIWorkerResponse {
 }
 
 interface MatchHistoryEntry {
+  shotNumber: number
   player: PlayerId
   firstContactBallNumber: number | null
   pocketedBallNumbers: number[]
@@ -46,6 +47,7 @@ export class GameApp {
   private readonly shotHistoryElement: HTMLOListElement
   private readonly matchSummaryElement: HTMLElement
   private readonly shotHistory: MatchHistoryEntry[] = []
+  private totalShotCount = 0
   private readonly interactionHint: HTMLElement
   private readonly playerCards: [HTMLElement, HTMLElement]
   private readonly playerNames: [HTMLElement, HTMLElement]
@@ -148,6 +150,7 @@ export class GameApp {
       this.statusElement.classList.remove('is-thinking')
       this.world.resetRack()
       this.shotHistory.length = 0
+      this.totalShotCount = 0
       this.renderShotHistory()
       this.ruleState = createInitialEightBallState()
       this.renderer.updateBalls(this.world.getRenderBalls(1))
@@ -396,7 +399,9 @@ export class GameApp {
   }
 
   private recordShot(player: PlayerId, telemetry: ShotTelemetry, foulReasons: string[]): void {
+    this.totalShotCount += 1
     this.shotHistory.unshift({
+      shotNumber: this.totalShotCount,
       player,
       firstContactBallNumber: telemetry.firstContactBallNumber,
       pocketedBallNumbers: [...telemetry.pocketedBallNumbers],
@@ -434,7 +439,7 @@ export class GameApp {
       if (entry.foulReasons.length) {
         details.push(`${t('Foul')}: ${entry.foulReasons.map((reason) => translateGameMessage(reason)).join(', ')}`)
       }
-      item.textContent = `${t('Shot')} ${this.shotHistory.length - index} · ${playerName} · ${details.join(' · ')}`
+      item.textContent = ` ${t('Shot')} ${entry.shotNumber} · ${playerName} · ${details.join(' · ')}`
       this.shotHistoryElement.append(item)
     })
   }
