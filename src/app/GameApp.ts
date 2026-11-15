@@ -15,6 +15,11 @@ interface AIWorkerResponse {
   plan: AIShotPlan | null
 }
 
+interface CalledShotSelection {
+  ballNumber: number
+  pocketIndex: number
+}
+
 interface MatchHistoryEntry {
   shotNumber: number
   player: PlayerId
@@ -48,6 +53,8 @@ export class GameApp {
   private readonly matchSummaryElement: HTMLElement
   private readonly shotHistory: MatchHistoryEntry[] = []
   private totalShotCount = 0
+  private callShotRequired = false
+  private pendingCalledShot: CalledShotSelection | null = null
   private readonly interactionHint: HTMLElement
   private readonly playerCards: [HTMLElement, HTMLElement]
   private readonly playerNames: [HTMLElement, HTMLElement]
@@ -60,6 +67,9 @@ export class GameApp {
   private readonly spinValue: HTMLElement
   private readonly opponentModeInput: HTMLSelectElement
   private readonly aiDifficultyInput: HTMLSelectElement
+  private readonly callShotToggle: HTMLInputElement
+  private readonly callBallInput: HTMLSelectElement
+  private readonly callPocketInput: HTMLSelectElement
   private readonly raycaster = new Raycaster()
   private readonly groundPlane = new Plane(new Vector3(0, 1, 0), 0)
   private readonly intersection = new Vector3()
@@ -105,6 +115,9 @@ export class GameApp {
     this.spinValue = requireElement(root, '#spin-value')
     this.opponentModeInput = requireElement(root, '#opponent-mode')
     this.aiDifficultyInput = requireElement(root, '#ai-difficulty')
+    this.callShotToggle = requireElement<HTMLInputElement>(root, '#call-shot-toggle')
+    this.callBallInput = requireElement<HTMLSelectElement>(root, '#call-ball')
+    this.callPocketInput = requireElement<HTMLSelectElement>(root, '#call-pocket')
 
     this.renderer = new GameRenderer(sceneHost)
     this.cameras = new CameraManager(this.renderer.canvas)
@@ -152,6 +165,7 @@ export class GameApp {
       this.invalidateAiRequest()
       this.statusElement.classList.remove('is-thinking')
       this.world.resetRack()
+      this.pendingCalledShot = null
       this.shotHistory.length = 0
       this.totalShotCount = 0
       this.renderShotHistory()
@@ -179,6 +193,14 @@ export class GameApp {
     })
     this.aiDifficultyInput.disabled = true
 
+    this.callShotToggle.addEventListener('change', () => {
+      this.callShotRequired = this.callShotToggle.checked
+      this.rules.setOptions({ callShotRequired: this.callShotRequired })
+      this.pendingCalledShot = null
+      this.syncCallShotControls()
+    })
+    this.syncCallShotControls()
+
     this.powerInput.addEventListener('input', () => {
       this.power = Number(this.powerInput.value) / 100
       this.powerValue.textContent = this.powerInput.value + '%'
@@ -190,6 +212,13 @@ export class GameApp {
     this.spinPad.addEventListener('pointercancel', this.onSpinPointerUp)
     this.spinPad.addEventListener('keydown', this.onSpinKeyDown)
     window.addEventListener('keydown', this.onKeyDown)
+  }
+
+  private syncCallShotControls(): void {
+    const enabled = this.callShotRequired && this.ruleState.phase !== 'break' &&
+      this.ruleState.phase !== 'game-over'
+    this.callBallInput.disabled = !enabled
+    this.callPocketInput.disabled = !enabled
   }
 
   private setCamera(mode: CameraMode): void {
@@ -322,13 +351,28 @@ export class GameApp {
       const dx = cue.x - this.aimPoint.x
       const dz = cue.z - this.aimPoint.z
       const length = Math.hypot(dx, dz)
-      if (length > 0.045 && this.world.shootCueBall(
-        { x: dx / length, z: dz / length },
-        this.power,
-        this.spin,
-      )) {
-        this.statusElement.textContent = t('Balls in motion')
-        this.wasMoving = true
+      if (length > 0.045) {
+        let calledShot: CalledShotSelection | null = null
+        if (this.callShotRequired && this.ruleState.phase !== 'break') {
+          const ballNumber = Number(this.callBallInput.value)
+          const pocketIndex = Number(this.callPocketInput.value) - 1
+          if (!Number.isInteger(ballNumber) || ballNumber < 1 || ballNumber > 15 ||
+            !Number.isInteger(pocketIndex) || pocketIndex < 0 || pocketIndex > 5) {
+            this.statusElement.textContent = t('Select a called ball and pocket')
+          } else {
+            calledShot = { ballNumber, pocketIndex }
+          }
+        }
+        if ((!this.callShotRequired || this.ruleState.phase === 'break' || calledShot) &&
+          this.world.shootCueBall(
+            { x: dx / length, z: dz / length },
+            this.power,
+            this.spin,
+          )) {
+          this.pendingCalledShot = calledShot
+          this.statusElement.textContent = t('Balls in motion')
+          this.wasMoving = true
+        }
       }
     }
     this.aiming = false
@@ -466,6 +510,7 @@ export class GameApp {
   }
 
   private updateTurnStatus(): void {
+    this.syncCallShotControls()
     this.renderMatchSummary()
     const currentGroup = this.ruleState.playerGroups[this.ruleState.currentPlayer]
     const phaseLabel = this.ruleState.phase === 'break'
@@ -635,9 +680,13 @@ export class GameApp {
       plan.command.power,
       plan.command.spin,
     )) {
+      this.pendingCalledShot = null
       this.statusElement.textContent = t('AI shot was rejected by the physics world')
       return
     }
+    this.pendingCalledShot = this.callShotRequired && this.ruleState.phase !== 'break'
+      ? { ballNumber: plan.targetBallNumber, pocketIndex: plan.pocketIndex }
+      : null
 
     this.statusElement.textContent =
       translateGameMessage(`AI · ${plan.style === 'pot' ? 'pot attempt' : 'safety attempt'} · ${plan.routeType === 'bank' ? 'bank shot' : plan.routeType === 'kick' ? 'kick shot' : plan.routeType === 'multi-rail' ? 'multi-rail shot' : 'direct shot'} · target ${plan.targetBallNumber}`)
@@ -671,7 +720,12 @@ export class GameApp {
       this.wasMoving = false
       const telemetry = this.world.getShotTelemetry()
       const shooter = this.ruleState.currentPlayer
-      const resolution = this.rules.resolveShot(this.ruleState, telemetry)
+      const resolution = this.rules.resolveShot(this.ruleState, {
+        ...telemetry,
+        calledBallNumber: this.pendingCalledShot?.ballNumber ?? null,
+        calledPocketIndex: this.pendingCalledShot?.pocketIndex ?? null,
+      })
+      this.pendingCalledShot = null
       this.recordShot(shooter, telemetry, resolution.foulReasons)
       this.ruleState = resolution.state
       if (resolution.rerack) {
