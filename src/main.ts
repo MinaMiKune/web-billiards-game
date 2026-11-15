@@ -142,5 +142,6 @@ languageSelect?.addEventListener('change', () => {
   const locale = languageSelect.value as Locale
   setLocale(locale)
   window.localStorage.setItem('billiards-locale', locale)
+  window.dispatchEvent(new Event('billiards-locale-change'))
 })
 new GameApp(app)
