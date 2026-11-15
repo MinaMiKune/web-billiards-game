@@ -1,9 +1,9 @@
 import { Plane, Raycaster, Vector2, Vector3 } from 'three'
 import { CameraManager, type CameraMode } from '../camera/CameraManager'
-import { PhysicsWorld, type BallSpin, type RenderBall } from '../physics/PhysicsWorld'
+import { PhysicsWorld, type BallSpin, type RenderBall, type ShotTelemetry } from '../physics/PhysicsWorld'
 import { GameRenderer } from '../rendering/GameRenderer'
 import { AIController, type AIDifficulty, type AIShotPlan } from '../ai/AIController'
-import { createInitialEightBallState, EightBallRuleEngine, type EightBallState } from '../game/EightBallRuleEngine'
+import { createInitialEightBallState, EightBallRuleEngine, type EightBallState, type PlayerId } from '../game/EightBallRuleEngine'
 import { t, translateGameMessage } from '../i18n'
 
 const FIXED_STEP = 1 / 120
@@ -13,6 +13,13 @@ const MAX_SUBSTEPS = 12
 interface AIWorkerResponse {
   requestId: number
   plan: AIShotPlan | null
+}
+
+interface MatchHistoryEntry {
+  player: PlayerId
+  firstContactBallNumber: number | null
+  pocketedBallNumbers: number[]
+  foulReasons: string[]
 }
 
 function requireElement<T extends HTMLElement>(root: HTMLElement, selector: string): T {
@@ -36,6 +43,9 @@ export class GameApp {
   private readonly cameras: CameraManager
   private readonly statusElement: HTMLElement
   private readonly turnElement: HTMLElement
+  private readonly shotHistoryElement: HTMLOListElement
+  private readonly matchSummaryElement: HTMLElement
+  private readonly shotHistory: MatchHistoryEntry[] = []
   private readonly interactionHint: HTMLElement
   private readonly playerCards: [HTMLElement, HTMLElement]
   private readonly playerNames: [HTMLElement, HTMLElement]
@@ -67,6 +77,8 @@ export class GameApp {
     const sceneHost = requireElement<HTMLDivElement>(root, '#scene-host')
     this.statusElement = requireElement(root, '#game-status')
     this.turnElement = requireElement(root, '#turn-status')
+    this.shotHistoryElement = requireElement<HTMLOListElement>(root, '#shot-history')
+    this.matchSummaryElement = requireElement(root, '#match-summary')
     this.interactionHint = requireElement(root, '#interaction-hint')
     this.playerCards = [
       requireElement(root, '#player-one-card'),
@@ -135,6 +147,8 @@ export class GameApp {
       this.invalidateAiRequest()
       this.statusElement.classList.remove('is-thinking')
       this.world.resetRack()
+      this.shotHistory.length = 0
+      this.renderShotHistory()
       this.ruleState = createInitialEightBallState()
       this.renderer.updateBalls(this.world.getRenderBalls(1))
       this.resetSpin()
@@ -381,7 +395,65 @@ export class GameApp {
     this.renderer.setAimPreview(this.cueRenderBall(), { x: 1, z: 0 }, 0, visible)
   }
 
+  private recordShot(player: PlayerId, telemetry: ShotTelemetry, foulReasons: string[]): void {
+    this.shotHistory.unshift({
+      player,
+      firstContactBallNumber: telemetry.firstContactBallNumber,
+      pocketedBallNumbers: [...telemetry.pocketedBallNumbers],
+      foulReasons: [...foulReasons],
+    })
+    if (this.shotHistory.length > 12) this.shotHistory.length = 12
+    this.renderShotHistory()
+  }
+
+  private renderShotHistory(): void {
+    this.shotHistoryElement.replaceChildren()
+    if (this.shotHistory.length === 0) {
+      const empty = document.createElement('li')
+      empty.className = 'history-empty'
+      empty.textContent = t('No shots recorded yet')
+      this.shotHistoryElement.append(empty)
+      return
+    }
+
+    this.shotHistory.forEach((entry, index) => {
+      const item = document.createElement('li')
+      const playerName = entry.player === 1 && this.opponentMode === 'ai'
+        ? t('AI OPPONENT')
+        : t(entry.player === 0 ? 'PLAYER 1' : 'PLAYER 2')
+      const firstContact = entry.firstContactBallNumber === null
+        ? t('None')
+        : String(entry.firstContactBallNumber)
+      const pocketed = entry.pocketedBallNumbers.length
+        ? entry.pocketedBallNumbers.join(', ')
+        : t('None')
+      const details = [
+        `${t('First contact')}: ${firstContact}`,
+        `${t('Pocketed')}: ${pocketed}`,
+      ]
+      if (entry.foulReasons.length) {
+        details.push(`${t('Foul')}: ${entry.foulReasons.map((reason) => translateGameMessage(reason)).join(', ')}`)
+      }
+      item.textContent = `${t('Shot')} ${this.shotHistory.length - index} · ${playerName} · ${details.join(' · ')}`
+      this.shotHistoryElement.append(item)
+    })
+  }
+
+  private renderMatchSummary(): void {
+    if (this.ruleState.phase !== 'game-over' || this.ruleState.winner === null) {
+      this.matchSummaryElement.hidden = true
+      this.matchSummaryElement.textContent = ''
+      return
+    }
+    const winner = this.ruleState.winner === 1 && this.opponentMode === 'ai'
+      ? t('AI OPPONENT')
+      : t(this.ruleState.winner === 0 ? 'PLAYER 1' : 'PLAYER 2')
+    this.matchSummaryElement.hidden = false
+    this.matchSummaryElement.textContent = `${t('MATCH COMPLETE')} · ${t('WINNER:')} ${winner}`
+  }
+
   private updateTurnStatus(): void {
+    this.renderMatchSummary()
     const currentGroup = this.ruleState.playerGroups[this.ruleState.currentPlayer]
     const phaseLabel = this.ruleState.phase === 'break'
       ? t('Break')
@@ -584,7 +656,10 @@ export class GameApp {
     const moving = this.world.isMoving
     if (this.wasMoving && !moving) {
       this.wasMoving = false
-      const resolution = this.rules.resolveShot(this.ruleState, this.world.getShotTelemetry())
+      const telemetry = this.world.getShotTelemetry()
+      const shooter = this.ruleState.currentPlayer
+      const resolution = this.rules.resolveShot(this.ruleState, telemetry)
+      this.recordShot(shooter, telemetry, resolution.foulReasons)
       this.ruleState = resolution.state
       if (resolution.rerack) {
         this.world.resetRack()
