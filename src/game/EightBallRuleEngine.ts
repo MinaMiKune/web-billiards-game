@@ -18,16 +18,19 @@ export interface PocketedBallEvent {
 }
 
 export type EightBallOnBreakRule = 'rerack' | 'breaker-wins'
+export type BreakRequirement = 'relaxed' | 'four-rails'
 
 export interface EightBallRulesOptions {
   callShotRequired: boolean
   eightBallOnBreak: EightBallOnBreakRule
+  breakRequirement: BreakRequirement
 }
 
 export interface ShotResult {
   firstContactBallNumber: number | null
   pocketedBallNumbers: number[]
   pocketedBallEvents?: PocketedBallEvent[]
+  railContactBallNumbersAfterFirstHit?: number[]
   calledBallNumber?: number | null
   calledPocketIndex?: number | null
   cueBallPocketed: boolean
@@ -75,7 +78,7 @@ export class EightBallRuleEngine {
   private options: EightBallRulesOptions
 
   constructor(options: Partial<EightBallRulesOptions> = {}) {
-    this.options = { callShotRequired: false, eightBallOnBreak: 'rerack', ...options }
+    this.options = { callShotRequired: false, eightBallOnBreak: 'rerack', breakRequirement: 'relaxed', ...options }
   }
 
   setOptions(options: Partial<EightBallRulesOptions>): void {
@@ -137,6 +140,14 @@ export class EightBallRuleEngine {
       : []
 
     const foulReasons: string[] = []
+    if (
+      state.phase === 'break' &&
+      this.options.breakRequirement === 'four-rails' &&
+      objectBallsPocketed.length === 0 &&
+      (shot.railContactBallNumbersAfterFirstHit ?? []).length < 4
+    ) {
+      foulReasons.push('Illegal break — fewer than four object balls reached a cushion')
+    }
     if (shot.cueBallPocketed) foulReasons.push('Cue ball pocketed')
     if (shot.firstContactBallNumber === null) {
       foulReasons.push('No object ball contacted')

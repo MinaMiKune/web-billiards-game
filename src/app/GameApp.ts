@@ -73,6 +73,7 @@ export class GameApp {
   private readonly callBallInput: HTMLSelectElement
   private readonly callPocketInput: HTMLSelectElement
   private readonly breakEightRuleInput: HTMLSelectElement
+  private readonly breakRequirementInput: HTMLSelectElement
   private readonly soundToggle: HTMLInputElement
   private readonly raycaster = new Raycaster()
   private readonly groundPlane = new Plane(new Vector3(0, 1, 0), 0)
@@ -123,6 +124,7 @@ export class GameApp {
     this.callBallInput = requireElement<HTMLSelectElement>(root, '#call-ball')
     this.callPocketInput = requireElement<HTMLSelectElement>(root, '#call-pocket')
     this.breakEightRuleInput = requireElement<HTMLSelectElement>(root, '#break-eight-rule')
+    this.breakRequirementInput = requireElement<HTMLSelectElement>(root, '#break-requirement')
     this.soundToggle = requireElement<HTMLInputElement>(root, '#sound-toggle')
 
     this.renderer = new GameRenderer(sceneHost)
@@ -205,6 +207,13 @@ export class GameApp {
     })
     this.soundEffects.setEnabled(this.soundToggle.checked)
 
+    this.breakRequirementInput.addEventListener('change', () => {
+      this.rules.setOptions({
+        breakRequirement: this.breakRequirementInput.value === 'four-rails'
+          ? 'four-rails'
+          : 'relaxed',
+      })
+    })
     this.breakEightRuleInput.addEventListener('change', () => {
       this.rules.setOptions({
         eightBallOnBreak: this.breakEightRuleInput.value === 'breaker-wins'

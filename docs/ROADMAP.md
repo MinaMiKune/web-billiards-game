@@ -48,7 +48,8 @@ Selected decisions:
 - [x] Support break/open-table/group assignment, turn switching, fouls and 8-ball win/loss.
 - [x] Add ball-in-hand placement with collision and pocket-area validation.
 - [x] Add optional called-ball/called-pocket rules for human and AI shots.
-- [ ] Add the remaining tournament ruleset variants (break and foul variations).
+- [x] Add an optional four-object-ball-to-rail requirement for dry breaks.
+- [ ] Add remaining tournament foul and ball-in-hand variations.
 - [x] Add game-flow UI for shot history, player groups and match result summary.
 
 ## Phase 4 — AI opponents

@@ -147,6 +147,32 @@ describe('PhysicsWorld', () => {
     expect(cue.active).toBe(false)
   })
 
+  it('records distinct object balls that reach a rail after first contact', () => {
+    const world = new PhysicsWorld()
+    const [cue, target] = world.balls
+    for (const ball of world.balls) ball.active = false
+
+    const xLimit = world.config.tableLength / 2 - target.radius
+    target.active = true
+    target.position = { x: xLimit - 0.005, z: 0 }
+    target.previousPosition = { ...target.position }
+    target.velocity = { x: 0, z: 0 }
+
+    cue.active = true
+    cue.position = {
+      x: target.position.x - cue.radius - target.radius - 0.001,
+      z: 0,
+    }
+    cue.previousPosition = { ...cue.position }
+    cue.velocity = { x: 2, z: 0 }
+
+    world.step(STEP)
+    world.step(STEP)
+
+    expect(world.getShotTelemetry().firstContactBallNumber).toBe(1)
+    expect(world.getShotTelemetry().railContactBallNumbersAfterFirstHit).toContain(1)
+  })
+
   it('records the correct pocket index for a side-pocket capture', () => {
     const world = new PhysicsWorld()
     const cue = world.cueBall
