@@ -31,7 +31,14 @@ Evidence: CI run URL, commit SHA, test summary and deployment URL.
 
 Record reproducible steps and the tested commit for each failure.
 
-## Gate 3 — Browser and responsive acceptance
+## Gate 3 — Visual, audio and tactile acceptance
+
+- [ ] Inspect table/felt/wood materials, cue proportions, ball contact shadows and lighting in all four camera views.
+- [ ] Confirm cue strike, ball collision, rail collision and pocket audio are distinct and never interrupt simulation.
+- [ ] Confirm mobile vibration works where the browser exposes it, is best-effort, and gracefully no-ops where unavailable.
+- [ ] Review texture generation, GPU cost and reduced-motion/accessibility behavior on low-end devices.
+
+## Gate 4 — Browser and responsive acceptance
 
 Run the manual matrix in docs/BROWSER_QA.md on actual browsers/devices. At minimum record:
 
@@ -42,7 +49,7 @@ Run the manual matrix in docs/BROWSER_QA.md on actual browsers/devices. At minim
 
 Do not infer mobile Safari or touch behavior from desktop emulation. Confirm pointer cancellation, page-scroll suppression, canvas resize, WebGL startup, worker loading and all four camera modes on real devices.
 
-## Gate 4 — Physics evidence
+## Gate 5 — Physics evidence
 
 The physics engine is currently a deterministic game-simulation model, not a measured calibration of a physical table.
 
@@ -55,7 +62,7 @@ Before describing it as physically calibrated, require:
 
 If this evidence is not available, release notes and product copy must retain the explicit game-realistic / not physically calibrated qualification.
 
-## Gate 5 — Release operations
+## Gate 6 — Release operations
 
 - [ ] Choose and document the release version; update package.json, lockfile and user-facing version references together.
 - [ ] Review license, dependency changes, attribution, privacy implications of browser storage and known limitations.

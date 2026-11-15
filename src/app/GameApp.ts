@@ -3,6 +3,7 @@ import { CameraManager, type CameraMode } from '../camera/CameraManager'
 import { PhysicsWorld, type BallSpin, type RenderBall, type ShotTelemetry } from '../physics/PhysicsWorld'
 import { GameRenderer } from '../rendering/GameRenderer'
 import { SoundEffects } from '../audio/SoundEffects'
+import { TactileFeedback } from '../input/TactileFeedback'
 import { AIController, type AIDifficulty, type AIShotPlan } from '../ai/AIController'
 import { createInitialEightBallState, EightBallRuleEngine, type EightBallState, type PlayerId } from '../game/EightBallRuleEngine'
 import { t, translateGameMessage } from '../i18n'
@@ -40,6 +41,7 @@ export class GameApp {
   private readonly rules = new EightBallRuleEngine()
   private readonly ai = new AIController()
   private readonly soundEffects = new SoundEffects()
+  private readonly tactileFeedback = new TactileFeedback()
   private ruleState: EightBallState = createInitialEightBallState()
   private opponentMode: 'local' | 'ai' = 'local'
   private aiDifficulty: AIDifficulty = 3
@@ -169,6 +171,7 @@ export class GameApp {
     this.aiWorker?.terminate()
     this.aiWorker = null
     this.soundEffects.dispose()
+    this.tactileFeedback.dispose()
     this.resizeObserver.disconnect()
     this.cameras.dispose()
     this.renderer.dispose()
@@ -447,6 +450,7 @@ export class GameApp {
           )) {
           this.pendingCalledShot = calledShot
           this.soundEffects.playCue()
+          this.tactileFeedback.shot(this.power)
           this.syncCallShotControls()
           this.statusElement.textContent = t('Balls in motion')
           this.interactionHint.textContent = t('Balls in motion')
@@ -804,6 +808,7 @@ export class GameApp {
       ? { ballNumber: plan.targetBallNumber, pocketIndex: plan.pocketIndex }
       : null
     this.soundEffects.playCue()
+    this.tactileFeedback.shot(plan.command.power)
     this.syncCallShotControls()
 
     this.statusElement.textContent =
@@ -828,6 +833,15 @@ export class GameApp {
     let steps = 0
     while (this.accumulator >= FIXED_STEP && steps < MAX_SUBSTEPS) {
       this.world.step(FIXED_STEP)
+      for (const contact of this.world.consumeContactEvents()) {
+        if (contact.kind === 'rail') {
+          this.soundEffects.playRailImpact(contact.intensity)
+          this.tactileFeedback.rail(contact.intensity)
+        } else {
+          this.soundEffects.playBallImpact(contact.intensity)
+          this.tactileFeedback.impact(contact.ballNumber, contact.intensity)
+        }
+      }
       this.accumulator -= FIXED_STEP
       steps += 1
     }
@@ -837,7 +851,11 @@ export class GameApp {
     if (this.wasMoving && !moving) {
       this.wasMoving = false
       const telemetry = this.world.getShotTelemetry()
-      if (telemetry.pocketedBallNumbers.length > 0) this.soundEffects.playPocket()
+      if (telemetry.pocketedBallNumbers.length > 0) {
+        this.soundEffects.playPocket()
+        this.tactileFeedback.pocket(telemetry.pocketedBallNumbers.length)
+      }
+      if (telemetry.firstContactBallNumber !== null) this.tactileFeedback.impact(telemetry.firstContactBallNumber)
       const shooter = this.ruleState.currentPlayer
       const resolution = this.rules.resolveShot(this.ruleState, {
         ...telemetry,

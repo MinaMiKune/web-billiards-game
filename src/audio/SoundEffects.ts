@@ -10,6 +10,16 @@ export class SoundEffects {
     this.playTone(155, 92, 0.075, 'triangle', 0.035)
   }
 
+  playBallImpact(intensity = 0.5): void {
+    const strength = Math.max(0.15, Math.min(1, intensity))
+    this.playTone(210 + strength * 95, 105, 0.045 + strength * 0.035, 'triangle', 0.018 + strength * 0.025)
+  }
+
+  playRailImpact(intensity = 0.5): void {
+    const strength = Math.max(0.15, Math.min(1, intensity))
+    this.playTone(125 + strength * 45, 72, 0.065, 'square', 0.012 + strength * 0.018)
+  }
+
   playPocket(): void {
     this.playTone(235, 58, 0.17, 'sine', 0.055)
   }
