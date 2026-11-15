@@ -108,6 +108,18 @@ Selected decisions:
 - [x] Make camera controls wrap into a compact 2×2 layout below 380px with 44px+ touch targets.
 - [ ] Complete real-device touch/browser verification at 320px and cross-browser checks.
 
+## Phase 5C — Visual, physical-feedback and mobile tactile rebuild (active)
+
+- [x] Replace flat table colors with generated felt-weave and wood-grain surface textures.
+- [x] Add a tapered 3D cue model with shaft, butt, wrap, ferrule and tip during aiming.
+- [x] Add per-ball contact shadows that track pocket-drop presentation.
+- [x] Add best-effort mobile vibration feedback for cue strike, first-contact result and pocket events, with unsupported-device fallback.
+- [x] Add distinct procedural audio primitives for ball and rail impacts.
+- [ ] Upgrade collision event reporting so impact audio and haptics can fire at the moment of contact rather than after the shot settles.
+- [ ] Replace procedural presentation assets with licensed, authored high-resolution PBR assets and documented attribution.
+- [ ] Validate cue proportions, table details, shadows, sound mix and haptic patterns on real devices.
+- [ ] Rework and validate collision/friction integration against captured reference shots; deterministic software tests are not physical calibration.
+
 ## Phase 6 — Release readiness (active before stable 1.0)
 
 - [ ] Complete gameplay acceptance across full local and AI matches.
