@@ -54,6 +54,30 @@ app.innerHTML = `
         </div>
       </div>
 
+      <section class="scoreboard" aria-label="Player scores and remaining balls">
+        <article id="player-one-card" class="player-card is-current">
+          <div class="player-card-copy">
+            <span id="player-one-name" class="player-name">PLAYER 1</span>
+            <strong id="player-one-group" class="player-group" data-group="open">OPEN TABLE</strong>
+          </div>
+          <div class="player-ball-count">
+            <strong id="player-one-count">15</strong>
+            <span>BALLS LEFT</span>
+          </div>
+        </article>
+        <span class="score-divider" aria-hidden="true">VS</span>
+        <article id="player-two-card" class="player-card">
+          <div class="player-card-copy">
+            <span id="player-two-name" class="player-name">PLAYER 2</span>
+            <strong id="player-two-group" class="player-group" data-group="open">OPEN TABLE</strong>
+          </div>
+          <div class="player-ball-count">
+            <strong id="player-two-count">15</strong>
+            <span>BALLS LEFT</span>
+          </div>
+        </article>
+      </section>
+
       <div class="spin-bar">
         <div class="spin-copy">
           <span class="section-label">CUE BALL CONTACT</span>

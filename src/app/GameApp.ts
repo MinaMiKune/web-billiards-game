@@ -28,6 +28,10 @@ export class GameApp {
   private readonly statusElement: HTMLElement
   private readonly turnElement: HTMLElement
   private readonly interactionHint: HTMLElement
+  private readonly playerCards: [HTMLElement, HTMLElement]
+  private readonly playerNames: [HTMLElement, HTMLElement]
+  private readonly playerGroups: [HTMLElement, HTMLElement]
+  private readonly playerCounts: [HTMLElement, HTMLElement]
   private readonly powerInput: HTMLInputElement
   private readonly powerValue: HTMLElement
   private readonly spinPad: HTMLElement
@@ -55,6 +59,22 @@ export class GameApp {
     this.statusElement = requireElement(root, '#game-status')
     this.turnElement = requireElement(root, '#turn-status')
     this.interactionHint = requireElement(root, '#interaction-hint')
+    this.playerCards = [
+      requireElement(root, '#player-one-card'),
+      requireElement(root, '#player-two-card'),
+    ]
+    this.playerNames = [
+      requireElement(root, '#player-one-name'),
+      requireElement(root, '#player-two-name'),
+    ]
+    this.playerGroups = [
+      requireElement(root, '#player-one-group'),
+      requireElement(root, '#player-two-group'),
+    ]
+    this.playerCounts = [
+      requireElement(root, '#player-one-count'),
+      requireElement(root, '#player-two-count'),
+    ]
     this.powerInput = requireElement<HTMLInputElement>(root, '#shot-power')
     this.powerValue = requireElement(root, '#power-value')
     this.spinPad = requireElement(root, '#spin-pad')
@@ -99,6 +119,7 @@ export class GameApp {
 
     requireElement<HTMLButtonElement>(root, '#reset-rack').addEventListener('click', () => {
       window.clearTimeout(this.aiTimer)
+      this.statusElement.classList.remove('is-thinking')
       this.world.resetRack()
       this.ruleState = createInitialEightBallState()
       this.renderer.updateBalls(this.world.getRenderBalls(1))
@@ -111,6 +132,8 @@ export class GameApp {
     this.opponentModeInput.addEventListener('change', () => {
       this.opponentMode = this.opponentModeInput.value === 'ai' ? 'ai' : 'local'
       this.aiDifficultyInput.disabled = this.opponentMode !== 'ai'
+      this.statusElement.classList.remove('is-thinking')
+      this.statusElement.textContent = this.ruleState.lastMessage
       this.updateTurnStatus()
       this.scheduleAiTurn()
     })
@@ -354,13 +377,47 @@ export class GameApp {
           : 'Groups assigned'
     const groupLabel = currentGroup ? ` · ${currentGroup}` : ''
     const ballInHandLabel = this.ruleState.ballInHand ? ' · BALL IN HAND — CLICK TO PLACE' : ''
-    const winnerLabel = this.ruleState.winner === null ? '' : ` · WINNER: PLAYER ${this.ruleState.winner + 1}`
+    const winnerName = this.ruleState.winner === null
+      ? ''
+      : this.ruleState.winner === 1 && this.opponentMode === 'ai'
+        ? 'AI OPPONENT'
+        : `PLAYER ${this.ruleState.winner + 1}`
+    const winnerLabel = winnerName ? ` · WINNER: ${winnerName}` : ''
     const playerLabel = this.opponentMode === 'ai' && this.ruleState.currentPlayer === 1
       ? 'AI OPPONENT'
       : `PLAYER ${this.ruleState.currentPlayer + 1}`
     const modeLabel = this.opponentMode === 'ai' ? ' · VS AI' : ' · LOCAL 2P'
     this.turnElement.textContent =
       `${playerLabel}${groupLabel} · ${phaseLabel.toUpperCase()}${ballInHandLabel}${winnerLabel}${modeLabel}`
+
+    for (const player of [0, 1] as const) {
+      const group = this.ruleState.playerGroups[player]
+      const remaining = group
+        ? this.ruleState.remainingBalls.filter((number) =>
+          group === 'solids' ? number >= 1 && number <= 7 : number >= 9 && number <= 15,
+        ).length
+        : this.ruleState.remainingBalls.length
+
+      this.playerNames[player].textContent =
+        player === 1 && this.opponentMode === 'ai'
+          ? 'AI OPPONENT'
+          : `PLAYER ${player + 1}`
+      this.playerGroups[player].textContent = group
+        ? group.toUpperCase()
+        : this.ruleState.phase === 'break'
+          ? 'OPEN TABLE'
+          : 'UNASSIGNED'
+      this.playerGroups[player].dataset.group = group ?? 'open'
+      this.playerCounts[player].textContent = String(remaining)
+      this.playerCards[player].classList.toggle(
+        'is-current',
+        this.ruleState.phase !== 'game-over' && this.ruleState.currentPlayer === player,
+      )
+      this.playerCards[player].classList.toggle(
+        'is-winner',
+        this.ruleState.phase === 'game-over' && this.ruleState.winner === player,
+      )
+    }
 
     this.interactionHint.textContent = this.ruleState.ballInHand
       ? 'CLICK A CLEAR SPOT ON THE TABLE TO PLACE THE CUE BALL'
@@ -379,16 +436,25 @@ export class GameApp {
 
   private scheduleAiTurn(): void {
     window.clearTimeout(this.aiTimer)
-    if (!this.isAiTurn() || this.world.isMoving) return
+    if (!this.isAiTurn() || this.world.isMoving) {
+      this.statusElement.classList.remove('is-thinking')
+      return
+    }
 
+    this.statusElement.classList.add('is-thinking')
+    this.statusElement.textContent = 'AI is reading the table…'
     this.aiTimer = window.setTimeout(() => {
       this.runAiTurn()
     }, 420)
   }
 
   private runAiTurn(): void {
-    if (!this.isAiTurn() || this.world.isMoving) return
+    if (!this.isAiTurn() || this.world.isMoving) {
+      this.statusElement.classList.remove('is-thinking')
+      return
+    }
 
+    this.statusElement.classList.remove('is-thinking')
     if (this.ruleState.ballInHand) {
       const position = this.ai.chooseBallInHandPlacement(this.world, this.ruleState)
       if (!position || !this.world.placeCueBall(position)) {

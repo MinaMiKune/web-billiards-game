@@ -59,8 +59,12 @@ Selected decisions:
 
 ## Phase 5 — Polish and performance
 
-- Sound, lighting, visual feedback, accessibility and mobile performance.
-- Browser compatibility and repeatable benchmark scenarios.
+- [x] Add a live player scoreboard with group assignment and remaining-ball counts.
+- [x] Highlight the active player and match winner.
+- [x] Show an explicit AI-thinking state while the opponent is preparing a shot.
+- [ ] Add sound, lighting refinement and richer shot feedback.
+- [ ] Review touch controls, reduced motion and small-screen layouts in real browsers.
+- [ ] Add browser compatibility and repeatable performance benchmarks.
 
 ## Phase 6 — Multiplayer (not active)
 

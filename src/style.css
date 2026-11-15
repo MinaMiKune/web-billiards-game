@@ -108,3 +108,99 @@ footer { margin-top:16px; gap:12px; font-size:8px; letter-spacing:.12em; }
   .scene-hint { left:10px; bottom:9px; font-size:7px; }
   footer { flex-direction:column; align-items:flex-start; }
 }
+
+
+/* Match HUD */
+.scoreboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(119, 157, 136, .18);
+  background: rgba(12, 31, 24, .72);
+}
+.player-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding: 11px 14px;
+  border: 1px solid rgba(91, 124, 103, .32);
+  border-radius: 7px;
+  background: rgba(20, 47, 36, .48);
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+.player-card.is-current {
+  border-color: rgba(173, 202, 153, .82);
+  background: rgba(39, 76, 51, .42);
+  box-shadow: inset 3px 0 #a9c28e;
+}
+.player-card.is-winner {
+  border-color: rgba(218, 190, 129, .9);
+  background: rgba(80, 63, 34, .35);
+  box-shadow: inset 3px 0 #d9bb7d;
+}
+.player-card-copy { display: grid; gap: 5px; min-width: 0; }
+.player-name {
+  overflow: hidden;
+  color: #e7e5d9;
+  font: 500 10px 'DM Mono', monospace;
+  letter-spacing: .1em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.player-group {
+  color: #c9d7c9;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.player-group[data-group="solids"] { color: #e5bc64; }
+.player-group[data-group="stripes"] { color: #87b7d5; }
+.player-group[data-group="open"] { color: #9aae9f; }
+.player-ball-count { display: grid; gap: 2px; justify-items: end; flex: none; }
+.player-ball-count strong {
+  color: #f0e8d3;
+  font: 500 21px 'DM Mono', monospace;
+  line-height: 1;
+}
+.player-ball-count span {
+  color: #829b8c;
+  font: 500 7px 'DM Mono', monospace;
+  letter-spacing: .12em;
+}
+.score-divider {
+  color: #779081;
+  font: 500 9px 'DM Mono', monospace;
+  letter-spacing: .14em;
+}
+.status-block strong.is-thinking { color: #e2c58f; }
+@media (max-width: 720px) {
+  .scoreboard { padding: 10px 13px; gap: 8px; }
+  .player-card { padding: 9px 10px; gap: 8px; }
+  .player-name { font-size: 9px; }
+  .player-group { font-size: 11px; }
+}
+@media (max-width: 440px) {
+  .scoreboard { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 7px; }
+  .score-divider { display: none; }
+  .player-card { align-items: flex-start; flex-direction: column; gap: 8px; padding: 9px; }
+  .player-ball-count { display: flex; align-items: baseline; gap: 6px; justify-items: start; }
+  .player-ball-count strong { font-size: 18px; }
+}
+
+@media (max-width: 720px) {
+  .toolbar-actions { width: 100%; flex-wrap: wrap; justify-content: space-between; }
+}
+@media (max-width: 440px) {
+  .toolbar-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+    gap: 10px;
+  }
+  .opponent-control, .power-control { width: 100%; min-width: 0; }
+  .toolbar-actions .button-muted { width: 100%; align-self: end; }
+}
