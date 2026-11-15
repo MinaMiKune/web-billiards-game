@@ -485,3 +485,14 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
   .guide-step-number { width: 23px; height: 23px; }
   .first-shot-steps small { font-size: 10px; }
 }
+
+/* A direct rematch action appears beside the result when a match ends. */
+.match-result-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; min-width:0; }
+.rematch-button { min-height:34px; padding:7px 13px; font-size:10px; white-space:nowrap; }
+.rematch-button[hidden] { display:none; }
+@media (max-width:560px) {
+  .match-history-header { align-items:flex-start; flex-wrap:wrap; }
+  .match-result-actions { width:100%; justify-content:space-between; }
+  .match-summary { line-height:1.5; }
+  .rematch-button { margin-left:auto; }
+}
