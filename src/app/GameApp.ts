@@ -166,6 +166,7 @@ export class GameApp {
     canvas.addEventListener('pointermove', this.onPointerMove)
     canvas.addEventListener('pointerup', this.onPointerUp)
     canvas.addEventListener('pointercancel', this.onPointerCancel)
+    canvas.addEventListener('lostpointercapture', this.onPointerCancel)
 
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-camera]')) {
       button.addEventListener('click', () => {
@@ -232,6 +233,7 @@ export class GameApp {
     this.spinPad.addEventListener('pointermove', this.onSpinPointerMove)
     this.spinPad.addEventListener('pointerup', this.onSpinPointerUp)
     this.spinPad.addEventListener('pointercancel', this.onSpinPointerUp)
+    this.spinPad.addEventListener('lostpointercapture', this.onSpinPointerUp)
     this.spinPad.addEventListener('keydown', this.onSpinKeyDown)
     window.addEventListener('keydown', this.onKeyDown)
   }
@@ -443,11 +445,14 @@ export class GameApp {
     }
   }
 
-  private onPointerCancel = (): void => {
+  private onPointerCancel = (event: PointerEvent): void => {
     this.aiming = false
     this.aimPoint = null
     this.setAimVisible(false)
     this.updateTurnStatus()
+    if (this.renderer.canvas.hasPointerCapture(event.pointerId)) {
+      this.renderer.canvas.releasePointerCapture(event.pointerId)
+    }
   }
 
   private pickTablePoint(event: PointerEvent): { x: number; z: number } | null {
