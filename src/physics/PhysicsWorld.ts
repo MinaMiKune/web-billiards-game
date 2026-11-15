@@ -32,6 +32,8 @@ export interface ShotTelemetry {
 export interface BallSpin {
   side: number
   vertical: number
+  /** Optional cue elevation in radians, clamped to a safe playable range. */
+  elevation?: number
 }
 
 export interface BallState {
@@ -42,6 +44,9 @@ export interface BallState {
   mass: number
   position: Vec2
   previousPosition: Vec2
+  /** Ball-center height above the cloth plane, in meters. */
+  height: number
+  verticalVelocity: number
   velocity: Vec2
   angularVelocity: Vec3
   rotation: Vec3
@@ -114,6 +119,7 @@ export interface RenderBall {
   color: string
   radius: number
   position: Vec2
+  height: number
   rotation: Vec3
   active: boolean
   pocketed: boolean
@@ -221,6 +227,8 @@ export class PhysicsWorld {
 
     cue.position = { ...position }
     cue.previousPosition = { ...position }
+    cue.height = 0
+    cue.verticalVelocity = 0
     cue.velocity = { x: 0, z: 0 }
     cue.angularVelocity = ZERO_VEC3()
     cue.rotation = ZERO_VEC3()
@@ -244,6 +252,7 @@ export class PhysicsWorld {
       const linearSpeed = Math.hypot(ball.velocity.x, ball.velocity.z)
       const rollSpinSpeed = Math.hypot(ball.angularVelocity.x, ball.angularVelocity.z) * ball.radius
       return linearSpeed > this.config.stopSpeed ||
+        Math.abs(ball.verticalVelocity) > this.config.stopSpeed || ball.height > 1e-4 ||
         rollSpinSpeed > this.config.stopSpeed ||
         Math.abs(ball.angularVelocity.y) > this.config.spinStopSpeed
     })
@@ -261,13 +270,16 @@ export class PhysicsWorld {
     const speed = strength * this.config.maxShotSpeed
     const side = Math.max(-1, Math.min(1, spin.side))
     const vertical = Math.max(-1, Math.min(1, spin.vertical))
-    const verticalSpin = (speed / this.cueBall.radius) *
+    const elevation = Math.max(0, Math.min(0.45, spin.elevation ?? 0))
+    const planarSpeed = speed * Math.cos(elevation)
+    const verticalSpin = (planarSpeed / this.cueBall.radius) *
       vertical * this.config.verticalSpinRatio
 
     this.cueBall.velocity = {
-      x: unit.x * speed,
-      z: unit.z * speed,
+      x: unit.x * planarSpeed,
+      z: unit.z * planarSpeed,
     }
+    this.cueBall.verticalVelocity = speed * Math.sin(elevation)
     // Positive vertical input is follow/top spin. The rolling axis is up × travel direction.
     this.cueBall.angularVelocity = {
       x: unit.z * verticalSpin,
@@ -304,6 +316,15 @@ export class PhysicsWorld {
         this.applyClothFriction(ball, substep)
         ball.position.x += ball.velocity.x * substep
         ball.position.z += ball.velocity.z * substep
+        if (ball.height > 0 || ball.verticalVelocity !== 0) {
+          ball.verticalVelocity -= this.config.gravity * substep
+          ball.height += ball.verticalVelocity * substep
+          if (ball.height <= 0) {
+            ball.height = 0
+            if (ball.verticalVelocity < -0.22) ball.verticalVelocity = -ball.verticalVelocity * 0.18
+            else ball.verticalVelocity = 0
+          }
+        }
         ball.rotation.x += ball.angularVelocity.x * substep
         ball.rotation.y += ball.angularVelocity.y * substep
         ball.rotation.z += ball.angularVelocity.z * substep
@@ -334,6 +355,7 @@ export class PhysicsWorld {
         x: ball.previousPosition.x + (ball.position.x - ball.previousPosition.x) * blend,
         z: ball.previousPosition.z + (ball.position.z - ball.previousPosition.z) * blend,
       },
+      height: ball.height,
       rotation: {
         x: ball.previousRotation.x + (ball.rotation.x - ball.previousRotation.x) * blend,
         y: ball.previousRotation.y + (ball.rotation.y - ball.previousRotation.y) * blend,
@@ -368,6 +390,8 @@ export class PhysicsWorld {
       mass: this.config.ballMass,
       position,
       previousPosition: { ...position },
+      height: 0,
+      verticalVelocity: 0,
       velocity: { x: 0, z: 0 },
       angularVelocity: ZERO_VEC3(),
       rotation: ZERO_VEC3(),
@@ -414,7 +438,9 @@ export class PhysicsWorld {
     const slipZ = ball.velocity.z - radius * ball.angularVelocity.x
     const slipSpeed = Math.hypot(slipX, slipZ)
 
-    if (slipSpeed > this.config.rollingSlipThreshold) {
+    if (ball.height > 1e-5 || ball.verticalVelocity > 1e-5) {
+      // Airborne balls do not receive cloth friction.
+    } else if (slipSpeed > this.config.rollingSlipThreshold) {
       const maximumImpulse = this.config.slidingFriction * ball.mass *
         this.config.gravity * deltaSeconds
       const impulseToStopSlip = slipSpeed / ((1 / ball.mass) + (radius * radius / inertia))
@@ -465,7 +491,7 @@ export class PhysicsWorld {
     const crossedXBoundary = Math.abs(ball.position.x) >= xLimit
     const crossedZBoundary = Math.abs(ball.position.z) >= zLimit
 
-    if (crossedXBoundary || crossedZBoundary) {
+    if (ball.height <= 0.012 && (crossedXBoundary || crossedZBoundary)) {
       const cornerPocketIndex = cornerPockets.findIndex((pocket) =>
         Math.hypot(ball.position.x - pocket.x, ball.position.z - pocket.z) <=
         this.config.pocketCaptureRadius,
@@ -500,6 +526,7 @@ export class PhysicsWorld {
       }
     }
 
+    if (ball.height > 0.04) return
     this.resolvePocketJawImpacts(ball, halfLength, halfWidth)
 
     if (ball.position.x > xLimit) {
@@ -618,6 +645,7 @@ export class PhysicsWorld {
   }
 
   private resolveCushionImpact(ball: BallState, normal: Vec2): void {
+    if (ball.height > 0.04) return
     const normalSpeed = ball.velocity.x * normal.x + ball.velocity.z * normal.z
     if (normalSpeed >= 0) return
 
@@ -657,63 +685,66 @@ export class PhysicsWorld {
   private applyBallContactFriction(
     a: BallState,
     b: BallState,
-    normal: Vec2,
+    normal: Vec3,
     normalImpulse: number,
   ): void {
     const inertiaA = momentOfInertia(a)
     const inertiaB = momentOfInertia(b)
-    const armA: Vec3 = { x: normal.x * a.radius, y: 0, z: normal.z * a.radius }
-    const armB: Vec3 = { x: -normal.x * b.radius, y: 0, z: -normal.z * b.radius }
+    const armA: Vec3 = { x: normal.x * a.radius, y: normal.y * a.radius, z: normal.z * a.radius }
+    const armB: Vec3 = { x: -normal.x * b.radius, y: -normal.y * b.radius, z: -normal.z * b.radius }
     const surfaceA = crossProduct(a.angularVelocity, armA)
     const surfaceB = crossProduct(b.angularVelocity, armB)
     const relative = {
       x: b.velocity.x + surfaceB.x - a.velocity.x - surfaceA.x,
-      y: surfaceB.y - surfaceA.y,
+      y: b.verticalVelocity + surfaceB.y - a.verticalVelocity - surfaceA.y,
       z: b.velocity.z + surfaceB.z - a.velocity.z - surfaceA.z,
     }
-    const tangent = { x: -normal.z, y: 0, z: normal.x }
-    const vertical = { x: 0, y: 1, z: 0 }
+    const reference: Vec3 = Math.abs(normal.y) < 0.9
+      ? { x: 0, y: 1, z: 0 }
+      : { x: 1, y: 0, z: 0 }
+    const tangentLength = Math.hypot(
+      normal.y * reference.z - normal.z * reference.y,
+      normal.z * reference.x - normal.x * reference.z,
+      normal.x * reference.y - normal.y * reference.x,
+    )
+    const tangent: Vec3 = {
+      x: (normal.y * reference.z - normal.z * reference.y) / tangentLength,
+      y: (normal.z * reference.x - normal.x * reference.z) / tangentLength,
+      z: (normal.x * reference.y - normal.y * reference.x) / tangentLength,
+    }
+    const bitangent = crossProduct(normal, tangent)
 
     const effectiveInverseMass = (direction: Vec3): number => {
       const angularA = crossProduct(armA, direction)
       const angularB = crossProduct(armB, direction)
-      const rotationalA = (
-        angularA.x * angularA.x +
-        angularA.y * angularA.y +
-        angularA.z * angularA.z
-      ) / inertiaA
-      const rotationalB = (
-        angularB.x * angularB.x +
-        angularB.y * angularB.y +
-        angularB.z * angularB.z
-      ) / inertiaB
+      const rotationalA = (angularA.x ** 2 + angularA.y ** 2 + angularA.z ** 2) / inertiaA
+      const rotationalB = (angularB.x ** 2 + angularB.y ** 2 + angularB.z ** 2) / inertiaB
       return (1 / a.mass) + (1 / b.mass) + rotationalA + rotationalB
     }
+    const project = (v: Vec3, axis: Vec3): number =>
+      v.x * axis.x + v.y * axis.y + v.z * axis.z
 
-    // Solve the two independent tangent directions using their own rotational
-    // effective masses, then enforce the Coulomb friction disk.
-    let tangentImpulse = -(
-      relative.x * tangent.x + relative.y * tangent.y + relative.z * tangent.z
-    ) / effectiveInverseMass(tangent)
-    let verticalImpulse = -relative.y / effectiveInverseMass(vertical)
-    const requestedMagnitude = Math.hypot(tangentImpulse, verticalImpulse)
+    let impulseTangent = -project(relative, tangent) / effectiveInverseMass(tangent)
+    let impulseBitangent = -project(relative, bitangent) / effectiveInverseMass(bitangent)
+    const requestedMagnitude = Math.hypot(impulseTangent, impulseBitangent)
     const maximumMagnitude = this.config.ballCollisionFriction * normalImpulse
     if (requestedMagnitude > maximumMagnitude && requestedMagnitude > 0) {
       const scale = maximumMagnitude / requestedMagnitude
-      tangentImpulse *= scale
-      verticalImpulse *= scale
+      impulseTangent *= scale
+      impulseBitangent *= scale
     }
 
     const impulse: Vec3 = {
-      x: tangent.x * tangentImpulse,
-      y: verticalImpulse,
-      z: tangent.z * tangentImpulse,
+      x: tangent.x * impulseTangent + bitangent.x * impulseBitangent,
+      y: tangent.y * impulseTangent + bitangent.y * impulseBitangent,
+      z: tangent.z * impulseTangent + bitangent.z * impulseBitangent,
     }
     a.velocity.x -= impulse.x / a.mass
+    a.verticalVelocity -= impulse.y / a.mass
     a.velocity.z -= impulse.z / a.mass
     b.velocity.x += impulse.x / b.mass
+    b.verticalVelocity += impulse.y / b.mass
     b.velocity.z += impulse.z / b.mass
-
     const torqueA = crossProduct(armA, impulse)
     const torqueB = crossProduct(armB, impulse)
     a.angularVelocity.x -= torqueA.x / inertiaA
@@ -734,35 +765,34 @@ export class PhysicsWorld {
         if (!b.active) continue
 
         const dx = b.position.x - a.position.x
+        const dy = b.height - a.height
         const dz = b.position.z - a.position.z
-        const distance = Math.hypot(dx, dz)
+        const distance = Math.hypot(dx, dy, dz)
         const minimumDistance = a.radius + b.radius
         if (distance >= minimumDistance) continue
 
-        const normal = distance > 1e-8
-          ? { x: dx / distance, z: dz / distance }
-          : { x: 1, z: 0 }
+        const normal: Vec3 = distance > 1e-8
+          ? { x: dx / distance, y: dy / distance, z: dz / distance }
+          : { x: 1, y: 0, z: 0 }
         const overlap = minimumDistance - distance
         const correction = Math.max(0, overlap - 0.00025) * 0.8
         const totalMass = a.mass + b.mass
-
         a.position.x -= normal.x * correction * (b.mass / totalMass)
+        a.height = Math.max(0, a.height - normal.y * correction * (b.mass / totalMass))
         a.position.z -= normal.z * correction * (b.mass / totalMass)
         b.position.x += normal.x * correction * (a.mass / totalMass)
+        b.height = Math.max(0, b.height + normal.y * correction * (a.mass / totalMass))
         b.position.z += normal.z * correction * (a.mass / totalMass)
 
         const relativeNormalSpeed =
           (b.velocity.x - a.velocity.x) * normal.x +
+          (b.verticalVelocity - a.verticalVelocity) * normal.y +
           (b.velocity.z - a.velocity.z) * normal.z
-
         if (relativeNormalSpeed >= 0) continue
 
         if (this.shotTelemetry.firstContactBallNumber === null) {
-          if (a.number === 0 && b.number !== 0) {
-            this.shotTelemetry.firstContactBallNumber = b.number
-          } else if (b.number === 0 && a.number !== 0) {
-            this.shotTelemetry.firstContactBallNumber = a.number
-          }
+          if (a.number === 0 && b.number !== 0) this.shotTelemetry.firstContactBallNumber = b.number
+          else if (b.number === 0 && a.number !== 0) this.shotTelemetry.firstContactBallNumber = a.number
         }
 
         const restitution = Math.abs(relativeNormalSpeed) < 0.04 ? 0 : this.config.ballRestitution
@@ -772,18 +802,19 @@ export class PhysicsWorld {
         if (!this.emittedContactPairs.has(pairKey)) {
           this.emittedContactPairs.add(pairKey)
           this.stepContactEvents.push({
-          kind: 'ball',
-          intensity: Math.max(0.08, Math.min(1, impulse / (Math.min(a.mass, b.mass) * this.config.maxShotSpeed))),
-          ballNumber: a.number === 0 ? b.number : a.number,
+            kind: 'ball',
+            intensity: Math.max(0.08, Math.min(1, impulse / (Math.min(a.mass, b.mass) * this.config.maxShotSpeed))),
+            ballNumber: a.number === 0 ? b.number : a.number,
           })
         }
 
         a.velocity.x -= (impulse / a.mass) * normal.x
+        a.verticalVelocity -= (impulse / a.mass) * normal.y
         a.velocity.z -= (impulse / a.mass) * normal.z
         b.velocity.x += (impulse / b.mass) * normal.x
+        b.verticalVelocity += (impulse / b.mass) * normal.y
         b.velocity.z += (impulse / b.mass) * normal.z
         this.applyBallContactFriction(a, b, normal, impulse)
       }
     }
   }
-}
