@@ -18,6 +18,7 @@ export interface ShotTelemetry {
   firstContactBallNumber: number | null
   pocketedBallNumbers: number[]
   pocketedBallEvents: PocketedBallEvent[]
+  railContactBallNumbersAfterFirstHit: number[]
   cueBallPocketed: boolean
   railContactAfterFirstHit: boolean
 }
@@ -148,6 +149,7 @@ export class PhysicsWorld {
       ...this.shotTelemetry,
       pocketedBallNumbers: [...this.shotTelemetry.pocketedBallNumbers],
       pocketedBallEvents: this.shotTelemetry.pocketedBallEvents.map((event) => ({ ...event })),
+      railContactBallNumbersAfterFirstHit: [...this.shotTelemetry.railContactBallNumbersAfterFirstHit],
     }
   }
 
@@ -319,6 +321,7 @@ export class PhysicsWorld {
       firstContactBallNumber: null,
       pocketedBallNumbers: [],
       pocketedBallEvents: [],
+      railContactBallNumbersAfterFirstHit: [],
       cueBallPocketed: false,
       railContactAfterFirstHit: false,
     }
@@ -596,6 +599,10 @@ export class PhysicsWorld {
       ball.mass * -normalSpeed
     if (this.shotTelemetry.firstContactBallNumber !== null) {
       this.shotTelemetry.railContactAfterFirstHit = true
+      if (ball.number > 0 &&
+        !this.shotTelemetry.railContactBallNumbersAfterFirstHit.includes(ball.number)) {
+        this.shotTelemetry.railContactBallNumbersAfterFirstHit.push(ball.number)
+      }
     }
 
     ball.velocity.x -= (1 + this.config.cushionRestitution) * normalSpeed * normal.x
