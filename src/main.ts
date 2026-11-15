@@ -140,6 +140,12 @@ app.innerHTML = `
           <strong id="power-value">65%</strong>
           <input id="shot-power" type="range" min="10" max="100" value="65" aria-label="Shot power" aria-describedby="shot-control-hint" />
         </label>
+        <label class="elevation-control" for="cue-elevation">
+          <span class="section-label">CUE ELEVATION</span>
+          <strong id="elevation-value">0°</strong>
+          <input id="cue-elevation" type="range" min="0" max="25" step="1" value="0" aria-label="Cue elevation" aria-describedby="elevation-hint" />
+          <small id="elevation-hint">Raise the cue to lift the cue ball</small>
+        </label>
         <p id="shot-control-hint" class="shot-control-hint">Pull back from the cue ball, then release to shoot</p>
       </div>
 
