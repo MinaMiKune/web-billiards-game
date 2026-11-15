@@ -18,7 +18,7 @@ These are configurable starting dimensions. Table construction, cushion nose pos
 
 ## Simulation loop
 
-Use a fixed simulation step, initially 1/120 second. Rendering runs independently and interpolates between simulation snapshots. Clamp unusually large frame deltas and cap accumulated catch-up steps to prevent a tab-resume spiral.
+The application advances a fixed 1/120-second simulation step. `PhysicsWorld.step` additionally subdivides any larger direct delta into slices no larger than 1/120 second, preventing large-step tunneling in tests, AI rollouts and future callers. Rendering runs independently and interpolates from the state captured at the start of the caller step.
 
 ## Current motion model
 
@@ -30,7 +30,9 @@ The cloth-contact slip velocity is computed from the ball's linear velocity and 
 - Rolling deceleration: configurable, initial value 0.32 m/s².
 - Vertical spin (follow/draw): initialized from the selected cue contact offset.
 - Side spin: represented as angular velocity about the vertical axis and gradually dissipated.
-- Ball-ball impacts apply a normal impulse plus a Coulomb-limited tangential impulse at the contact point. This allows side spin to transfer into a small throw and angular-velocity change.
+- Ball-ball impacts apply a normal impulse plus a Coulomb-limited two-axis tangential impulse at the contact point. Each tangent axis uses its own rotational effective inverse mass, accounting for the sphere contact arms and solid-sphere inertia; side spin transfers into throw and angular-velocity changes.
+- The sequential contact solver uses six passes per internal step, a small penetration slop and partial positional correction to reduce overlap without injecting large separation corrections. Low-speed impacts suppress restitution to avoid artificial jitter.
+- Contact presentation events are deduplicated per ball pair within a caller step, so solver iterations cannot create repeated audio/haptic triggers for one sustained contact.
 - Straight-cushion and angled-jaw impacts use a normal restitution response plus a Coulomb-limited tangential friction impulse; side spin can change the tangential rebound velocity.
 - The current contact model is still planar and simplified: it omits cushion height, vertical ball motion, curved/rounded jaw profiles and measured cloth calibration.
 
@@ -82,7 +84,9 @@ Maintain deterministic cases for:
 - follow and draw spin have opposite rotational signs;
 - side spin decays;
 - equal-mass head-on collision transfers normal velocity;
-- side spin creates a bounded tangential response in ball-ball contact;
+- side spin creates a bounded tangential response and angular-velocity transfer in ball-ball contact;
+- large caller deltas are subdivided to avoid fast-ball tunneling;
+- solver iterations emit one presentation event per contacting ball pair;
 - side spin creates a tangential component on cushion rebound;
 - straight cushion reflection;
 - corner and side pocket captures;

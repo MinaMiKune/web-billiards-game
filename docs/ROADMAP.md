@@ -120,6 +120,16 @@ Selected decisions:
 - [ ] Validate cue proportions, table details, shadows, sound mix and haptic patterns on real devices.
 - [ ] Rework and validate collision/friction integration against captured reference shots; deterministic software tests are not physical calibration.
 
+## Phase 5D — Physics solver and contact dynamics (active)
+
+- [x] Subdivide oversized physics deltas into safe 1/120-second maximum integration steps.
+- [x] Upgrade ball-ball tangential impulse calculation to use direction-specific rotational effective mass.
+- [x] Improve penetration correction with slop and partial correction; suppress low-speed restitution jitter.
+- [x] Expand sequential collision resolution to six passes and deduplicate per-pair contact feedback events.
+- [x] Add deterministic regression tests for high-delta tunneling, side-spin transfer and event deduplication.
+- [ ] Validate solver behavior against captured reference-shot datasets and stress-test dense multi-ball clusters.
+- [ ] Add vertical ball motion, jump/massé and measured cushion/jaw geometry in later physics increments.
+
 ## Phase 6 — Release readiness (active before stable 1.0)
 
 - [ ] Complete gameplay acceptance across full local and AI matches.
