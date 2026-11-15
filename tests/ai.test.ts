@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AIController, type AIDifficulty } from '../src/ai/AIController'
 import { createInitialEightBallState } from '../src/game/EightBallRuleEngine'
-import { PhysicsWorld } from '../src/physics/PhysicsWorld'
+import { DEFAULT_PHYSICS_CONFIG, PhysicsWorld } from '../src/physics/PhysicsWorld'
 
 describe('AIController', () => {
   it('plans a valid shot using a cloned copy of the real physics world', () => {
