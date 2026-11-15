@@ -140,6 +140,7 @@ export class PhysicsWorld {
   balls: BallState[]
   private shotTelemetry: ShotTelemetry = this.createEmptyShotTelemetry()
   private stepContactEvents: PhysicsContactEvent[] = []
+  private readonly emittedContactPairs = new Set<string>()
 
   constructor(config: PhysicsConfig = DEFAULT_PHYSICS_CONFIG) {
     this.config = { ...config }
@@ -279,31 +280,40 @@ export class PhysicsWorld {
   step(deltaSeconds: number): void {
     if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return
     this.stepContactEvents = []
+    this.emittedContactPairs.clear()
 
+    // Keep one render snapshot for the full caller step, but internally subdivide
+    // unusually large deltas so fast balls cannot tunnel through one another.
     for (const ball of this.balls) {
       ball.previousPosition = { ...ball.position }
       ball.previousRotation = { ...ball.rotation }
-      if (ball.pocketed) {
-        ball.pocketedElapsedSeconds = Math.min(
-          this.config.pocketDropDuration,
-          ball.pocketedElapsedSeconds + deltaSeconds,
-        )
-        continue
-      }
-      if (!ball.active) continue
-
-      this.applyClothFriction(ball, deltaSeconds)
-      ball.position.x += ball.velocity.x * deltaSeconds
-      ball.position.z += ball.velocity.z * deltaSeconds
-      ball.rotation.x += ball.angularVelocity.x * deltaSeconds
-      ball.rotation.y += ball.angularVelocity.y * deltaSeconds
-      ball.rotation.z += ball.angularVelocity.z * deltaSeconds
-      this.resolvePocketAndCushion(ball)
     }
+    const substepCount = Math.max(1, Math.ceil(deltaSeconds / (1 / 120)))
+    const substep = deltaSeconds / substepCount
+    for (let substepIndex = 0; substepIndex < substepCount; substepIndex += 1) {
+      for (const ball of this.balls) {
+        if (ball.pocketed) {
+          ball.pocketedElapsedSeconds = Math.min(
+            this.config.pocketDropDuration,
+            ball.pocketedElapsedSeconds + substep,
+          )
+          continue
+        }
+        if (!ball.active) continue
 
-    // Four sequential impulse passes reduce residual overlap in dense racks and clusters.
-    for (let iteration = 0; iteration < 4; iteration += 1) {
-      this.resolveBallCollisions()
+        this.applyClothFriction(ball, substep)
+        ball.position.x += ball.velocity.x * substep
+        ball.position.z += ball.velocity.z * substep
+        ball.rotation.x += ball.angularVelocity.x * substep
+        ball.rotation.y += ball.angularVelocity.y * substep
+        ball.rotation.z += ball.angularVelocity.z * substep
+        this.resolvePocketAndCushion(ball)
+      }
+
+      // Sequential impulse solver: repeated passes settle dense racks and multi-ball contacts.
+      for (let iteration = 0; iteration < 6; iteration += 1) {
+        this.resolveBallCollisions()
+      }
     }
   }
 
@@ -650,43 +660,55 @@ export class PhysicsWorld {
     normal: Vec2,
     normalImpulse: number,
   ): void {
-    const radiusA = a.radius
-    const radiusB = b.radius
     const inertiaA = momentOfInertia(a)
     const inertiaB = momentOfInertia(b)
-    const armA: Vec3 = { x: normal.x * radiusA, y: 0, z: normal.z * radiusA }
-    const armB: Vec3 = { x: -normal.x * radiusB, y: 0, z: -normal.z * radiusB }
+    const armA: Vec3 = { x: normal.x * a.radius, y: 0, z: normal.z * a.radius }
+    const armB: Vec3 = { x: -normal.x * b.radius, y: 0, z: -normal.z * b.radius }
     const surfaceA = crossProduct(a.angularVelocity, armA)
     const surfaceB = crossProduct(b.angularVelocity, armB)
+    const relative = {
+      x: b.velocity.x + surfaceB.x - a.velocity.x - surfaceA.x,
+      y: surfaceB.y - surfaceA.y,
+      z: b.velocity.z + surfaceB.z - a.velocity.z - surfaceA.z,
+    }
+    const tangent = { x: -normal.z, y: 0, z: normal.x }
+    const vertical = { x: 0, y: 1, z: 0 }
 
-    const relativeX = (b.velocity.x + surfaceB.x) - (a.velocity.x + surfaceA.x)
-    const relativeY = surfaceB.y - surfaceA.y
-    const relativeZ = (b.velocity.z + surfaceB.z) - (a.velocity.z + surfaceA.z)
-    const tangent: Vec2 = { x: -normal.z, z: normal.x }
-    const tangentialSlip = relativeX * tangent.x + relativeZ * tangent.z
+    const effectiveInverseMass = (direction: Vec3): number => {
+      const angularA = crossProduct(armA, direction)
+      const angularB = crossProduct(armB, direction)
+      const rotationalA = (
+        angularA.x * angularA.x +
+        angularA.y * angularA.y +
+        angularA.z * angularA.z
+      ) / inertiaA
+      const rotationalB = (
+        angularB.x * angularB.x +
+        angularB.y * angularB.y +
+        angularB.z * angularB.z
+      ) / inertiaB
+      return (1 / a.mass) + (1 / b.mass) + rotationalA + rotationalB
+    }
 
-    const effectiveInverseMass =
-      (1 / a.mass) + (1 / b.mass) +
-      (radiusA * radiusA / inertiaA) +
-      (radiusB * radiusB / inertiaB)
-
-    let impulseTangent = -tangentialSlip / effectiveInverseMass
-    let impulseVertical = -relativeY / effectiveInverseMass
-    const requestedMagnitude = Math.hypot(impulseTangent, impulseVertical)
+    // Solve the two independent tangent directions using their own rotational
+    // effective masses, then enforce the Coulomb friction disk.
+    let tangentImpulse = -(
+      relative.x * tangent.x + relative.y * tangent.y + relative.z * tangent.z
+    ) / effectiveInverseMass(tangent)
+    let verticalImpulse = -relative.y / effectiveInverseMass(vertical)
+    const requestedMagnitude = Math.hypot(tangentImpulse, verticalImpulse)
     const maximumMagnitude = this.config.ballCollisionFriction * normalImpulse
-
     if (requestedMagnitude > maximumMagnitude && requestedMagnitude > 0) {
       const scale = maximumMagnitude / requestedMagnitude
-      impulseTangent *= scale
-      impulseVertical *= scale
+      tangentImpulse *= scale
+      verticalImpulse *= scale
     }
 
     const impulse: Vec3 = {
-      x: tangent.x * impulseTangent,
-      y: impulseVertical,
-      z: tangent.z * impulseTangent,
+      x: tangent.x * tangentImpulse,
+      y: verticalImpulse,
+      z: tangent.z * tangentImpulse,
     }
-
     a.velocity.x -= impulse.x / a.mass
     a.velocity.z -= impulse.z / a.mass
     b.velocity.x += impulse.x / b.mass
@@ -721,12 +743,13 @@ export class PhysicsWorld {
           ? { x: dx / distance, z: dz / distance }
           : { x: 1, z: 0 }
         const overlap = minimumDistance - distance
+        const correction = Math.max(0, overlap - 0.00025) * 0.8
         const totalMass = a.mass + b.mass
 
-        a.position.x -= normal.x * overlap * (b.mass / totalMass)
-        a.position.z -= normal.z * overlap * (b.mass / totalMass)
-        b.position.x += normal.x * overlap * (a.mass / totalMass)
-        b.position.z += normal.z * overlap * (a.mass / totalMass)
+        a.position.x -= normal.x * correction * (b.mass / totalMass)
+        a.position.z -= normal.z * correction * (b.mass / totalMass)
+        b.position.x += normal.x * correction * (a.mass / totalMass)
+        b.position.z += normal.z * correction * (a.mass / totalMass)
 
         const relativeNormalSpeed =
           (b.velocity.x - a.velocity.x) * normal.x +
@@ -742,13 +765,18 @@ export class PhysicsWorld {
           }
         }
 
-        const impulse = -((1 + this.config.ballRestitution) * relativeNormalSpeed) /
+        const restitution = Math.abs(relativeNormalSpeed) < 0.04 ? 0 : this.config.ballRestitution
+        const impulse = -((1 + restitution) * relativeNormalSpeed) /
           ((1 / a.mass) + (1 / b.mass))
-        this.stepContactEvents.push({
+        const pairKey = a.id < b.id ? a.id + ':' + b.id : b.id + ':' + a.id
+        if (!this.emittedContactPairs.has(pairKey)) {
+          this.emittedContactPairs.add(pairKey)
+          this.stepContactEvents.push({
           kind: 'ball',
           intensity: Math.max(0.08, Math.min(1, impulse / (Math.min(a.mass, b.mass) * this.config.maxShotSpeed))),
           ballNumber: a.number === 0 ? b.number : a.number,
-        })
+          })
+        }
 
         a.velocity.x -= (impulse / a.mass) * normal.x
         a.velocity.z -= (impulse / a.mass) * normal.z
