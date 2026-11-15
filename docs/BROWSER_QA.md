@@ -26,6 +26,8 @@ Record browser version, operating system/device, GPU, viewport size and test dat
 
 - [ ] Pointer/touch drag aims and release shoots without page scrolling.
 - [ ] Shot power and cue contact-point spin controls respond.
+- [ ] Cue-elevation slider covers 0–25°; the cue model and aim preview track the selected angle, and 0° remains a planar shot.
+- [ ] Elevated shots visibly rise, cast a separated contact shadow, transfer vertical motion on ball contact and land without tunneling or persistent jitter.
 - [ ] Ball-in-hand placement accepts legal spots and rejects overlaps/pockets/out-of-bounds positions.
 - [ ] Call-shot mode validates the selected ball and pocket.
 - [ ] AI mode completes turns at all five difficulty levels.
@@ -34,7 +36,8 @@ Record browser version, operating system/device, GPU, viewport size and test dat
 
 ## Audio, accessibility and localization
 
-- [ ] Cue and pocket sounds play after a user gesture; mute toggle suppresses both.
+- [ ] Cue, ball-ball, rail and pocket sounds are distinct, play after a user gesture, and never stall the simulation; mute suppresses all effects.
+- [ ] Mobile haptics respond to cue/ball/rail impacts where supported, do not duplicate for solver iterations, and safely no-op where vibration APIs are unavailable.
 - [ ] Browsers without Web Audio continue gameplay silently.
 - [ ] prefers-reduced-motion disables orbit damping and reduces CSS motion.
 - [ ] Table canvas can receive keyboard focus and shows a visible focus ring.
@@ -45,6 +48,7 @@ Record browser version, operating system/device, GPU, viewport size and test dat
 
 - [ ] Layout remains usable at 320 px, 375 px, 768 px, 1280 px and ultrawide widths.
 - [ ] Touch controls do not trigger accidental browser gestures.
+- [ ] On Android Chrome and iOS Safari, verify elevation and spin controls are touch-operable while the table canvas prevents unintended page scrolling.
 - [ ] No horizontal overflow or clipped rule controls on mobile.
 - [ ] High-difficulty AI search does not block rendering because it runs in a worker.
 - [ ] Run npm run bench:performance on a fixed machine/runtime and compare with previous runs.
