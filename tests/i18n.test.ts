@@ -55,6 +55,13 @@ describe('dynamic game message localization', () => {
     expect(translateGameMessage(message, 'ja')).toBe('AI · ポット狙い · マルチレールショット · ターゲット 11')
   })
 
+  it('translates behind-head-string ball-in-hand guidance', () => {
+    expect(translateGameMessage('Ball in hand · behind head string', 'zh-CN'))
+      .toBe('自由球：母球必须放在开球线后方')
+    expect(translateGameMessage('Cue ball must stay behind the head string', 'ja'))
+      .toBe('手球はヘッドストリングの後方に置いてください')
+  })
+
   it('translates break-requirement settings and foul feedback', () => {
     expect(translateGameMessage('BREAK REQUIREMENT', 'zh-CN')).toBe('开球要求')
     expect(translateGameMessage('Relaxed', 'ja')).toBe('緩和')
