@@ -1,8 +1,8 @@
 # Web Billiards
 
-A browser-based billiards simulation built with TypeScript, Vite and Three.js.
+A browser-based 8-ball game built with TypeScript, Vite and Three.js.
 
-The product direction is **game-realistic billiards**: accessible controls backed by a credible, deterministic and testable physics model. One simulation is shared by the top-down, angled, side and free-observation cameras.
+**Product direction: game-first, physics-powered.** Players should be able to open the page, understand the next action and play immediately. Deterministic billiards physics, AI opponents and multiple camera views support the game experience rather than turning the interface into a simulator. See [the game-first redesign brief](docs/GAMEPLAY_REDESIGN.md).
 
 ## Current status
 

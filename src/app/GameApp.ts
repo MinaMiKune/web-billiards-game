@@ -53,6 +53,8 @@ export class GameApp {
   private readonly turnElement: HTMLElement
   private readonly shotHistoryElement: HTMLOListElement
   private readonly matchSummaryElement: HTMLElement
+  private readonly lastShotFeedbackElement: HTMLElement
+  private readonly rematchButton: HTMLButtonElement
   private readonly shotHistory: MatchHistoryEntry[] = []
   private totalShotCount = 0
   private callShotRequired = false
@@ -96,6 +98,8 @@ export class GameApp {
     this.turnElement = requireElement(root, '#turn-status')
     this.shotHistoryElement = requireElement<HTMLOListElement>(root, '#shot-history')
     this.matchSummaryElement = requireElement(root, '#match-summary')
+    this.lastShotFeedbackElement = requireElement(root, '#last-shot-feedback')
+    this.rematchButton = requireElement<HTMLButtonElement>(root, '#rematch-game')
     this.interactionHint = requireElement(root, '#interaction-hint')
     this.playerCards = [
       requireElement(root, '#player-one-card'),
@@ -120,6 +124,16 @@ export class GameApp {
     this.spinValue = requireElement(root, '#spin-value')
     this.opponentModeInput = requireElement(root, '#opponent-mode')
     this.aiDifficultyInput = requireElement(root, '#ai-difficulty')
+    const savedMode = window.localStorage.getItem('billiards-opponent-mode')
+    if (savedMode === 'local' || savedMode === 'ai') {
+      this.opponentMode = savedMode
+      this.opponentModeInput.value = savedMode
+    }
+    const savedDifficulty = Number(window.localStorage.getItem('billiards-ai-difficulty'))
+    if (Number.isInteger(savedDifficulty) && savedDifficulty >= 1 && savedDifficulty <= 5) {
+      this.aiDifficulty = savedDifficulty as AIDifficulty
+      this.aiDifficultyInput.value = String(savedDifficulty)
+    }
     this.callShotToggle = requireElement<HTMLInputElement>(root, '#call-shot-toggle')
     this.callBallInput = requireElement<HTMLSelectElement>(root, '#call-ball')
     this.callPocketInput = requireElement<HTMLSelectElement>(root, '#call-pocket')
@@ -129,7 +143,11 @@ export class GameApp {
 
     this.renderer = new GameRenderer(sceneHost)
     this.cameras = new CameraManager(this.renderer.canvas)
-    this.cameras.setMode('top')
+    const savedCamera = window.localStorage.getItem('billiards-camera-mode')
+    const initialCamera: CameraMode = savedCamera && ['top', 'angled', 'side', 'free'].includes(savedCamera)
+      ? savedCamera as CameraMode
+      : 'top'
+    this.setCamera(initialCamera)
     this.renderer.updateBalls(this.world.getRenderBalls(1))
 
     this.bindControls(root)
@@ -162,6 +180,7 @@ export class GameApp {
     canvas.addEventListener('pointermove', this.onPointerMove)
     canvas.addEventListener('pointerup', this.onPointerUp)
     canvas.addEventListener('pointercancel', this.onPointerCancel)
+    canvas.addEventListener('lostpointercapture', this.onPointerCancel)
 
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-camera]')) {
       button.addEventListener('click', () => {
@@ -169,26 +188,14 @@ export class GameApp {
       })
     }
 
-    requireElement<HTMLButtonElement>(root, '#reset-rack').addEventListener('click', () => {
-      window.clearTimeout(this.aiTimer)
-      this.invalidateAiRequest()
-      this.statusElement.classList.remove('is-thinking')
-      this.world.resetRack()
-      this.pendingCalledShot = null
-      this.shotHistory.length = 0
-      this.totalShotCount = 0
-      this.renderShotHistory()
-      this.ruleState = createInitialEightBallState()
-      this.renderer.updateBalls(this.world.getRenderBalls(1))
-      this.resetSpin()
-      this.setAimVisible(false)
-      this.statusElement.textContent = translateGameMessage(this.ruleState.lastMessage)
-      this.updateTurnStatus()
-    })
+    const startNewRack = (): void => this.startNewRack()
+    requireElement<HTMLButtonElement>(root, '#reset-rack').addEventListener('click', startNewRack)
+    this.rematchButton.addEventListener('click', startNewRack)
 
     this.opponentModeInput.addEventListener('change', () => {
       this.invalidateAiRequest()
       this.opponentMode = this.opponentModeInput.value === 'ai' ? 'ai' : 'local'
+      window.localStorage.setItem('billiards-opponent-mode', this.opponentMode)
       this.aiDifficultyInput.disabled = this.opponentMode !== 'ai'
       this.statusElement.classList.remove('is-thinking')
       this.statusElement.textContent = translateGameMessage(this.ruleState.lastMessage)
@@ -198,9 +205,12 @@ export class GameApp {
 
     this.aiDifficultyInput.addEventListener('change', () => {
       const level = Number(this.aiDifficultyInput.value)
-      if (level >= 1 && level <= 5) this.aiDifficulty = level as AIDifficulty
+      if (level >= 1 && level <= 5) {
+        this.aiDifficulty = level as AIDifficulty
+        window.localStorage.setItem('billiards-ai-difficulty', String(level))
+      }
     })
-    this.aiDifficultyInput.disabled = true
+    this.aiDifficultyInput.disabled = this.opponentMode !== 'ai'
 
     this.soundToggle.addEventListener('change', () => {
       this.soundEffects.setEnabled(this.soundToggle.checked)
@@ -229,17 +239,39 @@ export class GameApp {
     })
     this.syncCallShotControls()
 
+    this.powerInput.setAttribute('aria-valuetext', this.powerInput.value + '%')
     this.powerInput.addEventListener('input', () => {
       this.power = Number(this.powerInput.value) / 100
       this.powerValue.textContent = this.powerInput.value + '%'
+      this.powerInput.setAttribute('aria-valuetext', this.powerInput.value + '%')
+      if (this.aiming) this.interactionHint.textContent = `${t('Release to take your shot')} · ${this.powerInput.value}%`
     })
 
     this.spinPad.addEventListener('pointerdown', this.onSpinPointerDown)
     this.spinPad.addEventListener('pointermove', this.onSpinPointerMove)
     this.spinPad.addEventListener('pointerup', this.onSpinPointerUp)
     this.spinPad.addEventListener('pointercancel', this.onSpinPointerUp)
+    this.spinPad.addEventListener('lostpointercapture', this.onSpinPointerUp)
     this.spinPad.addEventListener('keydown', this.onSpinKeyDown)
     window.addEventListener('keydown', this.onKeyDown)
+  }
+
+  private startNewRack(): void {
+    window.clearTimeout(this.aiTimer)
+    this.invalidateAiRequest()
+    this.statusElement.classList.remove('is-thinking')
+    this.world.resetRack()
+    this.pendingCalledShot = null
+    this.shotHistory.length = 0
+    this.totalShotCount = 0
+    this.renderShotHistory()
+    this.ruleState = createInitialEightBallState()
+    this.renderer.updateBalls(this.world.getRenderBalls(1))
+    this.resetSpin()
+    this.setAimVisible(false)
+    this.statusElement.textContent = translateGameMessage(this.ruleState.lastMessage)
+    this.updateTurnStatus()
+    this.scheduleAiTurn()
   }
 
   private syncCallShotControls(): void {
@@ -257,6 +289,7 @@ export class GameApp {
   private setCamera(mode: CameraMode): void {
     if (!['top', 'angled', 'side', 'free'].includes(mode)) return
     this.cameras.setMode(mode)
+    window.localStorage.setItem('billiards-camera-mode', mode)
     for (const button of document.querySelectorAll<HTMLButtonElement>('[data-camera]')) {
       const active = button.dataset.camera === mode
       button.classList.toggle('is-active', active)
@@ -365,11 +398,16 @@ export class GameApp {
     if (this.ruleState.phase === 'game-over' || !this.world.cueBall.active) return
 
     const cue = this.world.cueBall.position
-    if (Math.hypot(point.x - cue.x, point.z - cue.z) > 0.16) return
+    // Fingers cover more of the table than a mouse cursor; widen only the
+    // touch hit area so players can reliably begin a drag without changing
+    // desktop aiming precision.
+    const cueHitRadius = event.pointerType === 'touch' ? 0.22 : 0.16
+    if (Math.hypot(point.x - cue.x, point.z - cue.z) > cueHitRadius) return
 
     event.preventDefault()
     this.aiming = true
     this.aimPoint = point
+    this.interactionHint.textContent = `${t('Release to take your shot')} · ${this.powerInput.value}%`
     this.renderer.canvas.setPointerCapture(event.pointerId)
     this.updateAimPreview()
   }
@@ -383,6 +421,7 @@ export class GameApp {
   private onPointerUp = (event: PointerEvent): void => {
     if (!this.aiming) return
     this.aimPoint = this.pickTablePoint(event) ?? this.aimPoint
+    let shotStarted = false
     const cue = this.world.cueBall.position
     if (this.aimPoint) {
       const dx = cue.x - this.aimPoint.x
@@ -410,22 +449,29 @@ export class GameApp {
           this.soundEffects.playCue()
           this.syncCallShotControls()
           this.statusElement.textContent = t('Balls in motion')
+          this.interactionHint.textContent = t('Balls in motion')
           this.wasMoving = true
+          shotStarted = true
         }
       }
     }
     this.aiming = false
     this.aimPoint = null
     this.setAimVisible(false)
+    if (!shotStarted) this.updateTurnStatus()
     if (this.renderer.canvas.hasPointerCapture(event.pointerId)) {
       this.renderer.canvas.releasePointerCapture(event.pointerId)
     }
   }
 
-  private onPointerCancel = (): void => {
+  private onPointerCancel = (event: PointerEvent): void => {
     this.aiming = false
     this.aimPoint = null
     this.setAimVisible(false)
+    this.updateTurnStatus()
+    if (this.renderer.canvas.hasPointerCapture(event.pointerId)) {
+      this.renderer.canvas.releasePointerCapture(event.pointerId)
+    }
   }
 
   private pickTablePoint(event: PointerEvent): { x: number; z: number } | null {
@@ -535,8 +581,35 @@ export class GameApp {
     })
   }
 
+  private renderShotFeedback(): void {
+    const latest = this.shotHistory[0]
+    if (!latest) {
+      this.lastShotFeedbackElement.hidden = true
+      this.lastShotFeedbackElement.textContent = ''
+      this.lastShotFeedbackElement.className = 'last-shot-feedback'
+      return
+    }
+
+    this.lastShotFeedbackElement.hidden = false
+    if (latest.foulReasons.length) {
+      this.lastShotFeedbackElement.className = 'last-shot-feedback is-foul'
+      this.lastShotFeedbackElement.textContent =
+        `${t('Foul')} · ${latest.foulReasons.map((reason) => translateGameMessage(reason)).join(', ')}`
+    } else if (latest.pocketedBallNumbers.length) {
+      this.lastShotFeedbackElement.className = 'last-shot-feedback is-pot'
+      this.lastShotFeedbackElement.textContent =
+        `${t('Pocketed')}: ${latest.pocketedBallNumbers.join(', ')}`
+    } else {
+      this.lastShotFeedbackElement.className = 'last-shot-feedback is-dry'
+      this.lastShotFeedbackElement.textContent = t('No balls pocketed')
+    }
+  }
+
   private renderMatchSummary(): void {
-    if (this.ruleState.phase !== 'game-over' || this.ruleState.winner === null) {
+    this.renderShotFeedback()
+    const matchComplete = this.ruleState.phase === 'game-over' && this.ruleState.winner !== null
+    this.rematchButton.hidden = !matchComplete
+    if (!matchComplete) {
       this.matchSummaryElement.hidden = true
       this.matchSummaryElement.textContent = ''
       return

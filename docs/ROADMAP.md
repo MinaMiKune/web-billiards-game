@@ -1,5 +1,7 @@
 # Development Roadmap
 
+Product direction (2026-11-15): game-first Web Billiards. The default experience must feel like an immediately playable 8-ball game; simulation fidelity is an invisible foundation, not the primary UI.
+
 Selected decisions:
 - Simulation target: game-realistic.
 - Cameras: top, angled, side and free-observation.
@@ -85,6 +87,26 @@ Selected decisions:
 - [x] Support English, Simplified Chinese, Traditional Chinese and Japanese.
 - [x] Translate dynamic rule-engine, foul, winner and AI shot status messages.
 - [x] Add locale regression tests for runtime-interpolated messages.
+
+## Phase 5B — Game-first experience redesign
+
+- [x] Record the product pivot and player-facing experience principles in `docs/GAMEPLAY_REDESIGN.md`.
+- [x] Replace simulator-facing labels with player-facing match language and strengthen the playfield/turn visual hierarchy.
+- [x] Reorganize advanced rule options behind progressive disclosure.
+- [x] Add a persistent first-shot guide that explains aim, power and release; dismiss it after the first recorded shot or explicit dismissal.
+- [x] Show live power percentage and contextual release/shot-in-motion guidance during pointer aiming.
+- [x] Increase the shot-power slider's touch target and expose its live value to assistive technology.
+- [x] Use a slightly larger cue-ball drag start target for touch pointers while preserving mouse precision.
+- [x] Recover aim and spin interactions cleanly when the browser cancels or unexpectedly releases pointer capture.
+- [x] Announce turn changes through a polite live region for assistive technology.
+- [x] Reflow the four camera selectors into large, two-column touch targets on narrow phones.
+- [x] Remember the player's preferred camera view between visits.
+- [x] Restore the selected local/AI game mode and AI difficulty on the next visit.
+- [ ] Complete touch-first layout verification at 320px and on real mobile browsers.
+- [x] Add a one-tap rematch action beside the completed-match result while preserving the selected game mode and AI difficulty.
+- [x] Show a localized latest-shot outcome callout that distinguishes pots, fouls and dry shots.
+- [x] Make camera controls wrap into a compact 2×2 layout below 380px with 44px+ touch targets.
+- [ ] Complete real-device touch/browser verification at 320px and cross-browser checks.
 
 ## Phase 6 — Multiplayer (not active)
 
