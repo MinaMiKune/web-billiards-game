@@ -49,6 +49,7 @@ npm run bench:performance
 - [Development guide](docs/DEVELOPMENT.md)
 - [Physics model and validation](docs/PHYSICS.md)
 - [Performance benchmarks](docs/PERFORMANCE.md)
+- [Browser QA checklist](docs/BROWSER_QA.md)
 - [Roadmap](docs/ROADMAP.md)
 - [8-ball rules and options](docs/RULES.md)
 
