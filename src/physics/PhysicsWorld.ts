@@ -191,7 +191,7 @@ export class PhysicsWorld {
   }
 
   placeCueBall(position: Vec2, zone: 'anywhere' | 'behind-head-string' = 'anywhere'): boolean {
-    if (this.isMoving) return false
+    if (this.isMoving || !Number.isFinite(position.x) || !Number.isFinite(position.z)) return false
 
     const cue = this.cueBall
     const halfLength = this.config.tableLength / 2
@@ -262,10 +262,13 @@ export class PhysicsWorld {
 
   shootCueBall(direction: Vec2, power: number, spin: BallSpin = { side: 0, vertical: 0 }): boolean {
     if (this.isMoving || !this.cueBall.active) return false
+    if (!Number.isFinite(direction.x) || !Number.isFinite(direction.z) || !Number.isFinite(power)) return false
+    if (!Number.isFinite(spin.side) || !Number.isFinite(spin.vertical) ||
+      (spin.elevation !== undefined && !Number.isFinite(spin.elevation))) return false
 
     const length = Math.hypot(direction.x, direction.z)
     const strength = Math.max(0, Math.min(1, power))
-    if (length < 1e-6 || strength <= 0) return false
+    if (!Number.isFinite(length) || length < 1e-6 || strength <= 0) return false
 
     this.shotTelemetry = this.createEmptyShotTelemetry()
     const unit = { x: direction.x / length, z: direction.z / length }
