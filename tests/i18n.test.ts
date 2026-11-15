@@ -33,6 +33,21 @@ describe('dynamic game message localization', () => {
       .toBe('AI · セーフティ狙い · ターゲット 12')
   })
 
+  it('translates AI bank-shot route feedback in all supported locales', () => {
+    const message = 'AI · pot attempt · bank shot · target 8'
+    expect(translateGameMessage(message, 'en')).toBe(message)
+    expect(translateGameMessage(message, 'zh-CN')).toBe('AI · 进球尝试 · 借库球 · 目标球 8')
+    expect(translateGameMessage(message, 'zh-TW')).toBe('AI · 進球嘗試 · 借庫球 · 目標球 8')
+    expect(translateGameMessage(message, 'ja')).toBe('AI · ポット狙い · バンクショット · ターゲット 8')
+  })
+
+  it('translates AI kick-shot route feedback in all supported locales', () => {
+    const message = 'AI · safety attempt · kick shot · target 3'
+    expect(translateGameMessage(message, 'zh-CN')).toBe('AI · 防守尝试 · 解球 · 目标球 3')
+    expect(translateGameMessage(message, 'zh-TW')).toBe('AI · 防守嘗試 · 解球 · 目標球 3')
+    expect(translateGameMessage(message, 'ja')).toBe('AI · セーフティ狙い · キックショット · ターゲット 3')
+  })
+
   it('translates winner and rerack messages', () => {
     expect(translateGameMessage('Player 2 wins · 8-ball', 'zh-CN'))
       .toBe('玩家 2 获胜 · 8 号球')
