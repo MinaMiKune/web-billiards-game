@@ -113,6 +113,8 @@ export class GameApp {
 
     this.bindControls(root)
     this.initializeAiWorker()
+    window.addEventListener('billiards-locale-change', this.onLocaleChange)
+    this.renderShotHistory()
     this.updateTurnStatus()
     this.resizeObserver = new ResizeObserver(() => this.resize())
     this.resizeObserver.observe(sceneHost)
@@ -124,6 +126,7 @@ export class GameApp {
     cancelAnimationFrame(this.frameHandle)
     window.clearTimeout(this.aiTimer)
     this.invalidateAiRequest()
+    window.removeEventListener('billiards-locale-change', this.onLocaleChange)
     this.aiWorker?.terminate()
     this.aiWorker = null
     this.resizeObserver.disconnect()
@@ -398,6 +401,11 @@ export class GameApp {
     this.renderer.setAimPreview(this.cueRenderBall(), { x: 1, z: 0 }, 0, visible)
   }
 
+  private onLocaleChange = (): void => {
+    this.renderShotHistory()
+    this.updateTurnStatus()
+  }
+
   private recordShot(player: PlayerId, telemetry: ShotTelemetry, foulReasons: string[]): void {
     this.totalShotCount += 1
     this.shotHistory.unshift({
@@ -439,7 +447,7 @@ export class GameApp {
       if (entry.foulReasons.length) {
         details.push(`${t('Foul')}: ${entry.foulReasons.map((reason) => translateGameMessage(reason)).join(', ')}`)
       }
-      item.textContent = ` ${t('Shot')} ${entry.shotNumber} · ${playerName} · ${details.join(' · ')}`
+      item.textContent = `${t('Shot')} ${entry.shotNumber} · ${playerName} · ${details.join(' · ')}`
       this.shotHistoryElement.append(item)
     })
   }
