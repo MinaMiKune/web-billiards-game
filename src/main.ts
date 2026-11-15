@@ -47,6 +47,29 @@ app.innerHTML = `
               <option value="5">5 · Master</option>
             </select>
           </label>
+          <label class="call-shot-toggle" for="call-shot-toggle">
+            <input id="call-shot-toggle" type="checkbox" />
+            <span class="section-label">CALL SHOT</span>
+          </label>
+          <label class="call-shot-control" for="call-ball">
+            <span class="section-label">CALL BALL</span>
+            <select id="call-ball" disabled>
+              <option value="">Select ball</option>
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
+            </select>
+          </label>
+          <label class="call-shot-control" for="call-pocket">
+            <span class="section-label">CALL POCKET</span>
+            <select id="call-pocket" disabled>
+              <option value="">Select pocket</option>
+              <option value="1">1 · Top left</option>
+              <option value="2">2 · Top middle</option>
+              <option value="3">3 · Top right</option>
+              <option value="4">4 · Bottom left</option>
+              <option value="5">5 · Bottom middle</option>
+              <option value="6">6 · Bottom right</option>
+            </select>
+          </label>
           <label class="power-control" for="shot-power">
             <span class="section-label">SHOT POWER</span>
             <strong id="power-value">65%</strong>

@@ -143,6 +143,59 @@ describe('EightBallRuleEngine', () => {
     expect(result.state.winner).toBe(1)
   })
 
+  it('assigns groups only when the called ball reaches the called pocket', () => {
+    const callRules = new EightBallRuleEngine({ callShotRequired: true })
+    const state = { ...createInitialEightBallState(), phase: 'open-table' as const }
+    const missedCall = callRules.resolveShot(state, cleanShot({
+      pocketedBallNumbers: [1],
+      pocketedBallEvents: [{ ballNumber: 1, pocketIndex: 2 }],
+      calledBallNumber: 1,
+      calledPocketIndex: 1,
+    }))
+    expect(missedCall.state.playerGroups).toEqual([null, null])
+    expect(missedCall.state.currentPlayer).toBe(1)
+    expect(missedCall.state.ballInHand).toBe(false)
+    expect(missedCall.state.remainingBalls).not.toContain(1)
+
+    const madeCall = callRules.resolveShot(state, cleanShot({
+      pocketedBallNumbers: [1],
+      pocketedBallEvents: [{ ballNumber: 1, pocketIndex: 2 }],
+      calledBallNumber: 1,
+      calledPocketIndex: 2,
+    }))
+    expect(madeCall.state.playerGroups).toEqual(['solids', 'stripes'])
+    expect(madeCall.state.currentPlayer).toBe(0)
+  })
+
+  it('requires the 8-ball to be called into the correct pocket to win', () => {
+    const callRules = new EightBallRuleEngine({ callShotRequired: true })
+    const state = {
+      ...createInitialEightBallState(),
+      phase: 'groups-assigned' as const,
+      playerGroups: ['solids', 'stripes'] as [BallGroup | null, BallGroup | null],
+      remainingBalls: [8, 9, 10, 11, 12, 13, 14, 15],
+    }
+    const wrongPocket = callRules.resolveShot(state, cleanShot({
+      firstContactBallNumber: 8,
+      pocketedBallNumbers: [8],
+      pocketedBallEvents: [{ ballNumber: 8, pocketIndex: 2 }],
+      calledBallNumber: 8,
+      calledPocketIndex: 1,
+    }))
+    expect(wrongPocket.state.phase).toBe('game-over')
+    expect(wrongPocket.state.winner).toBe(1)
+
+    const correctPocket = callRules.resolveShot(state, cleanShot({
+      firstContactBallNumber: 8,
+      pocketedBallNumbers: [8],
+      pocketedBallEvents: [{ ballNumber: 8, pocketIndex: 2 }],
+      calledBallNumber: 8,
+      calledPocketIndex: 2,
+    }))
+    expect(correctPocket.state.phase).toBe('game-over')
+    expect(correctPocket.state.winner).toBe(0)
+  })
+
   it('does not mutate the previous game state', () => {
     const state = createInitialEightBallState()
     const before = [...state.remainingBalls]

@@ -147,6 +147,22 @@ describe('PhysicsWorld', () => {
     expect(cue.active).toBe(false)
   })
 
+  it('records the correct pocket index for a side-pocket capture', () => {
+    const world = new PhysicsWorld()
+    const cue = world.cueBall
+    const zLimit = world.config.tableWidth / 2 - cue.radius
+    cue.position = { x: 0, z: zLimit - 0.001 }
+    cue.previousPosition = { ...cue.position }
+    cue.velocity = { x: 0, z: 1 }
+
+    world.step(STEP)
+
+    expect(world.getShotTelemetry().pocketedBallEvents).toContainEqual({
+      ballNumber: 0,
+      pocketIndex: 4,
+    })
+  })
+
   it('animates a pocketed ball into the pocket before hiding it', () => {
     const world = new PhysicsWorld()
     const cue = world.cueBall
