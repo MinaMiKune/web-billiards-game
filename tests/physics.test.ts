@@ -173,6 +173,12 @@ describe('PhysicsWorld', () => {
     expect(world.getShotTelemetry().railContactBallNumbersAfterFirstHit).toContain(1)
   })
 
+  it('restricts cue-ball placement to the head area when requested', () => {
+    const world = new PhysicsWorld()
+    expect(world.placeCueBall({ x: 0, z: 0 }, 'behind-head-string')).toBe(false)
+    expect(world.placeCueBall({ x: -world.config.tableLength * 0.4, z: 0 }, 'behind-head-string')).toBe(true)
+  })
+
   it('records the correct pocket index for a side-pocket capture', () => {
     const world = new PhysicsWorld()
     const cue = world.cueBall
