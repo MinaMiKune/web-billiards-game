@@ -84,16 +84,11 @@ const messages: Record<string, [string, string, string]> = {
   'pot attempt': ['进球尝试', '進球嘗試', 'ポット狙い'],
   'safety attempt': ['防守尝试', '防守嘗試', 'セーフティ狙い'],
   'target': ['目标球', '目標球', 'ターゲット'],
-  'OPEN TABLE': ['开放球台', '開放球桌', 'オープンテーブル'],
   'UNASSIGNED': ['未分配', '未分配', '未割り当て'],
   'BALL IN HAND — CLICK TO PLACE': ['自由球 — 点击放置母球', '自由球 — 點擊放置母球', 'フリーボール — クリックして手球を配置'],
   'WINNER:': ['获胜者：', '獲勝者：', '勝者：'],
   'VS AI': ['对战 AI', '對戰 AI', 'AI 対戦'],
   'LOCAL 2P': ['本地双人', '本機雙人', 'ローカル 2 人対戦'],
-  'CLICK A CLEAR SPOT ON THE TABLE TO PLACE THE CUE BALL': ['点击球台空位放置母球', '點擊球桌空位放置母球', 'テーブルの空き場所をクリックして手球を置く'],
-  'GAME OVER · START A NEW RACK TO PLAY AGAIN': ['比赛结束 · 重新摆球再来一局', '比賽結束 · 重新擺球再玩一局', 'ゲーム終了 · ラックをリセットして再開'],
-  'AI OPPONENT IS ANALYZING THE TABLE': ['AI 对手正在分析球台', 'AI 對手正在分析球桌', 'AI 対戦相手がテーブルを分析中'],
-  'DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT': ['从母球向后拖动瞄准 · 松开击球', '從母球向後拖曳瞄準 · 放開即可擊球', '手球から後ろにドラッグして照準 · 離してショット'],
 }
 
 let locale: Locale | 'en' = 'en'
