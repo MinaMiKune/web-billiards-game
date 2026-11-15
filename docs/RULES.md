@@ -52,6 +52,7 @@ This implementation currently allows placement anywhere in the legal playing are
 - **Re-rack (default):** pocketing the 8-ball on the break re-racks for the same player.
 - **Breaker wins:** pocketing the 8-ball on the break wins for the breaker; if the cue ball is also pocketed, the opponent wins.
 - Call-shot declarations do not apply to the break.
+- **Break requirement (optional):** Relaxed (default) accepts a dry break without a rail-count test. Four-rails requires at least four distinct object balls to reach a cushion after first contact when no object ball is pocketed; otherwise it is a foul and the opponent receives ball in hand.
 
 ## Scope and future refinement
 
