@@ -53,6 +53,7 @@ export class GameApp {
   private readonly turnElement: HTMLElement
   private readonly shotHistoryElement: HTMLOListElement
   private readonly matchSummaryElement: HTMLElement
+  private readonly lastShotFeedbackElement: HTMLElement
   private readonly rematchButton: HTMLButtonElement
   private readonly shotHistory: MatchHistoryEntry[] = []
   private totalShotCount = 0
@@ -97,6 +98,7 @@ export class GameApp {
     this.turnElement = requireElement(root, '#turn-status')
     this.shotHistoryElement = requireElement<HTMLOListElement>(root, '#shot-history')
     this.matchSummaryElement = requireElement(root, '#match-summary')
+    this.lastShotFeedbackElement = requireElement(root, '#last-shot-feedback')
     this.rematchButton = requireElement<HTMLButtonElement>(root, '#rematch-game')
     this.interactionHint = requireElement(root, '#interaction-hint')
     this.playerCards = [
@@ -549,7 +551,32 @@ export class GameApp {
     })
   }
 
+  private renderShotFeedback(): void {
+    const latest = this.shotHistory[0]
+    if (!latest) {
+      this.lastShotFeedbackElement.hidden = true
+      this.lastShotFeedbackElement.textContent = ''
+      this.lastShotFeedbackElement.className = 'last-shot-feedback'
+      return
+    }
+
+    this.lastShotFeedbackElement.hidden = false
+    if (latest.foulReasons.length) {
+      this.lastShotFeedbackElement.className = 'last-shot-feedback is-foul'
+      this.lastShotFeedbackElement.textContent =
+        `${t('Foul')} · ${latest.foulReasons.map((reason) => translateGameMessage(reason)).join(', ')}`
+    } else if (latest.pocketedBallNumbers.length) {
+      this.lastShotFeedbackElement.className = 'last-shot-feedback is-pot'
+      this.lastShotFeedbackElement.textContent =
+        `${t('Pocketed')}: ${latest.pocketedBallNumbers.join(', ')}`
+    } else {
+      this.lastShotFeedbackElement.className = 'last-shot-feedback is-dry'
+      this.lastShotFeedbackElement.textContent = t('No balls pocketed')
+    }
+  }
+
   private renderMatchSummary(): void {
+    this.renderShotFeedback()
     const matchComplete = this.ruleState.phase === 'game-over' && this.ruleState.winner !== null
     this.rematchButton.hidden = !matchComplete
     if (!matchComplete) {
