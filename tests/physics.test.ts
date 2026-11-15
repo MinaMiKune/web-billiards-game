@@ -18,11 +18,12 @@ describe('Eight-ball rack layout', () => {
     const world = new PhysicsWorld()
     const objectBalls = world.balls.filter((ball) => ball.number > 0)
     const rearX = Math.max(...objectBalls.map((ball) => ball.position.x))
-    const rearCorners = objectBalls.filter((ball) =>
+    const rearRow = objectBalls.filter((ball) =>
       Math.abs(ball.position.x - rearX) < 1e-9,
     ).sort((a, b) => a.position.z - b.position.z)
+    const rearCorners = [rearRow[0], rearRow[rearRow.length - 1]]
 
-    expect(rearCorners).toHaveLength(2)
+    expect(rearRow).toHaveLength(5)
     expect(rearCorners[0].number).toBeGreaterThanOrEqual(1)
     expect(rearCorners[0].number).toBeLessThanOrEqual(7)
     expect(rearCorners[1].number).toBeGreaterThanOrEqual(9)
