@@ -119,6 +119,7 @@ const messages: Record<string, [string, string, string]> = {
   'multi-rail shot': ['多库球', '多庫球', 'マルチレールショット'],
   'target': ['目标球', '目標球', 'ターゲット'],
   'BALL IN HAND — CLICK TO PLACE': ['自由球 — 点击放置母球', '自由球 — 點擊放置母球', 'フリーボール — クリックして手球を配置'],
+  'BALL IN HAND — BEHIND HEAD STRING': ['自由球 — 母球必须放在开球线后方', '自由球 — 母球必須放在開球線後方', 'フリーボール — ヘッドストリングの後方に配置'],
   'WINNER:': ['获胜者：', '獲勝者：', '勝者：'],
   'VS AI': ['对战 AI', '對戰 AI', 'AI 対戦'],
   'LOCAL 2P': ['本地双人', '本機雙人', 'ローカル 2 人対戦'],
