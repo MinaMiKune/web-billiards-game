@@ -106,6 +106,21 @@ describe('dynamic game message localization', () => {
       .toBe('ブレイクで 8 ボールがポケットイン · 再ラック')
   })
 
+
+  it('translates rematch and latest-shot outcome labels in all supported locales', () => {
+    expect(translateGameMessage('Play again', 'en')).toBe('Play again')
+    expect(translateGameMessage('Play again', 'zh-CN')).toBe('再来一局')
+    expect(translateGameMessage('Play again', 'zh-TW')).toBe('再玩一局')
+    expect(translateGameMessage('Play again', 'ja')).toBe('もう一度プレイ')
+
+    expect(translateGameMessage('Pocketed', 'zh-CN')).toBe('落袋')
+    expect(translateGameMessage('Pocketed', 'zh-TW')).toBe('落袋')
+    expect(translateGameMessage('Pocketed', 'ja')).toBe('ポケットイン')
+    expect(translateGameMessage('No balls pocketed', 'zh-CN')).toBe('没有球落袋')
+    expect(translateGameMessage('No balls pocketed', 'zh-TW')).toBe('沒有球落袋')
+    expect(translateGameMessage('No balls pocketed', 'ja')).toBe('ボールはポケットに入りませんでした')
+  })
+
   it('leaves unknown messages readable instead of dropping them', () => {
     expect(translateGameMessage('A future unregistered status', 'zh-CN'))
       .toBe('A future unregistered status')
