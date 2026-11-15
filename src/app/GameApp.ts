@@ -4,7 +4,7 @@ import { PhysicsWorld, type BallSpin, type RenderBall } from '../physics/Physics
 import { GameRenderer } from '../rendering/GameRenderer'
 import { AIController, type AIDifficulty } from '../ai/AIController'
 import { createInitialEightBallState, EightBallRuleEngine, type EightBallState } from '../game/EightBallRuleEngine'
-import { t } from '../i18n'
+import { t, translateGameMessage } from '../i18n'
 
 const FIXED_STEP = 1 / 120
 const MAX_FRAME_DELTA = 0.1
@@ -126,7 +126,7 @@ export class GameApp {
       this.renderer.updateBalls(this.world.getRenderBalls(1))
       this.resetSpin()
       this.setAimVisible(false)
-      this.statusElement.textContent = this.ruleState.lastMessage
+      this.statusElement.textContent = translateGameMessage(this.ruleState.lastMessage)
       this.updateTurnStatus()
     })
 
@@ -376,18 +376,18 @@ export class GameApp {
         : this.ruleState.phase === 'game-over'
           ? 'Game over'
           : 'Groups assigned'
-    const groupLabel = currentGroup ? ` · ${currentGroup}` : ''
-    const ballInHandLabel = this.ruleState.ballInHand ? ' · BALL IN HAND — CLICK TO PLACE' : ''
+    const groupLabel = currentGroup ? ` · ${t(currentGroup === 'solids' ? 'SOLIDS' : 'STRIPES')}` : ''
+    const ballInHandLabel = this.ruleState.ballInHand ? ` · ${t('BALL IN HAND — CLICK TO PLACE')}` : ''
     const winnerName = this.ruleState.winner === null
       ? ''
       : this.ruleState.winner === 1 && this.opponentMode === 'ai'
         ? 'AI OPPONENT'
         : `PLAYER ${this.ruleState.winner + 1}`
-    const winnerLabel = winnerName ? ` · WINNER: ${winnerName}` : ''
+    const winnerLabel = winnerName ? ` · ${t('WINNER:')} ${winnerName}` : ''
     const playerLabel = this.opponentMode === 'ai' && this.ruleState.currentPlayer === 1
       ? 'AI OPPONENT'
-      : `PLAYER ${this.ruleState.currentPlayer + 1}`
-    const modeLabel = this.opponentMode === 'ai' ? ' · VS AI' : ' · LOCAL 2P'
+      : t(this.ruleState.currentPlayer === 0 ? 'PLAYER 1' : 'PLAYER 2')
+    const modeLabel = ` · ${t(this.opponentMode === 'ai' ? 'VS AI' : 'LOCAL 2P')}`
     this.turnElement.textContent =
       `${playerLabel}${groupLabel} · ${phaseLabel.toUpperCase()}${ballInHandLabel}${winnerLabel}${modeLabel}`
 
@@ -401,13 +401,13 @@ export class GameApp {
 
       this.playerNames[player].textContent =
         player === 1 && this.opponentMode === 'ai'
-          ? 'AI OPPONENT'
-          : `PLAYER ${player + 1}`
+          ? t('AI OPPONENT')
+          : t(player === 0 ? 'PLAYER 1' : 'PLAYER 2')
       this.playerGroups[player].textContent = group
         ? t(group === 'solids' ? 'SOLIDS' : 'STRIPES')
         : this.ruleState.phase === 'break'
-          ? 'OPEN TABLE'
-          : 'UNASSIGNED'
+          ? t('OPEN TABLE')
+          : t('UNASSIGNED')
       this.playerGroups[player].dataset.group = group ?? 'open'
       this.playerCounts[player].textContent = String(remaining)
       this.playerCards[player].classList.toggle(
@@ -421,12 +421,12 @@ export class GameApp {
     }
 
     this.interactionHint.textContent = this.ruleState.ballInHand
-      ? 'CLICK A CLEAR SPOT ON THE TABLE TO PLACE THE CUE BALL'
+      ? t('CLICK A CLEAR SPOT ON THE TABLE TO PLACE THE CUE BALL')
       : this.ruleState.phase === 'game-over'
-        ? 'GAME OVER · START A NEW RACK TO PLAY AGAIN'
+        ? t('GAME OVER · START A NEW RACK TO PLAY AGAIN')
         : this.isAiTurn()
-          ? 'AI OPPONENT IS ANALYZING THE TABLE'
-          : 'DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT'
+          ? t('AI OPPONENT IS ANALYZING THE TABLE')
+          : t('DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT')
   }
 
   private isAiTurn(): boolean {
@@ -483,7 +483,7 @@ export class GameApp {
     }
 
     this.statusElement.textContent =
-      `AI · ${plan.style === 'pot' ? 'pot attempt' : 'safety attempt'} · target ${plan.targetBallNumber}`
+      translateGameMessage(`AI · ${plan.style === 'pot' ? 'pot attempt' : 'safety attempt'} · target ${plan.targetBallNumber}`)
     this.wasMoving = true
   }
 
@@ -518,7 +518,7 @@ export class GameApp {
         this.world.resetRack()
         this.resetSpin()
       }
-      this.statusElement.textContent = resolution.state.lastMessage
+      this.statusElement.textContent = translateGameMessage(resolution.state.lastMessage)
       this.updateTurnStatus()
       this.scheduleAiTurn()
     }
