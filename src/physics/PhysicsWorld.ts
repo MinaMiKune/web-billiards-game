@@ -9,9 +9,15 @@ export interface Vec3 {
   z: number
 }
 
+export interface PocketedBallEvent {
+  ballNumber: number
+  pocketIndex: number
+}
+
 export interface ShotTelemetry {
   firstContactBallNumber: number | null
   pocketedBallNumbers: number[]
+  pocketedBallEvents: PocketedBallEvent[]
   cueBallPocketed: boolean
   railContactAfterFirstHit: boolean
 }
@@ -141,6 +147,7 @@ export class PhysicsWorld {
     return {
       ...this.shotTelemetry,
       pocketedBallNumbers: [...this.shotTelemetry.pocketedBallNumbers],
+      pocketedBallEvents: this.shotTelemetry.pocketedBallEvents.map((event) => ({ ...event })),
     }
   }
 
@@ -311,6 +318,7 @@ export class PhysicsWorld {
     return {
       firstContactBallNumber: null,
       pocketedBallNumbers: [],
+      pocketedBallEvents: [],
       cueBallPocketed: false,
       railContactAfterFirstHit: false,
     }
@@ -429,10 +437,11 @@ export class PhysicsWorld {
     const crossedZBoundary = Math.abs(ball.position.z) >= zLimit
 
     if (crossedXBoundary || crossedZBoundary) {
-      const cornerPocket = cornerPockets.find((pocket) =>
+      const cornerPocketIndex = cornerPockets.findIndex((pocket) =>
         Math.hypot(ball.position.x - pocket.x, ball.position.z - pocket.z) <=
         this.config.pocketCaptureRadius,
       )
+      const cornerPocket = cornerPocketIndex >= 0 ? cornerPockets[cornerPocketIndex] : null
       const sidePocketCaptured =
         crossedZBoundary &&
         Math.abs(ball.position.x) <= this.config.sidePocketHalfWidth
@@ -448,6 +457,14 @@ export class PhysicsWorld {
         ball.angularVelocity = ZERO_VEC3()
         if (!this.shotTelemetry.pocketedBallNumbers.includes(ball.number)) {
           this.shotTelemetry.pocketedBallNumbers.push(ball.number)
+          const cornerPocketIndices = [0, 3, 2, 5]
+          const pocketIndex = cornerPocketIndex >= 0
+            ? cornerPocketIndices[cornerPocketIndex]
+            : ball.position.z < 0 ? 1 : 4
+          this.shotTelemetry.pocketedBallEvents.push({
+            ballNumber: ball.number,
+            pocketIndex,
+          })
         }
         if (ball.number === 0) this.shotTelemetry.cueBallPocketed = true
         return
