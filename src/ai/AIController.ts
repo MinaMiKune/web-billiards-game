@@ -189,16 +189,16 @@ export class AIController {
           // cushion, so a banked cue-ball path can reach the same ghost ball.
           const halfLength = world.config.tableLength / 2
           const halfWidth = world.config.tableWidth / 2
-          const cushionLines = [
-            { x: -halfLength + cue.radius, z: null as number | null },
-            { x: halfLength - cue.radius, z: null as number | null },
-            { x: null as number | null, z: -halfWidth + cue.radius },
-            { x: null as number | null, z: halfWidth - cue.radius },
+          const cushionLines: { axis: 'x' | 'z'; value: number }[] = [
+            { axis: 'x', value: -halfLength + cue.radius },
+            { axis: 'x', value: halfLength - cue.radius },
+            { axis: 'z', value: -halfWidth + cue.radius },
+            { axis: 'z', value: halfWidth - cue.radius },
           ]
           for (const rail of cushionLines) {
-            const reflectedGhost = rail.x !== null
-              ? { x: 2 * rail.x - ghost.x, z: ghost.z }
-              : { x: ghost.x, z: 2 * (rail.z as number) - ghost.z }
+            const reflectedGhost = rail.axis === 'x'
+              ? { x: 2 * rail.value - ghost.x, z: ghost.z }
+              : { x: ghost.x, z: 2 * rail.value - ghost.z }
             const kickDistance = distance(cue.position, reflectedGhost)
             if (kickDistance < 0.04) continue
             if (!segmentClear(world.balls, cue.position, reflectedGhost, ignoredCueAndTarget)) continue
