@@ -232,6 +232,7 @@ export class GameApp {
     this.powerInput.addEventListener('input', () => {
       this.power = Number(this.powerInput.value) / 100
       this.powerValue.textContent = this.powerInput.value + '%'
+      if (this.aiming) this.interactionHint.textContent = `${t('Release to take your shot')} · ${this.powerInput.value}%`
     })
 
     this.spinPad.addEventListener('pointerdown', this.onSpinPointerDown)
@@ -370,6 +371,7 @@ export class GameApp {
     event.preventDefault()
     this.aiming = true
     this.aimPoint = point
+    this.interactionHint.textContent = `${t('Release to take your shot')} · ${this.powerInput.value}%`
     this.renderer.canvas.setPointerCapture(event.pointerId)
     this.updateAimPreview()
   }
@@ -383,6 +385,7 @@ export class GameApp {
   private onPointerUp = (event: PointerEvent): void => {
     if (!this.aiming) return
     this.aimPoint = this.pickTablePoint(event) ?? this.aimPoint
+    let shotStarted = false
     const cue = this.world.cueBall.position
     if (this.aimPoint) {
       const dx = cue.x - this.aimPoint.x
@@ -410,13 +413,16 @@ export class GameApp {
           this.soundEffects.playCue()
           this.syncCallShotControls()
           this.statusElement.textContent = t('Balls in motion')
+          this.interactionHint.textContent = t('Balls in motion')
           this.wasMoving = true
+          shotStarted = true
         }
       }
     }
     this.aiming = false
     this.aimPoint = null
     this.setAimVisible(false)
+    if (!shotStarted) this.updateTurnStatus()
     if (this.renderer.canvas.hasPointerCapture(event.pointerId)) {
       this.renderer.canvas.releasePointerCapture(event.pointerId)
     }
@@ -426,6 +432,7 @@ export class GameApp {
     this.aiming = false
     this.aimPoint = null
     this.setAimVisible(false)
+    this.updateTurnStatus()
   }
 
   private pickTablePoint(event: PointerEvent): { x: number; z: number } | null {
