@@ -8,6 +8,14 @@ export const LOCALES: { value: Locale; label: string }[] = [
 ]
 
 const messages: Record<string, [string, string, string]> = {
+  'YOUR FIRST SHOT': ['你的第一杆', '你的第一桿', '最初のショット'],
+  'Got it': ['知道了', '知道了', 'わかりました'],
+  'AIM': ['瞄准', '瞄準', '狙う'],
+  'Drag back from the white ball': ['从白色母球向后拖动', '從白色母球向後拖曳', '白い手球から後ろにドラッグ'],
+  'SET POWER': ['调整力度', '調整力度', '強さを調整'],
+  'Adjust the shot power below': ['在下方调整击球力度', '在下方調整擊球力度', '下のスライダーでショットの強さを調整'],
+  'SHOOT': ['击球', '擊球', 'ショット'],
+  'Release to take your shot': ['松开鼠标或手指即可击球', '放開滑鼠或手指即可擊球', '離すとショットします'],
   'PHYSICS PLAYGROUND': ['物理实验场', '物理實驗場', '物理シミュレーション'],
   '8-BALL MATCH': ['8 球对局', '8 球對局', '8 ボール対戦'],
   'GAME MODE': ['游戏模式', '遊戲模式', 'ゲームモード'],
