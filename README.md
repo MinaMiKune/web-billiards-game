@@ -49,6 +49,7 @@ npm run bench:performance
 - [Architecture](docs/ARCHITECTURE.md)
 - [Development guide](docs/DEVELOPMENT.md)
 - [Physics model and validation](docs/PHYSICS.md)
+- [Measured-shot calibration protocol](docs/PHYSICS_CALIBRATION.md)
 - [Performance benchmarks](docs/PERFORMANCE.md)
 - [Browser QA checklist](docs/BROWSER_QA.md)
 - [Roadmap](docs/ROADMAP.md)
