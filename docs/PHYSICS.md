@@ -14,7 +14,7 @@ The goal is a credible and tunable game simulation. The model is intentionally s
 - Standard pool ball diameter reference: approximately 0.05715 m.
 - A solid sphere uses moment of inertia I = 2/5 m r².
 
-These are configurable starting dimensions. Table construction, cushion nose positions and pocket jaw geometry must be measured consistently against the chosen table model.
+These are configurable starting dimensions. Table construction, cushion nose positions and pocket jaw geometry must be measured consistently against the chosen table model. See PHYSICS_CALIBRATION.md for the measurement and fitting protocol.
 
 ## Simulation loop
 

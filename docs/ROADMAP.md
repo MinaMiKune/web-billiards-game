@@ -33,6 +33,7 @@ Selected decisions:
 - [x] Rotate numbered/striped ball textures with the simulated angular velocity.
 - [x] Establish deterministic software baselines for rolling deceleration, sliding impulse, side-spin decay and collision momentum.
 - [x] Add repeatable fixed-step shot scenarios for straight hits, cut shots, follow and side-spin cushion approaches.
+- [x] Document the measured-shot capture and parameter-fitting protocol.
 - [ ] Calibrate friction and spin parameters against measured reference shots.
 - [x] Add tangential ball-ball collision impulses and spin-dependent cushion rebound.
 - [x] Add presentation-only ball drop animation after pocket capture.
