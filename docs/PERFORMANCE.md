@@ -1,15 +1,15 @@
 # Performance Benchmarks
 
-Run the repeatable local benchmark suite with:
+Run the repeatable local benchmark smoke suite with:
 
 ~~~bash
 npm run bench:performance
 ~~~
 
-The suite measures:
-- AI planning at all five difficulty levels using the standard opening rack.
-- 240 fixed physics steps (two simulated seconds) including rack setup and one cue shot.
+The suite reports:
+- Average AI planning time for each of the five difficulty levels (three runs per level).
+- Average time for a 240-step fixed-physics scenario (three runs).
 
-Vitest reports timing distributions for the current machine/runtime. These are comparison baselines, not universal pass/fail thresholds: compare runs on the same hardware, browser/runtime and power profile. Do not add hard millisecond assertions to CI until stable reference hardware is available.
+Timings are informational and intentionally have no machine-specific pass/fail thresholds. Compare results on the same hardware, browser/runtime and power profile. The benchmark smoke tests also assert that every scenario completes and reports a finite duration.
 
-AI planning in the browser runs in a Web Worker, so the AI benchmark measures planner throughput independently of main-thread rendering. Physics stepping remains deterministic and uses the same 120 Hz step as gameplay.
+AI planning in the browser runs in a Web Worker, so the planner timings measure search throughput independently of main-thread rendering. Physics stepping remains deterministic and uses the same 120 Hz step as gameplay.
