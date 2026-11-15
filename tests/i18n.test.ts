@@ -48,6 +48,13 @@ describe('dynamic game message localization', () => {
     expect(translateGameMessage(message, 'ja')).toBe('AI · セーフティ狙い · キックショット · ターゲット 3')
   })
 
+  it('translates AI multi-rail route feedback in all supported locales', () => {
+    const message = 'AI · pot attempt · multi-rail shot · target 11'
+    expect(translateGameMessage(message, 'zh-CN')).toBe('AI · 进球尝试 · 多库球 · 目标球 11')
+    expect(translateGameMessage(message, 'zh-TW')).toBe('AI · 進球嘗試 · 多庫球 · 目標球 11')
+    expect(translateGameMessage(message, 'ja')).toBe('AI · ポット狙い · マルチレールショット · ターゲット 11')
+  })
+
   it('translates winner and rerack messages', () => {
     expect(translateGameMessage('Player 2 wins · 8-ball', 'zh-CN'))
       .toBe('玩家 2 获胜 · 8 号球')
