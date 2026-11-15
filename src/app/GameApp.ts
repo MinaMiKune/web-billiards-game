@@ -560,7 +560,11 @@ export class GameApp {
           ? t('Game over')
           : t('Groups assigned')
     const groupLabel = currentGroup ? ` · ${t(currentGroup === 'solids' ? 'SOLIDS' : 'STRIPES')}` : ''
-    const ballInHandLabel = this.ruleState.ballInHand ? ` · ${t('BALL IN HAND — CLICK TO PLACE')}` : ''
+    const ballInHandLabel = this.ruleState.ballInHand
+      ? ` · ${t(this.ruleState.ballInHandZone === 'behind-head-string'
+        ? 'BALL IN HAND — BEHIND HEAD STRING'
+        : 'BALL IN HAND — CLICK TO PLACE')}`
+      : ''
     const winnerName = this.ruleState.winner === null
       ? ''
       : this.ruleState.winner === 1 && this.opponentMode === 'ai'
