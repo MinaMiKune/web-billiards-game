@@ -108,7 +108,17 @@ Selected decisions:
 - [x] Make camera controls wrap into a compact 2×2 layout below 380px with 44px+ touch targets.
 - [ ] Complete real-device touch/browser verification at 320px and cross-browser checks.
 
-## Phase 6 — Multiplayer (not active)
+## Phase 6 — Release readiness (active before stable 1.0)
+
+- [ ] Complete gameplay acceptance across full local and AI matches.
+- [ ] Run the real-device and cross-browser matrix in docs/BROWSER_QA.md and commit dated evidence.
+- [ ] Collect reference-table measurements and measured-shot trajectories; fit and validate physics against held-out shots.
+- [ ] Complete the release gates in docs/RELEASE_READINESS.md.
+- [ ] Publish a versioned GitHub Release only after the exact tagged commit passes CI and Pages deployment.
+
+Release claims must remain explicit: deterministic game-realistic physics is not the same as measured physical calibration.
+
+## Phase 7 — Multiplayer (not active)
 
 - Revisit only when local gameplay is stable.
 - Add a network session adapter, server-authoritative commands/state, reconnect and resynchronization.
