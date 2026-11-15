@@ -34,7 +34,8 @@ Selected decisions:
 - [ ] Calibrate friction and spin parameters against reference shots.
 - [x] Add tangential ball-ball collision impulses and spin-dependent cushion rebound.
 - [x] Add presentation-only ball drop animation after pocket capture.
-- [ ] Model full pocket jaw geometry and validate capture/near-miss trajectories against a measured table.
+- [x] Add first-pass angled jaw collisions for corner and side pockets with capture/near-miss regression tests.
+- [ ] Calibrate pocket opening width, jaw depth and trajectories against a measured table.
 
 ## Phase 3 — Rules and game flow
 
