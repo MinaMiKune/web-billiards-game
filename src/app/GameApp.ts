@@ -2,13 +2,18 @@ import { Plane, Raycaster, Vector2, Vector3 } from 'three'
 import { CameraManager, type CameraMode } from '../camera/CameraManager'
 import { PhysicsWorld, type BallSpin, type RenderBall } from '../physics/PhysicsWorld'
 import { GameRenderer } from '../rendering/GameRenderer'
-import { AIController, type AIDifficulty } from '../ai/AIController'
+import { AIController, type AIDifficulty, type AIShotPlan } from '../ai/AIController'
 import { createInitialEightBallState, EightBallRuleEngine, type EightBallState } from '../game/EightBallRuleEngine'
 import { t, translateGameMessage } from '../i18n'
 
 const FIXED_STEP = 1 / 120
 const MAX_FRAME_DELTA = 0.1
 const MAX_SUBSTEPS = 12
+
+interface AIWorkerResponse {
+  requestId: number
+  plan: AIShotPlan | null
+}
 
 function requireElement<T extends HTMLElement>(root: HTMLElement, selector: string): T {
   const element = root.querySelector<T>(selector)
@@ -24,6 +29,9 @@ export class GameApp {
   private opponentMode: 'local' | 'ai' = 'local'
   private aiDifficulty: AIDifficulty = 3
   private aiTimer = 0
+  private aiWorker: Worker | null = null
+  private nextAiRequestId = 0
+  private pendingAiRequestId = 0
   private readonly renderer: GameRenderer
   private readonly cameras: CameraManager
   private readonly statusElement: HTMLElement
@@ -90,6 +98,7 @@ export class GameApp {
     this.renderer.updateBalls(this.world.getRenderBalls(1))
 
     this.bindControls(root)
+    this.initializeAiWorker()
     this.updateTurnStatus()
     this.resizeObserver = new ResizeObserver(() => this.resize())
     this.resizeObserver.observe(sceneHost)
@@ -100,6 +109,9 @@ export class GameApp {
   dispose(): void {
     cancelAnimationFrame(this.frameHandle)
     window.clearTimeout(this.aiTimer)
+    this.invalidateAiRequest()
+    this.aiWorker?.terminate()
+    this.aiWorker = null
     this.resizeObserver.disconnect()
     this.cameras.dispose()
     this.renderer.dispose()
@@ -120,6 +132,7 @@ export class GameApp {
 
     requireElement<HTMLButtonElement>(root, '#reset-rack').addEventListener('click', () => {
       window.clearTimeout(this.aiTimer)
+      this.invalidateAiRequest()
       this.statusElement.classList.remove('is-thinking')
       this.world.resetRack()
       this.ruleState = createInitialEightBallState()
@@ -131,6 +144,7 @@ export class GameApp {
     })
 
     this.opponentModeInput.addEventListener('change', () => {
+      this.invalidateAiRequest()
       this.opponentMode = this.opponentModeInput.value === 'ai' ? 'ai' : 'local'
       this.aiDifficultyInput.disabled = this.opponentMode !== 'ai'
       this.statusElement.classList.remove('is-thinking')
@@ -449,16 +463,51 @@ export class GameApp {
     }, 420)
   }
 
+  private initializeAiWorker(): void {
+    if (typeof Worker === 'undefined') return
+    try {
+      this.aiWorker = new Worker(new URL('../ai/ai.worker.ts', import.meta.url), {
+        type: 'module',
+      })
+      this.aiWorker.onmessage = this.onAiWorkerMessage
+      this.aiWorker.onerror = this.onAiWorkerError
+    } catch {
+      this.aiWorker = null
+    }
+  }
+
+  private invalidateAiRequest(): void {
+    this.pendingAiRequestId = 0
+    this.nextAiRequestId += 1
+  }
+
+  private onAiWorkerMessage = (event: MessageEvent<AIWorkerResponse>): void => {
+    if (event.data.requestId !== this.pendingAiRequestId) return
+    this.pendingAiRequestId = 0
+    if (!this.isAiTurn() || this.world.isMoving) return
+    this.applyAiPlan(event.data.plan)
+  }
+
+  private onAiWorkerError = (): void => {
+    this.aiWorker?.terminate()
+    this.aiWorker = null
+    const hadPendingRequest = this.pendingAiRequestId !== 0
+    this.pendingAiRequestId = 0
+    if (hadPendingRequest && this.isAiTurn() && !this.world.isMoving) {
+      this.applyAiPlan(this.ai.planShot(this.world, this.ruleState, this.aiDifficulty))
+    }
+  }
+
   private runAiTurn(): void {
     if (!this.isAiTurn() || this.world.isMoving) {
       this.statusElement.classList.remove('is-thinking')
       return
     }
 
-    this.statusElement.classList.remove('is-thinking')
     if (this.ruleState.ballInHand) {
       const position = this.ai.chooseBallInHandPlacement(this.world, this.ruleState)
       if (!position || !this.world.placeCueBall(position)) {
+        this.statusElement.classList.remove('is-thinking')
         this.statusElement.textContent = t('AI could not find a legal cue-ball position')
         return
       }
@@ -467,7 +516,26 @@ export class GameApp {
       this.updateTurnStatus()
     }
 
-    const plan = this.ai.planShot(this.world, this.ruleState, this.aiDifficulty)
+    const requestId = ++this.nextAiRequestId
+    if (this.aiWorker) {
+      this.pendingAiRequestId = requestId
+      this.statusElement.classList.add('is-thinking')
+      this.statusElement.textContent = t('AI is reading the table…')
+      this.aiWorker.postMessage({
+        requestId,
+        config: this.world.config,
+        balls: this.world.balls,
+        gameState: this.ruleState,
+        difficulty: this.aiDifficulty,
+      })
+      return
+    }
+
+    this.applyAiPlan(this.ai.planShot(this.world, this.ruleState, this.aiDifficulty))
+  }
+
+  private applyAiPlan(plan: AIShotPlan | null): void {
+    this.statusElement.classList.remove('is-thinking')
     if (!plan) {
       this.statusElement.textContent = t('AI could not find a legal target')
       return
