@@ -421,3 +421,67 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
   .shot-control-row .power-control { width: 100%; min-width: 0; }
   .shot-control-hint { font-size: 10px; }
 }
+
+
+/* First-shot onboarding: teach the core loop without covering the playfield. */
+.first-shot-guide {
+  display: grid;
+  gap: 10px;
+  padding: 13px 20px;
+  border-bottom: 1px solid rgba(216, 193, 132, .24);
+  background: linear-gradient(90deg, rgba(48, 69, 38, .58), rgba(20, 43, 29, .72));
+}
+.first-shot-guide[hidden] { display: none; }
+.first-shot-guide-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.first-shot-guide-heading .section-label { color: #e2c98f; letter-spacing: .16em; }
+.guide-dismiss {
+  padding: 5px 10px;
+  border: 1px solid rgba(183, 194, 154, .4);
+  border-radius: 5px;
+  background: rgba(8, 23, 15, .48);
+  color: #d8e0ce;
+  font-size: 10px;
+  cursor: pointer;
+}
+.guide-dismiss:hover { border-color: #d8bd80; color: #fff4d9; }
+.first-shot-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.first-shot-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.guide-step-number {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  flex: none;
+  border: 1px solid rgba(221, 197, 139, .58);
+  border-radius: 50%;
+  color: #e6cf9b;
+  font: 500 11px 'DM Mono', monospace;
+}
+.first-shot-steps li > span:last-child { display: grid; gap: 3px; min-width: 0; }
+.first-shot-steps strong { color: #f1e8d4; font: 500 9px 'DM Mono', monospace; letter-spacing: .12em; }
+.first-shot-steps small { color: #b5c5b4; font-size: 11px; line-height: 1.35; }
+.guide-dismiss:focus-visible { outline: 2px solid #ead39f; outline-offset: 3px; }
+@media (max-width: 560px) {
+  .first-shot-guide { padding: 11px 13px; gap: 9px; }
+  .first-shot-steps { grid-template-columns: 1fr; gap: 8px; }
+  .first-shot-steps li { gap: 8px; }
+  .guide-step-number { width: 23px; height: 23px; }
+  .first-shot-steps small { font-size: 10px; }
+}
