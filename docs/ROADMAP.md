@@ -101,6 +101,7 @@ Selected decisions:
 - [x] Announce turn changes through a polite live region for assistive technology.
 - [x] Reflow the four camera selectors into large, two-column touch targets on narrow phones.
 - [x] Remember the player's preferred camera view between visits.
+- [x] Restore the selected local/AI game mode and AI difficulty on the next visit.
 - [ ] Complete touch-first layout verification at 320px and on real mobile browsers.
 - [x] Add a one-tap rematch action beside the completed-match result while preserving the selected game mode and AI difficulty.
 - [x] Show a localized latest-shot outcome callout that distinguishes pots, fouls and dry shots.
