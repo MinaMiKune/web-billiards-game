@@ -165,6 +165,7 @@ app.innerHTML = `
         <div class="match-history-header">
           <span class="section-label">SHOT HISTORY</span>
           <div class="match-result-actions">
+            <strong id="last-shot-feedback" class="last-shot-feedback" hidden aria-live="polite"></strong>
             <strong id="match-summary" class="match-summary" hidden aria-live="polite"></strong>
             <button id="rematch-game" class="button button-muted rematch-button" type="button" hidden>Play again</button>
           </div>
