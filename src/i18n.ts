@@ -31,6 +31,7 @@ const messages: Record<string, [string, string, string]> = {
   'Shot': ['第', '第', 'ショット'],
   'First contact': ['首次碰球', '首次碰球', '最初の接触'],
   'Pocketed': ['落袋', '落袋', 'ポケットイン'],
+  'No balls pocketed': ['没有球落袋', '沒有球落袋', 'ボールはポケットに入りませんでした'],
   'None': ['无', '無', 'なし'],
   'Player 1 breaks': ['玩家 1 开球', '玩家 1 開球', 'プレイヤー 1 のブレイク'],
   'PLAYER 1 · BREAK': ['玩家 1 · 开球', '玩家 1 · 開球', 'プレイヤー 1 · ブレイク'],
