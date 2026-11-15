@@ -33,7 +33,7 @@ interface Candidate {
   direction: Vec2
   power: number
   routeLength: number
-  routeType: 'direct' | 'bank' | 'kick'
+  routeType: 'direct' | 'bank' | 'kick' | 'multi-rail'
 }
 
 const FIXED_STEP = 1 / 120
