@@ -134,7 +134,7 @@ export class GameApp {
       this.opponentMode = this.opponentModeInput.value === 'ai' ? 'ai' : 'local'
       this.aiDifficultyInput.disabled = this.opponentMode !== 'ai'
       this.statusElement.classList.remove('is-thinking')
-      this.statusElement.textContent = this.ruleState.lastMessage
+      this.statusElement.textContent = translateGameMessage(this.ruleState.lastMessage)
       this.updateTurnStatus()
       this.scheduleAiTurn()
     })
@@ -252,7 +252,7 @@ export class GameApp {
     if (this.ruleState.ballInHand) {
       if (this.world.placeCueBall(point)) {
         this.ruleState = this.rules.placeBallInHand(this.ruleState)
-        this.statusElement.textContent = this.ruleState.lastMessage
+        this.statusElement.textContent = translateGameMessage(this.ruleState.lastMessage)
         this.updateTurnStatus()
         this.renderer.updateBalls(this.world.getRenderBalls(1))
         this.scheduleAiTurn()
