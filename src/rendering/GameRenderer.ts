@@ -11,6 +11,8 @@ import {
   Line,
   LineBasicMaterial,
   Mesh,
+  MeshBasicMaterial,
+  Group,
   MeshStandardMaterial,
   PlaneGeometry,
   Scene,
@@ -40,6 +42,8 @@ export class GameRenderer {
   private readonly ballTextures = new Map<string, CanvasTexture>()
   private readonly aimLine: Line
   private readonly cueLine: Line
+  private readonly cueStick = new Group()
+  private readonly ballShadows = new Map<string, Mesh<CircleGeometry, MeshBasicMaterial>>()
 
   constructor(host: HTMLElement) {
     this.scene.background = new Color('#111e19')
@@ -64,7 +68,9 @@ export class GameRenderer {
     this.cueLine = new Line(new BufferGeometry(), cueMaterial)
     this.aimLine.visible = false
     this.cueLine.visible = false
-    this.scene.add(this.aimLine, this.cueLine)
+    this.cueLine.visible = false
+    this.createCueStick()
+    this.scene.add(this.aimLine, this.cueLine, this.cueStick)
   }
 
   get canvas(): HTMLCanvasElement {
@@ -91,6 +97,12 @@ export class GameRenderer {
         mesh.receiveShadow = true
         this.ballMeshes.set(ball.id, mesh)
         this.scene.add(mesh)
+        const shadow = new Mesh(new CircleGeometry(ball.radius * 1.65, 32), new MeshBasicMaterial({ color: '#06100d', transparent: true, opacity: 0.24, depthWrite: false }))
+        shadow.rotation.x = -Math.PI / 2
+        shadow.position.y = 0.002
+        shadow.renderOrder = 1
+        this.ballShadows.set(ball.id, shadow)
+        this.scene.add(shadow)
       }
 
       const isDropping = ball.pocketed
@@ -109,12 +121,19 @@ export class GameRenderer {
       mesh.position.set(renderX, renderY, renderZ)
       mesh.scale.setScalar(renderScale)
       mesh.rotation.set(ball.rotation.x, ball.rotation.y, ball.rotation.z)
+      const shadow = this.ballShadows.get(ball.id)
+      if (shadow) {
+        shadow.position.set(renderX + 0.012, 0.002, renderZ - 0.012)
+        shadow.scale.setScalar(isDropping ? renderScale : 1)
+        shadow.material.opacity = isDropping ? 0.24 * (1 - progress) : 0.24
+      }
     }
   }
 
   setAimPreview(cue: RenderBall, direction: { x: number; z: number }, pull: number, visible: boolean): void {
     this.aimLine.visible = visible
-    this.cueLine.visible = visible
+    this.cueLine.visible = false
+    this.cueStick.visible = visible
     if (!visible) return
 
     const dx = direction.x
@@ -156,6 +175,8 @@ export class GameRenderer {
       }
     })
     this.ballTextures.clear()
+    for (const shadow of this.ballShadows.values()) { shadow.geometry.dispose(); shadow.material.dispose() }
+    this.ballShadows.clear()
   }
 
   private createBallTexture(number: number, color: string): CanvasTexture {
@@ -239,10 +260,10 @@ export class GameRenderer {
   }
 
   private addTable(): void {
-    const wood = new MeshStandardMaterial({ color: '#5b3822', roughness: 0.32 })
-    const railWood = new MeshStandardMaterial({ color: '#70472a', roughness: 0.3 })
+    const wood = new MeshStandardMaterial({ color: '#9a6840', map: this.createSurfaceTexture('wood'), roughness: 0.3 })
+    const railWood = new MeshStandardMaterial({ color: '#a8794c', map: this.createSurfaceTexture('wood'), roughness: 0.28 })
     const cushion = new MeshStandardMaterial({ color: '#174b3a', roughness: 0.88 })
-    const felt = new MeshStandardMaterial({ color: '#176447', roughness: 0.96 })
+    const felt = new MeshStandardMaterial({ color: '#176447', map: this.createSurfaceTexture('felt'), roughness: 0.94 })
     const pocket = new MeshStandardMaterial({ color: '#080c0b', roughness: 1 })
     const pocketRim = new MeshStandardMaterial({ color: '#bd9b60', roughness: 0.45, metalness: 0.3 })
 
@@ -314,6 +335,47 @@ export class GameRenderer {
     const outerTrim = new Mesh(new BoxGeometry(TABLE_LENGTH + 0.46, 0.035, TABLE_WIDTH + 0.46), railWood)
     outerTrim.position.y = -0.225
     this.scene.add(outerTrim)
+  }
+
+
+  private createCueStick(): void {
+    const shaft = new Mesh(new CylinderGeometry(0.0032, 0.0082, 0.86, 16, 1), new MeshStandardMaterial({ color: '#d8b47c', roughness: 0.34 }))
+    shaft.position.y = 0.48
+    const butt = new Mesh(new CylinderGeometry(0.0082, 0.012, 0.34, 20, 1), new MeshStandardMaterial({ color: '#5a301c', roughness: 0.3 }))
+    butt.position.y = -0.12
+    const wrap = new Mesh(new CylinderGeometry(0.0105, 0.0105, 0.19, 20, 1), new MeshStandardMaterial({ color: '#202522', roughness: 0.82 }))
+    wrap.position.y = -0.12
+    const ferrule = new Mesh(new CylinderGeometry(0.0038, 0.0042, 0.035, 16), new MeshStandardMaterial({ color: '#e9dfc5', roughness: 0.24 }))
+    ferrule.position.y = 0.915
+    const tip = new Mesh(new CylinderGeometry(0.0032, 0.0038, 0.018, 16), new MeshStandardMaterial({ color: '#344b67', roughness: 0.72 }))
+    tip.position.y = 0.941
+    this.cueStick.add(shaft, butt, wrap, ferrule, tip)
+    this.cueStick.visible = false
+    this.cueStick.traverse((object) => { if (object instanceof Mesh) object.castShadow = true })
+  }
+
+  private createSurfaceTexture(kind: 'wood' | 'felt'): CanvasTexture {
+    const canvas = document.createElement('canvas')
+    canvas.width = 512; canvas.height = 512
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Could not create a procedural table texture')
+    if (kind === 'wood') {
+      context.fillStyle = '#8b5a35'; context.fillRect(0, 0, 512, 512)
+      for (let i = 0; i < 180; i += 1) {
+        const y = Math.random() * 512
+        context.strokeStyle = i % 5 === 0 ? 'rgba(42,20,9,0.22)' : 'rgba(226,176,112,0.12)'
+        context.lineWidth = 1 + Math.random() * 5
+        context.beginPath(); context.moveTo(0, y)
+        context.bezierCurveTo(160, y - 14, 340, y + 18, 512, y + (Math.random() - 0.5) * 22); context.stroke()
+      }
+    } else {
+      context.fillStyle = '#176447'; context.fillRect(0, 0, 512, 512)
+      for (let y = 0; y < 512; y += 3) { context.fillStyle = y % 6 === 0 ? 'rgba(255,255,255,0.035)' : 'rgba(0,20,12,0.035)'; context.fillRect(0, y, 512, 1) }
+      for (let x = 0; x < 512; x += 3) { context.fillStyle = x % 6 === 0 ? 'rgba(255,255,255,0.025)' : 'rgba(0,20,12,0.025)'; context.fillRect(x, 0, 1, 512) }
+    }
+    const texture = new CanvasTexture(canvas); texture.colorSpace = SRGBColorSpace
+    texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy()
+    return texture
   }
 
   private addPocketJaws(
