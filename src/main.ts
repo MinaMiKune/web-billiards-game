@@ -27,7 +27,7 @@ app.innerHTML = `
         <div class="status-block">
           <span class="section-label">TABLE STATUS</span>
           <strong id="game-status" aria-live="polite">Player 1 breaks</strong>
-          <span id="turn-status" class="turn-status">PLAYER 1 · BREAK</span>
+          <span id="turn-status" class="turn-status" aria-live="polite">PLAYER 1 · BREAK</span>
         </div>
         <div class="toolbar-actions">
           <label class="opponent-control" for="opponent-mode">
