@@ -370,19 +370,19 @@ export class GameApp {
   private updateTurnStatus(): void {
     const currentGroup = this.ruleState.playerGroups[this.ruleState.currentPlayer]
     const phaseLabel = this.ruleState.phase === 'break'
-      ? 'Break'
+      ? t('Break')
       : this.ruleState.phase === 'open-table'
-        ? 'Open table'
+        ? t('Open table')
         : this.ruleState.phase === 'game-over'
-          ? 'Game over'
-          : 'Groups assigned'
+          ? t('Game over')
+          : t('Groups assigned')
     const groupLabel = currentGroup ? ` · ${t(currentGroup === 'solids' ? 'SOLIDS' : 'STRIPES')}` : ''
     const ballInHandLabel = this.ruleState.ballInHand ? ` · ${t('BALL IN HAND — CLICK TO PLACE')}` : ''
     const winnerName = this.ruleState.winner === null
       ? ''
       : this.ruleState.winner === 1 && this.opponentMode === 'ai'
-        ? 'AI OPPONENT'
-        : `PLAYER ${this.ruleState.winner + 1}`
+        ? t('AI OPPONENT')
+        : t(this.ruleState.winner === 0 ? 'PLAYER 1' : 'PLAYER 2')
     const winnerLabel = winnerName ? ` · ${t('WINNER:')} ${winnerName}` : ''
     const playerLabel = this.opponentMode === 'ai' && this.ruleState.currentPlayer === 1
       ? 'AI OPPONENT'
