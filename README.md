@@ -13,6 +13,7 @@ The product direction is **game-realistic billiards**: accessible controls backe
 - [x] AI direct, bank, kick and two-rail shot candidates, safety evaluation and Web Worker planning
 - [x] Optional called-ball/called-pocket mode for human and AI players
 - [x] Configurable 8-ball-on-break outcome: re-rack or breaker wins
+- [x] Optional four-object-ball-to-rail requirement for dry breaks
 - [x] Shot history, player groups, remaining-ball scoreboard and match winner summary
 - [x] Procedural cue/pocket sound effects with a mute toggle
 - [x] Reduced-motion support and keyboard-focusable table canvas
