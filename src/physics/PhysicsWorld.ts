@@ -14,6 +14,12 @@ export interface PocketedBallEvent {
   pocketIndex: number
 }
 
+export interface PhysicsContactEvent {
+  kind: 'ball' | 'rail'
+  intensity: number
+  ballNumber: number
+}
+
 export interface ShotTelemetry {
   firstContactBallNumber: number | null
   pocketedBallNumbers: number[]
@@ -133,6 +139,7 @@ export class PhysicsWorld {
   readonly config: PhysicsConfig
   balls: BallState[]
   private shotTelemetry: ShotTelemetry = this.createEmptyShotTelemetry()
+  private stepContactEvents: PhysicsContactEvent[] = []
 
   constructor(config: PhysicsConfig = DEFAULT_PHYSICS_CONFIG) {
     this.config = { ...config }
@@ -142,6 +149,12 @@ export class PhysicsWorld {
   resetRack(): void {
     this.balls = this.createRack()
     this.shotTelemetry = this.createEmptyShotTelemetry()
+  }
+
+  consumeContactEvents(): PhysicsContactEvent[] {
+    const events = this.stepContactEvents
+    this.stepContactEvents = []
+    return events
   }
 
   getShotTelemetry(): ShotTelemetry {
@@ -265,6 +278,7 @@ export class PhysicsWorld {
 
   step(deltaSeconds: number): void {
     if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return
+    this.stepContactEvents = []
 
     for (const ball of this.balls) {
       ball.previousPosition = { ...ball.position }
@@ -287,7 +301,8 @@ export class PhysicsWorld {
       this.resolvePocketAndCushion(ball)
     }
 
-    for (let iteration = 0; iteration < 2; iteration += 1) {
+    // Four sequential impulse passes reduce residual overlap in dense racks and clusters.
+    for (let iteration = 0; iteration < 4; iteration += 1) {
       this.resolveBallCollisions()
     }
   }
@@ -598,6 +613,11 @@ export class PhysicsWorld {
 
     const normalImpulse = (1 + this.config.cushionRestitution) *
       ball.mass * -normalSpeed
+    this.stepContactEvents.push({
+      kind: 'rail',
+      intensity: Math.max(0.08, Math.min(1, normalImpulse / (ball.mass * this.config.maxShotSpeed))),
+      ballNumber: ball.number,
+    })
     if (this.shotTelemetry.firstContactBallNumber !== null) {
       this.shotTelemetry.railContactAfterFirstHit = true
       if (ball.number > 0 &&
@@ -724,6 +744,11 @@ export class PhysicsWorld {
 
         const impulse = -((1 + this.config.ballRestitution) * relativeNormalSpeed) /
           ((1 / a.mass) + (1 / b.mass))
+        this.stepContactEvents.push({
+          kind: 'ball',
+          intensity: Math.max(0.08, Math.min(1, impulse / (Math.min(a.mass, b.mass) * this.config.maxShotSpeed))),
+          ballNumber: a.number === 0 ? b.number : a.number,
+        })
 
         a.velocity.x -= (impulse / a.mass) * normal.x
         a.velocity.z -= (impulse / a.mass) * normal.z
