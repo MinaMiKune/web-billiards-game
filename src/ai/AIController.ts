@@ -15,6 +15,7 @@ export interface AIShotPlan {
   pocketIndex: number
   score: number
   style: 'pot' | 'safety'
+  routeType: 'direct' | 'bank' | 'kick'
   difficulty: AIDifficulty
   consideredCandidates: number
 }
@@ -32,16 +33,17 @@ interface Candidate {
   direction: Vec2
   power: number
   routeLength: number
+  routeType: 'direct' | 'bank' | 'kick'
 }
 
 const FIXED_STEP = 1 / 120
 const POCKET_COUNT = 6
 const PROFILES: Record<AIDifficulty, DifficultyProfile> = {
-  1: { candidateBudget: 4, aimErrorRadians: 0.095, powerError: 0.22, simulationSteps: 210 },
-  2: { candidateBudget: 8, aimErrorRadians: 0.06, powerError: 0.14, simulationSteps: 240 },
-  3: { candidateBudget: 14, aimErrorRadians: 0.032, powerError: 0.08, simulationSteps: 270 },
-  4: { candidateBudget: 22, aimErrorRadians: 0.014, powerError: 0.04, simulationSteps: 300 },
-  5: { candidateBudget: 30, aimErrorRadians: 0.004, powerError: 0.015, simulationSteps: 330 },
+  1: { candidateBudget: 4, aimErrorRadians: 0.095, powerError: 0.22, simulationSteps: 300 },
+  2: { candidateBudget: 8, aimErrorRadians: 0.06, powerError: 0.14, simulationSteps: 360 },
+  3: { candidateBudget: 14, aimErrorRadians: 0.032, powerError: 0.08, simulationSteps: 420 },
+  4: { candidateBudget: 22, aimErrorRadians: 0.014, powerError: 0.04, simulationSteps: 480 },
+  5: { candidateBudget: 30, aimErrorRadians: 0.004, powerError: 0.015, simulationSteps: 540 },
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -160,29 +162,120 @@ export class AIController {
         const objectDistance = distance(target.position, pocket)
         if (cueDistance < 0.04 || objectDistance < 0.04) continue
 
-        if (!segmentClear(world.balls, cue.position, ghost, new Set([cue.id, target.id]))) continue
-        if (!segmentClear(world.balls, target.position, pocket, new Set([cue.id, target.id]))) continue
+        const ignoredCueAndTarget = new Set([cue.id, target.id])
+        const cuePathClear = segmentClear(world.balls, cue.position, ghost, ignoredCueAndTarget)
+        const objectPathClear = segmentClear(world.balls, target.position, pocket, ignoredCueAndTarget)
 
-        const routeLength = cueDistance + objectDistance
-        const desiredSpeed = Math.sqrt(
-          2 * world.config.rollingDeceleration * routeLength,
-        ) * 1.28
-        const power = clamp(desiredSpeed / world.config.maxShotSpeed, 0.16, 0.92)
+        if (cuePathClear && objectPathClear) {
+          const routeLength = cueDistance + objectDistance
+          const desiredSpeed = Math.sqrt(
+            2 * world.config.rollingDeceleration * routeLength,
+          ) * 1.28
+          const power = clamp(desiredSpeed / world.config.maxShotSpeed, 0.16, 0.92)
 
-        candidates.push({
-          targetBallNumber: target.number,
-          pocketIndex,
-          direction: normalized({
-            x: ghost.x - cue.position.x,
-            z: ghost.z - cue.position.z,
-          }),
-          power,
-          routeLength,
-        })
+          candidates.push({
+            targetBallNumber: target.number,
+            pocketIndex,
+            direction: normalized({
+              x: ghost.x - cue.position.x,
+              z: ghost.z - cue.position.z,
+            }),
+            power,
+            routeLength,
+            routeType: 'direct',
+          })
+        } else if (!cuePathClear && objectPathClear) {
+          // A kick shot mirrors the desired cue-ball contact point across a
+          // cushion, so a banked cue-ball path can reach the same ghost ball.
+          const halfLength = world.config.tableLength / 2
+          const halfWidth = world.config.tableWidth / 2
+          const cushionLines: { axis: 'x' | 'z'; value: number }[] = [
+            { axis: 'x', value: -halfLength + cue.radius },
+            { axis: 'x', value: halfLength - cue.radius },
+            { axis: 'z', value: -halfWidth + cue.radius },
+            { axis: 'z', value: halfWidth - cue.radius },
+          ]
+          for (const rail of cushionLines) {
+            const reflectedGhost = rail.axis === 'x'
+              ? { x: 2 * rail.value - ghost.x, z: ghost.z }
+              : { x: ghost.x, z: 2 * rail.value - ghost.z }
+            const kickDistance = distance(cue.position, reflectedGhost)
+            if (kickDistance < 0.04) continue
+            if (!segmentClear(world.balls, cue.position, reflectedGhost, ignoredCueAndTarget)) continue
+            const kickRouteLength = kickDistance + objectDistance
+            const kickSpeed = Math.sqrt(
+              2 * world.config.rollingDeceleration * kickRouteLength,
+            ) * 1.42
+            candidates.push({
+              targetBallNumber: target.number,
+              pocketIndex,
+              direction: normalized({
+                x: reflectedGhost.x - cue.position.x,
+                z: reflectedGhost.z - cue.position.z,
+              }),
+              power: clamp(kickSpeed / world.config.maxShotSpeed, 0.2, 0.98),
+              routeLength: kickRouteLength,
+              routeType: 'kick',
+            })
+          }
+        }
+        
+        // Bank-shot candidates are generated by reflecting the pocket across
+        // each non-adjacent cushion. The real physics simulation below decides
+        // whether the rebound actually reaches the pocket.
+        const halfLength = world.config.tableLength / 2
+        const halfWidth = world.config.tableWidth / 2
+        const railOffset = target.radius
+        const reflectedPockets = [
+          { x: -2 * (halfLength - railOffset) - pocket.x, z: pocket.z },
+          { x: 2 * (halfLength - railOffset) - pocket.x, z: pocket.z },
+          { x: pocket.x, z: -2 * (halfWidth - railOffset) - pocket.z },
+          { x: pocket.x, z: 2 * (halfWidth - railOffset) - pocket.z },
+        ]
+        const onLeftRail = Math.abs(pocket.x + halfLength) < 1e-6
+        const onRightRail = Math.abs(pocket.x - halfLength) < 1e-6
+        const onTopRail = Math.abs(pocket.z + halfWidth) < 1e-6
+        const onBottomRail = Math.abs(pocket.z - halfWidth) < 1e-6
+        const canBankOffRail = [!onLeftRail, !onRightRail, !onTopRail, !onBottomRail]
+
+        for (let railIndex = 0; railIndex < reflectedPockets.length; railIndex += 1) {
+          if (!canBankOffRail[railIndex]) continue
+          const reflectedPocket = reflectedPockets[railIndex]
+          const bankDirection = normalized({
+            x: reflectedPocket.x - target.position.x,
+            z: reflectedPocket.z - target.position.z,
+          })
+          if (bankDirection.x === 0 && bankDirection.z === 0) continue
+          const bankGhost = {
+            x: target.position.x - bankDirection.x * (cue.radius + target.radius),
+            z: target.position.z - bankDirection.z * (cue.radius + target.radius),
+          }
+          const bankCueDistance = distance(cue.position, bankGhost)
+          const bankObjectDistance = distance(target.position, reflectedPocket)
+          if (bankCueDistance < 0.04 || bankObjectDistance < 0.04) continue
+          if (!segmentClear(world.balls, cue.position, bankGhost, new Set([cue.id, target.id]))) continue
+          if (!segmentClear(world.balls, target.position, reflectedPocket, new Set([cue.id, target.id]))) continue
+
+          const bankRouteLength = bankCueDistance + bankObjectDistance
+          const bankDesiredSpeed = Math.sqrt(
+            2 * world.config.rollingDeceleration * bankRouteLength,
+          ) * 1.38
+          candidates.push({
+            targetBallNumber: target.number,
+            pocketIndex,
+            direction: normalized({
+              x: bankGhost.x - cue.position.x,
+              z: bankGhost.z - cue.position.z,
+            }),
+            power: clamp(bankDesiredSpeed / world.config.maxShotSpeed, 0.18, 0.96),
+            routeLength: bankRouteLength,
+            routeType: 'bank',
+          })
+        }
       }
     }
 
-    candidates.sort((a, b) => a.routeLength - b.routeLength)
+    candidates.sort((a, b) => (a.routeLength + (a.routeType === 'bank' ? 0.12 : a.routeType === 'kick' ? 0.24 : 0)) - (b.routeLength + (b.routeType === 'bank' ? 0.12 : b.routeType === 'kick' ? 0.24 : 0)))
     const profile = PROFILES[difficulty]
     const selected = candidates.slice(0, profile.candidateBudget)
     let best: AIShotPlan | null = null
@@ -247,7 +340,18 @@ export class AIController {
           const nearest = Math.min(
             ...opponentBalls.map((ball) => distance(simulation.cueBall.position, ball.position)),
           )
-          score += clamp(nearest, 0, 1.2) * 10
+          const opponentHasOpenShot = opponentBalls.some((ball) =>
+            segmentClear(
+              simulation.balls,
+              simulation.cueBall.position,
+              ball.position,
+              new Set([simulation.cueBall.id, ball.id]),
+            ),
+          )
+          // Prefer cue-ball positions that leave the opponent both farther away
+          // and without an immediate unobstructed reply.
+          score += clamp(nearest, 0, 1.2) * 34
+          if (!opponentHasOpenShot) score += 72
         }
       }
       score -= candidate.routeLength * 2.5
@@ -260,6 +364,7 @@ export class AIController {
           pocketIndex: candidate.pocketIndex,
           score,
           style: targetPocketed ? 'pot' : 'safety',
+          routeType: candidate.routeType,
           difficulty,
           consideredCandidates: selected.length,
         }
@@ -337,6 +442,7 @@ export class AIController {
       pocketIndex: 0,
       score: -1000,
       style: 'safety',
+      routeType: 'direct',
       difficulty,
       consideredCandidates: 0,
     }
