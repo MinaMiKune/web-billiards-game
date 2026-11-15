@@ -243,7 +243,9 @@ export class GameApp {
   }
 
   private onKeyDown = (event: KeyboardEvent): void => {
-    if (event.target instanceof HTMLInputElement) return
+    if (event.target instanceof HTMLInputElement ||
+      event.target instanceof HTMLSelectElement ||
+      event.target instanceof HTMLButtonElement) return
     const modes: Record<string, CameraMode> = {
       '1': 'top',
       '2': 'angled',
