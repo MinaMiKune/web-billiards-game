@@ -80,7 +80,7 @@ See PHYSICS.md for parameter baselines and explicit validation limits.
 - Optional call-shot mode validates the called ball and pocket using physics pocket-index telemetry.
 - The 8-ball-on-break option supports re-rack (default) or breaker wins.
 - An optional dry-break requirement checks that four distinct object balls reach a cushion after first contact.
-- Cue-ball placement is validated against table bounds, pocket exclusion zones and other active balls.
+- Cue-ball placement is validated against table bounds, pocket exclusion zones and other active balls; break fouls additionally enforce the head-string zone.
 - GameApp presents recent shot history, scoreboard, turn state and winner summary.
 
 ## AI decision boundary
