@@ -167,6 +167,11 @@ export function translateGameMessage(message: string, target: Locale = locale): 
   match = message.match(/^Player (\d+) · ball placed$/)
   if (match) return `${translateForLocale('Player', target)} ${match[1]} · ${translateForLocale('ball placed', target)}`
 
+  match = message.match(/^AI · (pot attempt|safety attempt) · (bank shot|direct shot) · target (\d+)$/)
+  if (match) {
+    return `AI · ${translateForLocale(match[1], target)} · ${translateForLocale(match[2], target)} · ${translateForLocale('target', target)} ${match[3]}`
+  }
+
   match = message.match(/^AI · (pot attempt|safety attempt) · target (\d+)$/)
   if (match) {
     return `AI · ${translateForLocale(match[1], target)} · ${translateForLocale('target', target)} ${match[2]}`
