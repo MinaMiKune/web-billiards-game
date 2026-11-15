@@ -77,6 +77,10 @@ app.innerHTML = `
               <option value="6">6 · Bottom right</option>
             </select>
           </label>
+          <label class="sound-toggle" for="sound-toggle">
+            <input id="sound-toggle" type="checkbox" checked />
+            <span class="section-label">SOUND</span>
+          </label>
           <label class="power-control" for="shot-power">
             <span class="section-label">SHOT POWER</span>
             <strong id="power-value">65%</strong>

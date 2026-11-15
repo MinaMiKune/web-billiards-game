@@ -69,7 +69,8 @@ Selected decisions:
 - [x] Add a live player scoreboard with group assignment and remaining-ball counts.
 - [x] Highlight the active player and match winner.
 - [x] Show an explicit AI-thinking state while the opponent is preparing a shot.
-- [ ] Add sound, lighting refinement and richer shot feedback.
+- [x] Add procedural cue/pocket sound effects with a mute toggle.
+- [ ] Refine lighting and add richer shot feedback.
 - [x] Add reduced-motion support and keyboard focus visibility for the interactive table.
 - [ ] Review touch controls and small-screen layouts in real browsers.
 - [ ] Add browser compatibility and repeatable performance benchmarks.

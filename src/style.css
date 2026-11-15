@@ -303,3 +303,12 @@ footer { margin-top:16px; gap:12px; font-size:8px; letter-spacing:.12em; }
   outline: 2px solid #d9bb7d;
   outline-offset: -3px;
 }
+
+.sound-toggle {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 7px;
+  min-width: 58px;
+}
+.sound-toggle input { accent-color: #d9bb7d; }
