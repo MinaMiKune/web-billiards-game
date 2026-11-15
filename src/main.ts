@@ -117,6 +117,18 @@ app.innerHTML = `
         </article>
       </section>
 
+      <aside id="first-shot-guide" class="first-shot-guide" aria-label="First shot guide">
+        <div class="first-shot-guide-heading">
+          <span class="section-label">YOUR FIRST SHOT</span>
+          <button id="dismiss-first-shot-guide" class="guide-dismiss" type="button" aria-label="Dismiss first shot guide">Got it</button>
+        </div>
+        <ol class="first-shot-steps">
+          <li><span class="guide-step-number">1</span><span><strong>AIM</strong><small>Drag back from the white ball</small></span></li>
+          <li><span class="guide-step-number">2</span><span><strong>SET POWER</strong><small>Adjust the shot power below</small></span></li>
+          <li><span class="guide-step-number">3</span><span><strong>SHOOT</strong><small>Release to take your shot</small></span></li>
+        </ol>
+      </aside>
+
       <div class="scene-frame">
         <div id="scene-host" class="scene-host" aria-label="Interactive 3D billiards table"></div>
         <div id="interaction-hint" class="scene-hint">DRAG BACK FROM THE WHITE BALL TO AIM · RELEASE TO SHOOT</div>
@@ -190,4 +202,27 @@ languageSelect?.addEventListener('change', () => {
   window.localStorage.setItem('billiards-locale', locale)
   window.dispatchEvent(new Event('billiards-locale-change'))
 })
+const firstShotGuide = app.querySelector<HTMLElement>('#first-shot-guide')
+const dismissGuide = app.querySelector<HTMLButtonElement>('#dismiss-first-shot-guide')
+const guideDismissed = window.localStorage.getItem('billiards-first-shot-guide-dismissed') === 'true'
+if (guideDismissed && firstShotGuide) firstShotGuide.hidden = true
+
+dismissGuide?.addEventListener('click', () => {
+  if (firstShotGuide) firstShotGuide.hidden = true
+  window.localStorage.setItem('billiards-first-shot-guide-dismissed', 'true')
+})
+
 new GameApp(app)
+
+// Keep onboarding until the player has actually completed their first shot.
+const shotHistory = app.querySelector<HTMLOListElement>('#shot-history')
+if (shotHistory && firstShotGuide && !guideDismissed) {
+  const firstShotObserver = new MutationObserver(() => {
+    const hasRecordedShot = [...shotHistory.children].some((item) => !item.classList.contains('history-empty'))
+    if (!hasRecordedShot) return
+    firstShotGuide.hidden = true
+    window.localStorage.setItem('billiards-first-shot-guide-dismissed', 'true')
+    firstShotObserver.disconnect()
+  })
+  firstShotObserver.observe(shotHistory, { childList: true, subtree: true })
+}
