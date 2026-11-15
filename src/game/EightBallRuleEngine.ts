@@ -30,6 +30,7 @@ export interface ShotResult {
   firstContactBallNumber: number | null
   pocketedBallNumbers: number[]
   pocketedBallEvents?: PocketedBallEvent[]
+  railContactBallNumbersAfterFirstHit?: number[]
   calledBallNumber?: number | null
   calledPocketIndex?: number | null
   cueBallPocketed: boolean
