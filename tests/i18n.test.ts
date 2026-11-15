@@ -56,8 +56,8 @@ describe('dynamic game message localization', () => {
   })
 
   it('translates behind-head-string ball-in-hand guidance', () => {
-    expect(translateGameMessage('Ball in hand · behind head string', 'zh-CN'))
-      .toBe('自由球：母球必须放在开球线后方')
+    expect(translateGameMessage('BALL IN HAND — BEHIND HEAD STRING', 'zh-CN'))
+      .toBe('自由球 — 母球必须放在开球线后方')
     expect(translateGameMessage('Cue ball must stay behind the head string', 'ja'))
       .toBe('手球はヘッドストリングの後方に置いてください')
   })
