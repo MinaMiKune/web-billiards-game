@@ -833,6 +833,15 @@ export class GameApp {
     let steps = 0
     while (this.accumulator >= FIXED_STEP && steps < MAX_SUBSTEPS) {
       this.world.step(FIXED_STEP)
+      for (const contact of this.world.consumeContactEvents()) {
+        if (contact.kind === 'rail') {
+          this.soundEffects.playRailImpact(contact.intensity)
+          this.tactileFeedback.rail(contact.intensity)
+        } else {
+          this.soundEffects.playBallImpact(contact.intensity)
+          this.tactileFeedback.impact(contact.ballNumber, contact.intensity)
+        }
+      }
       this.accumulator -= FIXED_STEP
       steps += 1
     }
