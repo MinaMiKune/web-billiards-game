@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AIController, type AIDifficulty } from '../src/ai/AIController'
 import { createInitialEightBallState } from '../src/game/EightBallRuleEngine'
-import { PhysicsWorld } from '../src/physics/PhysicsWorld'
+import { DEFAULT_PHYSICS_CONFIG, PhysicsWorld } from '../src/physics/PhysicsWorld'
 
 describe('AIController', () => {
   it('plans a valid shot using a cloned copy of the real physics world', () => {
@@ -49,6 +49,26 @@ describe('AIController', () => {
     const placement = new AIController().chooseBallInHandPlacement(world, state)
 
     expect(placement).not.toBeNull()
+    const copy = world.clone()
+    expect(copy.placeCueBall(placement!)).toBe(true)
+  })
+
+  it('scales legal ball-in-hand search to non-default table dimensions', () => {
+    const world = new PhysicsWorld({
+      ...DEFAULT_PHYSICS_CONFIG,
+      tableLength: 3.2,
+      tableWidth: 1.6,
+    })
+    world.cueBall.active = false
+    world.cueBall.pocketed = true
+
+    const state = createInitialEightBallState()
+    state.phase = 'open-table'
+    const placement = new AIController().chooseBallInHandPlacement(world, state)
+
+    expect(placement).not.toBeNull()
+    expect(Math.abs(placement!.x)).toBeLessThan(3.2 / 2 - world.cueBall.radius)
+    expect(Math.abs(placement!.z)).toBeLessThan(1.6 / 2 - world.cueBall.radius)
     const copy = world.clone()
     expect(copy.placeCueBall(placement!)).toBe(true)
   })
