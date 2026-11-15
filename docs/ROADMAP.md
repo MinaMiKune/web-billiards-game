@@ -92,8 +92,8 @@ Selected decisions:
 
 - [x] Record the product pivot and player-facing experience principles in `docs/GAMEPLAY_REDESIGN.md`.
 - [x] Replace simulator-facing labels with player-facing match language and strengthen the playfield/turn visual hierarchy.
-- [ ] Reorganize advanced rule options behind progressive disclosure.
-- [ ] Add an explicit first-shot onboarding and clearer power/aim interaction.
+- [x] Reorganize advanced rule options behind progressive disclosure.
+- [x] Add a persistent first-shot guide that explains aim, power and release; dismiss it after the first recorded shot or explicit dismissal.
 - [ ] Complete touch-first layout verification at 320px and on real mobile browsers.
 - [ ] Add a fast rematch/mode-selection flow and improve shot-result feedback.
 
