@@ -555,7 +555,7 @@ export class GameApp {
     }
 
     this.statusElement.textContent =
-      translateGameMessage(`AI · ${plan.style === 'pot' ? 'pot attempt' : 'safety attempt'} · ${plan.routeType === 'bank' ? 'bank shot' : plan.routeType === 'kick' ? 'kick shot' : 'direct shot'} · target ${plan.targetBallNumber}`)
+      translateGameMessage(`AI · ${plan.style === 'pot' ? 'pot attempt' : 'safety attempt'} · ${plan.routeType === 'bank' ? 'bank shot' : plan.routeType === 'kick' ? 'kick shot' : plan.routeType === 'multi-rail' ? 'multi-rail shot' : 'direct shot'} · target ${plan.targetBallNumber}`)
     this.wasMoving = true
   }
 
