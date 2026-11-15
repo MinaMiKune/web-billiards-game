@@ -496,3 +496,17 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
   .match-summary { line-height:1.5; }
   .rematch-button { margin-left:auto; }
 }
+
+/* The latest resolved shot gets a compact, high-contrast outcome callout. */
+.last-shot-feedback {
+  display:block; max-width:min(460px, 100%); color:#cbd9c8;
+  font:600 10px/1.5 'DM Mono',monospace; letter-spacing:.035em;
+}
+.last-shot-feedback.is-pot { color:#e6d29e; }
+.last-shot-feedback.is-foul { color:#e6a49a; }
+.last-shot-feedback.is-dry { color:#9eb2a4; }
+.last-shot-feedback[hidden] { display:none; }
+@media (max-width:560px) {
+  .match-result-actions { align-items:flex-start; flex-direction:column; }
+  .last-shot-feedback { max-width:100%; }
+}
