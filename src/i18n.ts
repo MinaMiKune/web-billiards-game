@@ -1,6 +1,7 @@
-export type Locale = 'zh-CN' | 'zh-TW' | 'ja'
+export type Locale = 'en' | 'zh-CN' | 'zh-TW' | 'ja'
 
 export const LOCALES: { value: Locale; label: string }[] = [
+  { value: 'en', label: 'English' },
   { value: 'zh-CN', label: '简体中文' },
   { value: 'zh-TW', label: '繁體中文' },
   { value: 'ja', label: '日本語' },
@@ -71,7 +72,7 @@ let locale: Locale | 'en' = 'en'
 export function setLocale(next: Locale): void {
   locale = next
   document.documentElement.lang = next
-  const index = next === 'zh-CN' ? 0 : next === 'zh-TW' ? 1 : 2
+  const index = next === 'zh-CN' ? 0 : next === 'zh-TW' ? 1 : next === 'ja' ? 2 : null
   const reverse = new Map<string, string>()
   for (const [english, values] of Object.entries(messages)) {
     reverse.set(english, english)
@@ -84,7 +85,7 @@ export function setLocale(next: Locale): void {
     const trimmed = value.trim()
     const english = reverse.get(trimmed)
     if (!english) continue
-    const translated = messages[english]?.[index] ?? english
+    const translated = index === null ? english : messages[english]?.[index] ?? english
     node.nodeValue = value.replace(trimmed, translated)
   }
   const select = document.querySelector<HTMLSelectElement>('#language-select')
