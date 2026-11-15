@@ -259,8 +259,8 @@ export class GameRenderer {
     this.scene.add(feltMesh)
 
     const headStringGeometry = new BufferGeometry().setFromPoints([
-      new Vector3(-TABLE_LENGTH / 4, 0.002, -TABLE_WIDTH / 2 + 0.025),
-      new Vector3(-TABLE_LENGTH / 4, 0.002, TABLE_WIDTH / 2 - 0.025),
+      new Vector3(-TABLE_LENGTH / 4, -0.013, -TABLE_WIDTH / 2 + 0.025),
+      new Vector3(-TABLE_LENGTH / 4, -0.013, TABLE_WIDTH / 2 - 0.025),
     ])
     const headString = new Line(
       headStringGeometry,
