@@ -521,13 +521,17 @@ export class GameApp {
       this.pendingAiRequestId = requestId
       this.statusElement.classList.add('is-thinking')
       this.statusElement.textContent = t('AI is reading the table…')
-      this.aiWorker.postMessage({
-        requestId,
-        config: this.world.config,
-        balls: this.world.balls,
-        gameState: this.ruleState,
-        difficulty: this.aiDifficulty,
-      })
+      try {
+        this.aiWorker.postMessage({
+          requestId,
+          config: this.world.config,
+          balls: this.world.balls,
+          gameState: this.ruleState,
+          difficulty: this.aiDifficulty,
+        })
+      } catch {
+        this.onAiWorkerError()
+      }
       return
     }
 
