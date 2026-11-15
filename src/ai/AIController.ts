@@ -39,11 +39,11 @@ interface Candidate {
 const FIXED_STEP = 1 / 120
 const POCKET_COUNT = 6
 const PROFILES: Record<AIDifficulty, DifficultyProfile> = {
-  1: { candidateBudget: 4, aimErrorRadians: 0.095, powerError: 0.22, simulationSteps: 210 },
-  2: { candidateBudget: 8, aimErrorRadians: 0.06, powerError: 0.14, simulationSteps: 240 },
-  3: { candidateBudget: 14, aimErrorRadians: 0.032, powerError: 0.08, simulationSteps: 270 },
-  4: { candidateBudget: 22, aimErrorRadians: 0.014, powerError: 0.04, simulationSteps: 300 },
-  5: { candidateBudget: 30, aimErrorRadians: 0.004, powerError: 0.015, simulationSteps: 330 },
+  1: { candidateBudget: 4, aimErrorRadians: 0.095, powerError: 0.22, simulationSteps: 300 },
+  2: { candidateBudget: 8, aimErrorRadians: 0.06, powerError: 0.14, simulationSteps: 360 },
+  3: { candidateBudget: 14, aimErrorRadians: 0.032, powerError: 0.08, simulationSteps: 420 },
+  4: { candidateBudget: 22, aimErrorRadians: 0.014, powerError: 0.04, simulationSteps: 480 },
+  5: { candidateBudget: 30, aimErrorRadians: 0.004, powerError: 0.015, simulationSteps: 540 },
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -303,7 +303,18 @@ export class AIController {
           const nearest = Math.min(
             ...opponentBalls.map((ball) => distance(simulation.cueBall.position, ball.position)),
           )
-          score += clamp(nearest, 0, 1.2) * 10
+          const opponentHasOpenShot = opponentBalls.some((ball) =>
+            segmentClear(
+              simulation.balls,
+              simulation.cueBall.position,
+              ball.position,
+              new Set([simulation.cueBall.id, ball.id]),
+            ),
+          )
+          // Prefer cue-ball positions that leave the opponent both farther away
+          // and without an immediate unobstructed reply.
+          score += clamp(nearest, 0, 1.2) * 34
+          if (!opponentHasOpenShot) score += 72
         }
       }
       score -= candidate.routeLength * 2.5
