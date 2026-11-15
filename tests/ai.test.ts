@@ -53,6 +53,26 @@ describe('AIController', () => {
     expect(copy.placeCueBall(placement!)).toBe(true)
   })
 
+  it('scales legal ball-in-hand search to non-default table dimensions', () => {
+    const world = new PhysicsWorld({
+      ...DEFAULT_PHYSICS_CONFIG,
+      tableLength: 3.2,
+      tableWidth: 1.6,
+    })
+    world.cueBall.active = false
+    world.cueBall.pocketed = true
+
+    const state = createInitialEightBallState()
+    state.phase = 'open-table'
+    const placement = new AIController().chooseBallInHandPlacement(world, state)
+
+    expect(placement).not.toBeNull()
+    expect(Math.abs(placement!.x)).toBeLessThan(3.2 / 2 - world.cueBall.radius)
+    expect(Math.abs(placement!.z)).toBeLessThan(1.6 / 2 - world.cueBall.radius)
+    const copy = world.clone()
+    expect(copy.placeCueBall(placement!)).toBe(true)
+  })
+
   it('supports all five difficulty profiles', () => {
     const ai = new AIController()
     const world = new PhysicsWorld()
