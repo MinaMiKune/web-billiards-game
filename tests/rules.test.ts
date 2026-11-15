@@ -42,6 +42,30 @@ describe('EightBallRuleEngine', () => {
     expect(result.state.phase).toBe('open-table')
   })
 
+  it('enforces the four-object-ball rail requirement on a dry break when selected', () => {
+    const breakRules = new EightBallRuleEngine({ breakRequirement: 'four-rails' })
+    const state = createInitialEightBallState()
+    const illegalBreak = breakRules.resolveShot(state, cleanShot({
+      firstContactBallNumber: 1,
+      railContactAfterFirstHit: true,
+      railContactBallNumbersAfterFirstHit: [1, 2, 3],
+    }))
+    expect(illegalBreak.foulReasons).toContain(
+      'Illegal break — fewer than four object balls reached a cushion',
+    )
+    expect(illegalBreak.state.currentPlayer).toBe(1)
+    expect(illegalBreak.state.ballInHand).toBe(true)
+
+    const legalBreak = breakRules.resolveShot(state, cleanShot({
+      firstContactBallNumber: 1,
+      railContactAfterFirstHit: true,
+      railContactBallNumbersAfterFirstHit: [1, 2, 3, 4],
+    }))
+    expect(legalBreak.foulReasons).toHaveLength(0)
+    expect(legalBreak.state.currentPlayer).toBe(1)
+    expect(legalBreak.state.ballInHand).toBe(false)
+  })
+
   it('supports the breaker-wins option when the 8-ball is pocketed on the break', () => {
     const breakRules = new EightBallRuleEngine({ eightBallOnBreak: 'breaker-wins' })
     const result = breakRules.resolveShot(
