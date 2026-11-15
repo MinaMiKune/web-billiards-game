@@ -15,7 +15,7 @@ export interface AIShotPlan {
   pocketIndex: number
   score: number
   style: 'pot' | 'safety'
-  routeType: 'direct' | 'bank' | 'kick' | 'kick'
+  routeType: 'direct' | 'bank' | 'kick'
   difficulty: AIDifficulty
   consideredCandidates: number
 }
@@ -33,7 +33,7 @@ interface Candidate {
   direction: Vec2
   power: number
   routeLength: number
-  routeType: 'direct' | 'bank'
+  routeType: 'direct' | 'bank' | 'kick'
 }
 
 const FIXED_STEP = 1 / 120
