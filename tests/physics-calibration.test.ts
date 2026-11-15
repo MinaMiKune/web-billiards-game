@@ -61,8 +61,11 @@ describe('Physics calibration baselines', () => {
   })
 
   it('preserves linear momentum in a frictionless equal-mass head-on impact', () => {
+    const defaults = new PhysicsWorld().config
     const world = new PhysicsWorld({
-      ...new PhysicsWorld().config,
+      ...defaults,
+      slidingFriction: 0,
+      rollingDeceleration: 0,
       ballCollisionFriction: 0,
     })
     const [a, b] = world.balls
