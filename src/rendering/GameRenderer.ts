@@ -130,7 +130,7 @@ export class GameRenderer {
     }
   }
 
-  setAimPreview(cue: RenderBall, direction: { x: number; z: number }, pull: number, visible: boolean): void {
+  setAimPreview(cue: RenderBall, direction: { x: number; z: number }, pull: number, visible: boolean, elevation = 0): void {
     this.aimLine.visible = visible
     this.cueLine.visible = false
     this.cueStick.visible = visible
@@ -152,10 +152,10 @@ export class GameRenderer {
     this.aimLine.geometry = new BufferGeometry().setFromPoints([start, end])
     this.cueLine.geometry = new BufferGeometry().setFromPoints([cueStart, cueEnd])
     const pullBack = 0.32 + pull * 0.55
-    const cueAxis = new Vector3(dx, 0, dz).normalize()
+    const cueAxis = new Vector3(dx * Math.cos(elevation), Math.sin(elevation), dz * Math.cos(elevation)).normalize()
     this.cueStick.position.set(
       cue.position.x - dx * (pullBack + 0.95),
-      cue.radius + cue.height + 0.018,
+      cue.radius + cue.height + 0.018 - Math.sin(elevation) * (pullBack + 0.95),
       cue.position.z - dz * (pullBack + 0.95),
     )
     this.cueStick.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), cueAxis)
