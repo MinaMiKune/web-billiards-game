@@ -138,9 +138,9 @@ app.innerHTML = `
         <label class="power-control" for="shot-power">
           <span class="section-label">SHOT POWER</span>
           <strong id="power-value">65%</strong>
-          <input id="shot-power" type="range" min="10" max="100" value="65" />
+          <input id="shot-power" type="range" min="10" max="100" value="65" aria-label="Shot power" aria-describedby="shot-control-hint" />
         </label>
-        <p class="shot-control-hint">Pull back from the cue ball, then release to shoot</p>
+        <p id="shot-control-hint" class="shot-control-hint">Pull back from the cue ball, then release to shoot</p>
       </div>
 
       <div class="spin-bar">
