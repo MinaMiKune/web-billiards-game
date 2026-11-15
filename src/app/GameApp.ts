@@ -499,6 +499,7 @@ export class GameApp {
       color: cue.color,
       radius: cue.radius,
       position: cue.position,
+      height: cue.height,
       rotation: cue.rotation,
       active: cue.active,
       pocketed: cue.pocketed,

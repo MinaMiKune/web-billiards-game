@@ -115,7 +115,7 @@ export class GameRenderer {
       const renderZ = isDropping && ball.pocketTarget
         ? ball.position.z + (ball.pocketTarget.z - ball.position.z) * progress * 0.72
         : ball.position.z
-      const renderY = ball.radius - progress * 0.22
+      const renderY = ball.radius + ball.height - progress * 0.22
       const renderScale = isDropping ? 1 - progress * 0.62 : 1
 
       mesh.position.set(renderX, renderY, renderZ)
@@ -124,8 +124,8 @@ export class GameRenderer {
       const shadow = this.ballShadows.get(ball.id)
       if (shadow) {
         shadow.position.set(renderX + 0.012, 0.002, renderZ - 0.012)
-        shadow.scale.setScalar(isDropping ? renderScale : 1)
-        shadow.material.opacity = isDropping ? 0.24 * (1 - progress) : 0.24
+        shadow.scale.setScalar((isDropping ? renderScale : 1) * (1 + ball.height * 4))
+        shadow.material.opacity = (isDropping ? 0.24 * (1 - progress) : 0.24) / (1 + ball.height * 8)
       }
     }
   }
@@ -138,12 +138,12 @@ export class GameRenderer {
 
     const dx = direction.x
     const dz = direction.z
-    const start = new Vector3(cue.position.x + dx * 0.04, cue.radius + 0.006, cue.position.z + dz * 0.04)
-    const end = new Vector3(cue.position.x + dx * 1.1, cue.radius + 0.006, cue.position.z + dz * 1.1)
-    const cueStart = new Vector3(cue.position.x - dx * 0.11, cue.radius + 0.02, cue.position.z - dz * 0.11)
+    const start = new Vector3(cue.position.x + dx * 0.04, cue.radius + cue.height + 0.006, cue.position.z + dz * 0.04)
+    const end = new Vector3(cue.position.x + dx * 1.1, cue.radius + cue.height + 0.006, cue.position.z + dz * 1.1)
+    const cueStart = new Vector3(cue.position.x - dx * 0.11, cue.radius + cue.height + 0.02, cue.position.z - dz * 0.11)
     const cueEnd = new Vector3(
       cue.position.x - dx * (0.32 + pull * 0.55),
-      cue.radius + 0.02,
+      cue.radius + cue.height + 0.02,
       cue.position.z - dz * (0.32 + pull * 0.55),
     )
 
@@ -155,7 +155,7 @@ export class GameRenderer {
     const cueAxis = new Vector3(dx, 0, dz).normalize()
     this.cueStick.position.set(
       cue.position.x - dx * (pullBack + 0.95),
-      cue.radius + 0.018,
+      cue.radius + cue.height + 0.018,
       cue.position.z - dz * (pullBack + 0.95),
     )
     this.cueStick.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), cueAxis)
