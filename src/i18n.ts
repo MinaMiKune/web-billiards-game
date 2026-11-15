@@ -84,7 +84,6 @@ const messages: Record<string, [string, string, string]> = {
   'pot attempt': ['进球尝试', '進球嘗試', 'ポット狙い'],
   'safety attempt': ['防守尝试', '防守嘗試', 'セーフティ狙い'],
   'target': ['目标球', '目標球', 'ターゲット'],
-  'UNASSIGNED': ['未分配', '未分配', '未割り当て'],
   'BALL IN HAND — CLICK TO PLACE': ['自由球 — 点击放置母球', '自由球 — 點擊放置母球', 'フリーボール — クリックして手球を配置'],
   'WINNER:': ['获胜者：', '獲勝者：', '勝者：'],
   'VS AI': ['对战 AI', '對戰 AI', 'AI 対戦'],
