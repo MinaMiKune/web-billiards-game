@@ -97,6 +97,8 @@ Selected decisions:
 - [x] Show live power percentage and contextual release/shot-in-motion guidance during pointer aiming.
 - [x] Increase the shot-power slider's touch target and expose its live value to assistive technology.
 - [x] Use a slightly larger cue-ball drag start target for touch pointers while preserving mouse precision.
+- [x] Recover aim and spin interactions cleanly when the browser cancels or unexpectedly releases pointer capture.
+- [x] Announce turn changes through a polite live region for assistive technology.
 - [x] Reflow the four camera selectors into large, two-column touch targets on narrow phones.
 - [ ] Complete touch-first layout verification at 320px and on real mobile browsers.
 - [x] Add a one-tap rematch action beside the completed-match result while preserving the selected game mode and AI difficulty.
