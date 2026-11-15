@@ -50,7 +50,6 @@ const messages: Record<string, [string, string, string]> = {
   'PLAYER 1': ['玩家 1', '玩家 1', 'プレイヤー 1'],
   'PLAYER 2': ['玩家 2', '玩家 2', 'プレイヤー 2'],
   'PLAYER 1 breaks': ['玩家 1 开球', '玩家 1 開球', 'プレイヤー 1 のブレイク'],
-  'OPEN TABLE': ['开放球台', '開放球桌', 'オープンテーブル'],
   'UNASSIGNED': ['未分配', '未分配', '未割り当て'],
   'SOLIDS': ['全色球', '全色球', 'ソリッド'],
   'STRIPES': ['花色球', '花色球', 'ストライプ'],
@@ -65,10 +64,9 @@ const messages: Record<string, [string, string, string]> = {
   'GAME OVER · START A NEW RACK TO PLAY AGAIN': ['比赛结束 · 重新摆球再来一局', '比賽結束 · 重新擺球再玩一局', 'ゲーム終了 · ラックをリセットして再開'],
   'CLICK A CLEAR SPOT ON THE TABLE TO PLACE THE CUE BALL': ['点击球台空位放置母球', '點擊球桌空位放置母球', 'テーブルの空き場所をクリックして手球を置く'],
   'AI OPPONENT IS ANALYZING THE TABLE': ['AI 对手正在分析球台', 'AI 對手正在分析球桌', 'AI 対戦相手がテーブルを分析中'],
-  'Choose a clear spot away from balls and pockets': ['请选择远离其他球和袋口的空位', '請選擇遠離其他球與袋口的空位', '他のボールやポケットから離れた場所を選択してください'],
 }
 
-let locale: Locale = 'en' as Locale
+let locale: Locale | 'en' = 'en'
 
 export function setLocale(next: Locale): void {
   locale = next
@@ -86,7 +84,7 @@ export function setLocale(next: Locale): void {
     const trimmed = value.trim()
     const english = reverse.get(trimmed)
     if (!english) continue
-    const translated = index === -1 ? english : messages[english]?.[index] ?? english
+    const translated = messages[english]?.[index] ?? english
     node.nodeValue = value.replace(trimmed, translated)
   }
   const select = document.querySelector<HTMLSelectElement>('#language-select')
@@ -94,7 +92,7 @@ export function setLocale(next: Locale): void {
 }
 
 export function t(english: string): string {
-  if (locale === ('en' as Locale)) return english
+  if (locale === 'en') return english
   const index = locale === 'zh-CN' ? 0 : locale === 'zh-TW' ? 1 : 2
   return messages[english]?.[index] ?? english
 }
