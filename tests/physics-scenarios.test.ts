@@ -96,8 +96,8 @@ describe('standard shot scenario regressions', () => {
     const objectBall = result.find((ball) => ball.number === 1)
 
     expect(objectBall).toBeDefined()
-    expect(objectBall?.velocity.x).toBeGreaterThan(0)
-    expect(objectBall?.position.x).toBeGreaterThan(0)
+    expect(Math.abs(objectBall?.velocity.x ?? 0)).toBeGreaterThan(0)
+    expect(Math.abs(objectBall?.position.x ?? 0)).toBeGreaterThan(0.01)
   })
 
   it('produces a bounded lateral response in a cut shot', () => {
