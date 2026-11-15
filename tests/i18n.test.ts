@@ -55,6 +55,17 @@ describe('dynamic game message localization', () => {
     expect(translateGameMessage(message, 'ja')).toBe('AI · ポット狙い · マルチレールショット · ターゲット 11')
   })
 
+  it('translates break-requirement settings and foul feedback', () => {
+    expect(translateGameMessage('BREAK REQUIREMENT', 'zh-CN')).toBe('开球要求')
+    expect(translateGameMessage('Relaxed', 'ja')).toBe('緩和')
+    expect(translateGameMessage('4 object balls to rails', 'zh-TW'))
+      .toBe('至少 4 顆目標球碰庫')
+    expect(translateGameMessage(
+      'Illegal break — fewer than four object balls reached a cushion',
+      'zh-CN',
+    )).toBe('开球犯规：不足 4 颗目标球碰库')
+  })
+
   it('translates 8-ball-on-break rule settings and winner feedback', () => {
     expect(translateGameMessage('8-BALL ON BREAK', 'zh-CN')).toBe('开球时 8 号球规则')
     expect(translateGameMessage('Re-rack', 'ja')).toBe('再ラック')
