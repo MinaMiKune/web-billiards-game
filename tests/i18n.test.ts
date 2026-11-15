@@ -55,6 +55,15 @@ describe('dynamic game message localization', () => {
     expect(translateGameMessage(message, 'ja')).toBe('AI · ポット狙い · マルチレールショット · ターゲット 11')
   })
 
+  it('translates call-shot controls and validation feedback', () => {
+    expect(translateGameMessage('CALL SHOT', 'zh-CN')).toBe('叫球规则')
+    expect(translateGameMessage('CALL BALL', 'zh-TW')).toBe('指定球')
+    expect(translateGameMessage('CALL POCKET', 'ja')).toBe('コールするポケット')
+    expect(translateGameMessage('Select a called ball and pocket', 'zh-CN'))
+      .toBe('请指定目标球和袋口')
+    expect(translateGameMessage('Top middle', 'ja')).toBe('上中央ポケット')
+  })
+
   it('translates match history labels in all supported locales', () => {
     expect(translateGameMessage('SHOT HISTORY', 'zh-CN')).toBe('击球记录')
     expect(translateGameMessage('No shots recorded yet', 'zh-CN')).toBe('暂无击球记录')
