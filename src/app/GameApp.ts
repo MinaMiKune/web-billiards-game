@@ -483,7 +483,7 @@ export class GameApp {
     }
 
     this.statusElement.textContent =
-      translateGameMessage(`AI · ${plan.style === 'pot' ? 'pot attempt' : 'safety attempt'} · target ${plan.targetBallNumber}`)
+      translateGameMessage(`AI · ${plan.style === 'pot' ? 'pot attempt' : 'safety attempt'} · ${plan.routeType === 'bank' ? 'bank shot' : 'direct shot'} · target ${plan.targetBallNumber}`)
     this.wasMoving = true
   }
 
