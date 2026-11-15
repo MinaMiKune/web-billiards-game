@@ -377,7 +377,11 @@ export class GameApp {
     if (this.ruleState.phase === 'game-over' || !this.world.cueBall.active) return
 
     const cue = this.world.cueBall.position
-    if (Math.hypot(point.x - cue.x, point.z - cue.z) > 0.16) return
+    // Fingers cover more of the table than a mouse cursor; widen only the
+    // touch hit area so players can reliably begin a drag without changing
+    // desktop aiming precision.
+    const cueHitRadius = event.pointerType === 'touch' ? 0.22 : 0.16
+    if (Math.hypot(point.x - cue.x, point.z - cue.z) > cueHitRadius) return
 
     event.preventDefault()
     this.aiming = true
