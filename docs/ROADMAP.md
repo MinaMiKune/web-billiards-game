@@ -70,7 +70,8 @@ Selected decisions:
 - [x] Highlight the active player and match winner.
 - [x] Show an explicit AI-thinking state while the opponent is preparing a shot.
 - [ ] Add sound, lighting refinement and richer shot feedback.
-- [ ] Review touch controls, reduced motion and small-screen layouts in real browsers.
+- [x] Add reduced-motion support and keyboard focus visibility for the interactive table.
+- [ ] Review touch controls and small-screen layouts in real browsers.
 - [ ] Add browser compatibility and repeatable performance benchmarks.
 
 ## Cross-cutting — Localization
