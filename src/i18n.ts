@@ -10,6 +10,11 @@ export const LOCALES: { value: Locale; label: string }[] = [
 const messages: Record<string, [string, string, string]> = {
   'PHYSICS PLAYGROUND': ['物理实验场', '物理實驗場', '物理シミュレーション'],
   '8-BALL MATCH': ['8 球对局', '8 球對局', '8 ボール対戦'],
+  'GAME MODE': ['游戏模式', '遊戲模式', 'ゲームモード'],
+  'Play vs AI': ['对战 AI', '對戰 AI', 'AI と対戦'],
+  'Rules & options': ['规则与选项', '規則與選項', 'ルールとオプション'],
+  'New game': ['新开一局', '重新開局', '新しいゲーム'],
+  'Pull back from the cue ball, then release to shoot': ['从母球向后拖动，松开即可击球', '從母球向後拖曳，放開即可擊球', '手球から後ろに引き、離してショット'],
   'TABLE STATUS': ['球台状态', '球桌狀態', 'テーブル状態'],
   'SHOT HISTORY': ['击球记录', '擊球紀錄', 'ショット履歴'],
   'No shots recorded yet': ['暂无击球记录', '尚無擊球紀錄', 'ショット履歴はありません'],
