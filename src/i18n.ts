@@ -86,6 +86,7 @@ const messages: Record<string, [string, string, string]> = {
   'bank shot': ['借库球', '借庫球', 'バンクショット'],
   'direct shot': ['直线球', '直線球', 'ストレートショット'],
   'kick shot': ['解球', '解球', 'キックショット'],
+  'multi-rail shot': ['多库球', '多庫球', 'マルチレールショット'],
   'target': ['目标球', '目標球', 'ターゲット'],
   'BALL IN HAND — CLICK TO PLACE': ['自由球 — 点击放置母球', '自由球 — 點擊放置母球', 'フリーボール — クリックして手球を配置'],
   'WINNER:': ['获胜者：', '獲勝者：', '勝者：'],
@@ -168,7 +169,7 @@ export function translateGameMessage(message: string, target: Locale = locale): 
   match = message.match(/^Player (\d+) · ball placed$/)
   if (match) return `${translateForLocale('Player', target)} ${match[1]} · ${translateForLocale('ball placed', target)}`
 
-  match = message.match(/^AI · (pot attempt|safety attempt) · (bank shot|direct shot|kick shot) · target (\d+)$/)
+  match = message.match(/^AI · (pot attempt|safety attempt) · (bank shot|direct shot|kick shot|multi-rail shot) · target (\d+)$/)
   if (match) {
     return `AI · ${translateForLocale(match[1], target)} · ${translateForLocale(match[2], target)} · ${translateForLocale('target', target)} ${match[3]}`
   }
