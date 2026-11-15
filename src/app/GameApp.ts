@@ -220,9 +220,11 @@ export class GameApp {
     })
     this.syncCallShotControls()
 
+    this.powerInput.setAttribute('aria-valuetext', this.powerInput.value + '%')
     this.powerInput.addEventListener('input', () => {
       this.power = Number(this.powerInput.value) / 100
       this.powerValue.textContent = this.powerInput.value + '%'
+      this.powerInput.setAttribute('aria-valuetext', this.powerInput.value + '%')
       if (this.aiming) this.interactionHint.textContent = `${t('Release to take your shot')} · ${this.powerInput.value}%`
     })
 
