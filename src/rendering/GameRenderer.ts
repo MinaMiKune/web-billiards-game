@@ -15,6 +15,7 @@ import {
   PlaneGeometry,
   Scene,
   SphereGeometry,
+  SpotLight,
   Vector3,
   WebGLRenderer,
   SRGBColorSpace,
@@ -197,8 +198,9 @@ export class GameRenderer {
   }
 
   private addLighting(): void {
-    this.scene.add(new AmbientLight('#c5d4c8', 1.35))
-    const key = new DirectionalLight('#fff0d0', 2.6)
+    this.scene.add(new AmbientLight('#c5d4c8', 1.2))
+
+    const key = new DirectionalLight('#fff0d0', 2.35)
     key.position.set(-2.8, 5.4, 3.2)
     key.castShadow = true
     key.shadow.mapSize.set(1024, 1024)
@@ -208,7 +210,19 @@ export class GameRenderer {
     key.shadow.camera.bottom = -3
     this.scene.add(key)
 
-    const fill = new DirectionalLight('#7fae9a', 0.7)
+    // Soft overhead pool-hall light keeps the cloth and numbered balls readable
+    // across the top, angled and side cameras without changing physics state.
+    const overhead = new SpotLight('#f6e8c9', 1.15, 9, 0.48, 0.68, 1.5)
+    overhead.position.set(0, 5.4, 0)
+    overhead.target.position.set(0, 0, 0)
+    overhead.castShadow = true
+    overhead.shadow.mapSize.set(1024, 1024)
+    overhead.shadow.camera.near = 0.5
+    overhead.shadow.camera.far = 9
+    overhead.shadow.bias = -0.00015
+    this.scene.add(overhead, overhead.target)
+
+    const fill = new DirectionalLight('#7fae9a', 0.72)
     fill.position.set(3.5, 2.5, -3)
     this.scene.add(fill)
   }
