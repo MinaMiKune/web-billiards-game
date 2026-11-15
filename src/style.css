@@ -381,3 +381,43 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
   .player-card { padding: 8px; }
   .scene-hint { letter-spacing: .04em; }
 }
+
+/* Progressive disclosure and a clear primary shot-control zone. */
+.toolbar { align-items: center; }
+.toolbar-actions { align-items: center; }
+.advanced-settings { position: relative; }
+.advanced-settings > summary {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 40px; padding: 0 13px; border: 1px solid #55765d;
+  border-radius: 6px; color: #e7dfca; background: rgba(18, 43, 30, .9);
+  font: 500 10px 'DM Mono', monospace; cursor: pointer; list-style: none;
+}
+.advanced-settings > summary::-webkit-details-marker { display: none; }
+.advanced-settings > summary::after { content: '+'; margin-left: 9px; color: #e0c58e; font-size: 15px; }
+.advanced-settings[open] > summary::after { content: '−'; }
+.advanced-settings-grid {
+  position: absolute; z-index: 5; top: calc(100% + 8px); right: 0;
+  display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr));
+  gap: 12px; min-width: min(620px, calc(100vw - 36px)); padding: 16px;
+  border: 1px solid rgba(128, 166, 132, .55); border-radius: 9px;
+  background: #10271c; box-shadow: 0 18px 42px rgba(0,0,0,.48);
+}
+.shot-control-row {
+  display: flex; align-items: center; justify-content: center; gap: 28px;
+  padding: 13px 20px; border-bottom: 1px solid rgba(119,157,136,.2);
+  background: linear-gradient(90deg, rgba(33,65,43,.5), rgba(14,36,25,.7));
+}
+.shot-control-row .power-control { width: min(360px, 52vw); min-width: 220px; }
+.shot-control-row .power-control strong { font-size: 14px; }
+.shot-control-row .power-control input { height: 7px; }
+.shot-control-hint { margin: 0; color: #d7c79e; font-size: 12px; }
+@media (max-width: 720px) {
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .toolbar-actions { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .advanced-settings { grid-column: 1 / -1; }
+  .advanced-settings > summary { width: 100%; }
+  .advanced-settings-grid { position: static; grid-template-columns: repeat(2,minmax(0,1fr)); min-width: 0; margin-top: 8px; }
+  .shot-control-row { align-items: stretch; flex-direction: column; gap: 6px; padding: 12px 14px; }
+  .shot-control-row .power-control { width: 100%; min-width: 0; }
+  .shot-control-hint { font-size: 10px; }
+}
