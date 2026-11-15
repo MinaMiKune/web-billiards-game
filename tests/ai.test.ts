@@ -54,6 +54,21 @@ describe('AIController', () => {
     expect(copy.placeCueBall(placement!)).toBe(true)
   })
 
+  it('keeps AI ball-in-hand placement behind the head string when required', () => {
+    const world = new PhysicsWorld()
+    world.cueBall.active = false
+    world.cueBall.pocketed = true
+    const state = createInitialEightBallState()
+    state.phase = 'open-table'
+    state.ballInHand = true
+    state.ballInHandZone = 'behind-head-string'
+
+    const placement = new AIController().chooseBallInHandPlacement(world, state)
+    expect(placement).not.toBeNull()
+    expect(placement!.x).toBeLessThanOrEqual(-world.config.tableLength / 4)
+    expect(world.clone().placeCueBall(placement!, state.ballInHandZone)).toBe(true)
+  })
+
   it('scales legal ball-in-hand search to non-default table dimensions', () => {
     const world = new PhysicsWorld({
       ...DEFAULT_PHYSICS_CONFIG,
