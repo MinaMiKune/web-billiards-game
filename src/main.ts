@@ -31,10 +31,10 @@ app.innerHTML = `
         </div>
         <div class="toolbar-actions">
           <label class="opponent-control" for="opponent-mode">
-            <span class="section-label">OPPONENT</span>
+            <span class="section-label">GAME MODE</span>
             <select id="opponent-mode">
               <option value="local">Local 2P</option>
-              <option value="ai">AI opponent</option>
+              <option value="ai">Play vs AI</option>
             </select>
           </label>
           <label class="opponent-control" for="ai-difficulty">
@@ -47,54 +47,50 @@ app.innerHTML = `
               <option value="5">5 · Master</option>
             </select>
           </label>
-          <label class="opponent-control" for="break-requirement">
-            <span class="section-label">BREAK REQUIREMENT</span>
-            <select id="break-requirement">
-              <option value="relaxed">Relaxed</option>
-              <option value="four-rails">4 object balls to rails</option>
-            </select>
-          </label>
-          <label class="opponent-control" for="break-eight-rule">
-            <span class="section-label">8-BALL ON BREAK</span>
-            <select id="break-eight-rule">
-              <option value="rerack">Re-rack</option>
-              <option value="breaker-wins">Breaker wins</option>
-            </select>
-          </label>
-          <label class="call-shot-toggle" for="call-shot-toggle">
-            <input id="call-shot-toggle" type="checkbox" />
-            <span class="section-label">CALL SHOT</span>
-          </label>
-          <label class="call-shot-control" for="call-ball">
-            <span class="section-label">CALL BALL</span>
-            <select id="call-ball" disabled>
-              <option value="">Select ball</option>
-              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
-            </select>
-          </label>
-          <label class="call-shot-control" for="call-pocket">
-            <span class="section-label">CALL POCKET</span>
-            <select id="call-pocket" disabled>
-              <option value="">Select pocket</option>
-              <option value="1">1 · Top left</option>
-              <option value="2">2 · Top middle</option>
-              <option value="3">3 · Top right</option>
-              <option value="4">4 · Bottom left</option>
-              <option value="5">5 · Bottom middle</option>
-              <option value="6">6 · Bottom right</option>
-            </select>
-          </label>
-          <label class="sound-toggle" for="sound-toggle">
-            <input id="sound-toggle" type="checkbox" checked />
-            <span class="section-label">SOUND</span>
-          </label>
-          <label class="power-control" for="shot-power">
-            <span class="section-label">SHOT POWER</span>
-            <strong id="power-value">65%</strong>
-            <input id="shot-power" type="range" min="10" max="100" value="65" />
-          </label>
-          <button id="reset-rack" class="button button-muted" type="button">New rack</button>
-        </div>
+          <button id="reset-rack" class="button button-muted" type="button">New game</button>
+          <details class="advanced-settings">
+            <summary>Rules & options</summary>
+            <div class="advanced-settings-grid">
+              <label class="opponent-control" for="break-requirement">
+                <span class="section-label">BREAK REQUIREMENT</span>
+                <select id="break-requirement">
+                  <option value="relaxed">Relaxed</option>
+                  <option value="four-rails">4 object balls to rails</option>
+                </select>
+              </label>
+              <label class="opponent-control" for="break-eight-rule">
+                <span class="section-label">8-BALL ON BREAK</span>
+                <select id="break-eight-rule">
+                  <option value="rerack">Re-rack</option>
+                  <option value="breaker-wins">Breaker wins</option>
+                </select>
+              </label>
+              <label class="call-shot-toggle" for="call-shot-toggle">
+                <input id="call-shot-toggle" type="checkbox" />
+                <span class="section-label">CALL SHOT</span>
+              </label>
+              <label class="call-shot-control" for="call-ball">
+                <span class="section-label">CALL BALL</span>
+                <select id="call-ball" disabled>
+                  <option value="">Select ball</option>
+                  <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
+                </select>
+              </label>
+              <label class="call-shot-control" for="call-pocket">
+                <span class="section-label">CALL POCKET</span>
+                <select id="call-pocket" disabled>
+                  <option value="">Select pocket</option>
+                  <option value="1">1 · Top left</option><option value="2">2 · Top middle</option><option value="3">3 · Top right</option>
+                  <option value="4">4 · Bottom left</option><option value="5">5 · Bottom middle</option><option value="6">6 · Bottom right</option>
+                </select>
+              </label>
+              <label class="sound-toggle" for="sound-toggle">
+                <input id="sound-toggle" type="checkbox" checked />
+                <span class="section-label">SOUND</span>
+              </label>
+            </div>
+          </details>
+        </div>>
       </div>
 
       <section class="scoreboard" aria-label="Player scores and remaining balls">
@@ -147,6 +143,15 @@ app.innerHTML = `
           <span id="spin-marker" class="spin-marker"></span>
         </div>
         <p class="spin-help">Drag the marker · Arrow keys also work · Home resets</p>
+      </div>
+
+      <div class="shot-control-row">
+        <label class="power-control" for="shot-power">
+          <span class="section-label">SHOT POWER</span>
+          <strong id="power-value">65%</strong>
+          <input id="shot-power" type="range" min="10" max="100" value="65" />
+        </label>
+        <p class="shot-control-hint">Pull back from the cue ball, then release to shoot</p>
       </div>
 
       <div class="scene-frame">
