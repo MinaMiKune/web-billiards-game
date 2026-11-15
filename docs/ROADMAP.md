@@ -47,7 +47,8 @@ Selected decisions:
 - [x] Add regression tests for first-contact ordering, post-hit rail contact, cue-ball scratches and defensive telemetry snapshots.
 - [x] Support break/open-table/group assignment, turn switching, fouls and 8-ball win/loss.
 - [x] Add ball-in-hand placement with collision and pocket-area validation.
-- [ ] Add call-shot options and the full rule variations used by tournament rule sets.
+- [x] Add optional called-ball/called-pocket rules for human and AI shots.
+- [ ] Add the remaining tournament ruleset variants (break and foul variations).
 - [x] Add game-flow UI for shot history, player groups and match result summary.
 
 ## Phase 4 — AI opponents
