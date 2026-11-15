@@ -58,9 +58,10 @@ Selected decisions:
 - [x] Add five difficulty profiles controlling candidate budget, aim error and power consistency.
 - [x] Add AI opponent mode and automatic turn execution.
 - [x] Add legal ball-in-hand position search for the AI.
-- [ ] Add bank-shot, kick-shot and multi-rail planning.
-- [ ] Move deeper searches into a Web Worker after profiling.
-- [ ] Improve safety-ball and cue-ball position evaluation.
+- [x] Add physics-validated bank-shot and kick-shot candidate planning.
+- [ ] Add multi-rail planning.
+- [x] Move AI candidate simulation off the main thread into a Web Worker.
+- [x] Improve safety-ball and cue-ball position evaluation.
 
 ## Phase 5 — Polish and performance
 
