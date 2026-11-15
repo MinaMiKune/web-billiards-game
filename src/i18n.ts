@@ -141,37 +141,37 @@ function translateForLocale(english: string, target: Locale): string {
 export function translateGameMessage(message: string, target: Locale = locale): string {
   if (target === 'en') return message
 
-  let match = message.match(/^Player (\\d+) breaks$/)
+  let match = message.match(/^Player (\d+) breaks$/)
   if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('breaks', target)}`
 
-  match = message.match(/^Player (\\d+) wins · 8-ball$/)
+  match = message.match(/^Player (\d+) wins · 8-ball$/)
   if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('wins', target)} · ${translateForLocale('8-ball', target)}`
 
-  match = message.match(/^Player (\\d+) wins · foul on the 8-ball$/)
+  match = message.match(/^Player (\d+) wins · foul on the 8-ball$/)
   if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('wins', target)} · ${translateForLocale('Foul', target)} · ${translateForLocale('8-ball', target)}`
 
-  match = message.match(/^Foul · (.+) · Player (\\d+) ball in hand$/)
+  match = message.match(/^Foul · (.+) · Player (\d+) ball in hand$/)
   if (match) {
     const reasons = match[1].split(' · ').map((reason) => translateForLocale(reason, target))
     return `${translateForLocale('Foul', target)} · ${reasons.join(' · ')} · ${translateForLocale('Player', target)} ${match[2]} ${translateForLocale('ball in hand', target)}`
   }
 
-  match = message.match(/^Groups set · Player (\\d+): (solids|stripes)$/)
+  match = message.match(/^Groups set · Player (\d+): (solids|stripes)$/)
   if (match) {
     const group = match[2] === 'solids' ? 'SOLIDS' : 'STRIPES'
     return `${translateForLocale('Groups set', target)} · ${translateForLocale('Player', target)} ${match[1]}: ${translateForLocale(group, target)}`
   }
 
-  match = message.match(/^Player (\\d+) continues$/)
+  match = message.match(/^Player (\d+) continues$/)
   if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('continues', target)}`
 
-  match = message.match(/^Player (\\d+) to play$/)
+  match = message.match(/^Player (\d+) to play$/)
   if (match) return `${translateForLocale('Player', target)} ${match[1]} ${translateForLocale('to play', target)}`
 
-  match = message.match(/^Player (\\d+) · ball placed$/)
+  match = message.match(/^Player (\d+) · ball placed$/)
   if (match) return `${translateForLocale('Player', target)} ${match[1]} · ${translateForLocale('ball placed', target)}`
 
-  match = message.match(/^AI · (pot attempt|safety attempt) · target (\\d+)$/)
+  match = message.match(/^AI · (pot attempt|safety attempt) · target (\d+)$/)
   if (match) {
     return `AI · ${translateForLocale(match[1], target)} · ${translateForLocale('target', target)} ${match[2]}`
   }
