@@ -1,5 +1,7 @@
 # Development Roadmap
 
+Product direction (2026-11-15): game-first Web Billiards. The default experience must feel like an immediately playable 8-ball game; simulation fidelity is an invisible foundation, not the primary UI.
+
 Selected decisions:
 - Simulation target: game-realistic.
 - Cameras: top, angled, side and free-observation.
@@ -85,6 +87,15 @@ Selected decisions:
 - [x] Support English, Simplified Chinese, Traditional Chinese and Japanese.
 - [x] Translate dynamic rule-engine, foul, winner and AI shot status messages.
 - [x] Add locale regression tests for runtime-interpolated messages.
+
+## Phase 5B — Game-first experience redesign
+
+- [x] Record the product pivot and player-facing experience principles in `docs/GAMEPLAY_REDESIGN.md`.
+- [x] Replace simulator-facing labels with player-facing match language and strengthen the playfield/turn visual hierarchy.
+- [ ] Reorganize advanced rule options behind progressive disclosure.
+- [ ] Add an explicit first-shot onboarding and clearer power/aim interaction.
+- [ ] Complete touch-first layout verification at 320px and on real mobile browsers.
+- [ ] Add a fast rematch/mode-selection flow and improve shot-result feedback.
 
 ## Phase 6 — Multiplayer (not active)
 
