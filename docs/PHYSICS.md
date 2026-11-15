@@ -34,7 +34,8 @@ The cloth-contact slip velocity is computed from the ball's linear velocity and 
 - The sequential contact solver uses six passes per internal step, a small penetration slop and partial positional correction to reduce overlap without injecting large separation corrections. Low-speed impacts suppress restitution to avoid artificial jitter.
 - Contact presentation events are deduplicated per ball pair within a caller step, so solver iterations cannot create repeated audio/haptic triggers for one sustained contact.
 - Straight-cushion and angled-jaw impacts use a normal restitution response plus a Coulomb-limited tangential friction impulse; side spin can change the tangential rebound velocity.
-- The current contact model is still planar and simplified: it omits cushion height, vertical ball motion, curved/rounded jaw profiles and measured cloth calibration.
+- Balls now carry height above the cloth and vertical velocity. Cue elevation can launch the cue ball, gravity advances the flight, the cloth applies a damped landing bounce, and airborne balls skip cloth friction.
+- Ball-ball contacts resolve in 3D using center-height separation and transfer vertical impulse; balls above the configured 0.04 m cushion-nose clearance can pass over rails and jaws. This is still a simplified vertical model: no curved 3D cushion profile, airborne spin Magnus force, ball deformation or measured table calibration.
 
 This is a game-oriented approximation and is not calibrated to a specific cloth, ball set or table.
 
@@ -86,6 +87,7 @@ Maintain deterministic cases for:
 - equal-mass head-on collision transfers normal velocity;
 - side spin creates a bounded tangential response and angular-velocity transfer in ball-ball contact;
 - large caller deltas are subdivided to avoid fast-ball tunneling;
+- elevated cue shots follow gravity, airborne balls skip cloth friction, 3D contacts transfer vertical velocity, and elevated balls clear the cushion nose;
 - solver iterations emit one presentation event per contacting ball pair;
 - side spin creates a tangential component on cushion rebound;
 - straight cushion reflection;
