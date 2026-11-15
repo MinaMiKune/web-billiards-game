@@ -2,6 +2,7 @@ import { Plane, Raycaster, Vector2, Vector3 } from 'three'
 import { CameraManager, type CameraMode } from '../camera/CameraManager'
 import { PhysicsWorld, type BallSpin, type RenderBall, type ShotTelemetry } from '../physics/PhysicsWorld'
 import { GameRenderer } from '../rendering/GameRenderer'
+import { SoundEffects } from '../audio/SoundEffects'
 import { AIController, type AIDifficulty, type AIShotPlan } from '../ai/AIController'
 import { createInitialEightBallState, EightBallRuleEngine, type EightBallState, type PlayerId } from '../game/EightBallRuleEngine'
 import { t, translateGameMessage } from '../i18n'
@@ -38,6 +39,7 @@ export class GameApp {
   private readonly world = new PhysicsWorld()
   private readonly rules = new EightBallRuleEngine()
   private readonly ai = new AIController()
+  private readonly soundEffects = new SoundEffects()
   private ruleState: EightBallState = createInitialEightBallState()
   private opponentMode: 'local' | 'ai' = 'local'
   private aiDifficulty: AIDifficulty = 3
@@ -71,6 +73,7 @@ export class GameApp {
   private readonly callBallInput: HTMLSelectElement
   private readonly callPocketInput: HTMLSelectElement
   private readonly breakEightRuleInput: HTMLSelectElement
+  private readonly soundToggle: HTMLInputElement
   private readonly raycaster = new Raycaster()
   private readonly groundPlane = new Plane(new Vector3(0, 1, 0), 0)
   private readonly intersection = new Vector3()
@@ -120,6 +123,7 @@ export class GameApp {
     this.callBallInput = requireElement<HTMLSelectElement>(root, '#call-ball')
     this.callPocketInput = requireElement<HTMLSelectElement>(root, '#call-pocket')
     this.breakEightRuleInput = requireElement<HTMLSelectElement>(root, '#break-eight-rule')
+    this.soundToggle = requireElement<HTMLInputElement>(root, '#sound-toggle')
 
     this.renderer = new GameRenderer(sceneHost)
     this.cameras = new CameraManager(this.renderer.canvas)
@@ -144,6 +148,7 @@ export class GameApp {
     window.removeEventListener('billiards-locale-change', this.onLocaleChange)
     this.aiWorker?.terminate()
     this.aiWorker = null
+    this.soundEffects.dispose()
     this.resizeObserver.disconnect()
     this.cameras.dispose()
     this.renderer.dispose()
@@ -194,6 +199,11 @@ export class GameApp {
       if (level >= 1 && level <= 5) this.aiDifficulty = level as AIDifficulty
     })
     this.aiDifficultyInput.disabled = true
+
+    this.soundToggle.addEventListener('change', () => {
+      this.soundEffects.setEnabled(this.soundToggle.checked)
+    })
+    this.soundEffects.setEnabled(this.soundToggle.checked)
 
     this.breakEightRuleInput.addEventListener('change', () => {
       this.rules.setOptions({
@@ -383,6 +393,7 @@ export class GameApp {
             this.spin,
           )) {
           this.pendingCalledShot = calledShot
+          this.soundEffects.playCue()
           this.syncCallShotControls()
           this.statusElement.textContent = t('Balls in motion')
           this.wasMoving = true
@@ -701,6 +712,7 @@ export class GameApp {
     this.pendingCalledShot = this.callShotRequired && this.ruleState.phase !== 'break'
       ? { ballNumber: plan.targetBallNumber, pocketIndex: plan.pocketIndex }
       : null
+    this.soundEffects.playCue()
     this.syncCallShotControls()
 
     this.statusElement.textContent =
@@ -734,6 +746,7 @@ export class GameApp {
     if (this.wasMoving && !moving) {
       this.wasMoving = false
       const telemetry = this.world.getShotTelemetry()
+      if (telemetry.pocketedBallNumbers.length > 0) this.soundEffects.playPocket()
       const shooter = this.ruleState.currentPlayer
       const resolution = this.rules.resolveShot(this.ruleState, {
         ...telemetry,
