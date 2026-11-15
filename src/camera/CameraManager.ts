@@ -14,6 +14,7 @@ export class CameraManager {
   private readonly orbitControls: OrbitControls
   private activeMode: CameraMode = 'top'
   private readonly target = new Vector3(0, 0, 0)
+  private readonly motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
 
   constructor(canvas: HTMLCanvasElement) {
     this.topCamera.up.set(0, 0, -1)
@@ -25,12 +26,18 @@ export class CameraManager {
 
     this.orbitControls = new OrbitControls(this.perspectiveCamera, canvas)
     this.orbitControls.target.copy(this.target)
-    this.orbitControls.enableDamping = true
+    this.orbitControls.enableDamping = !this.motionPreference.matches
     this.orbitControls.dampingFactor = 0.08
+    this.motionPreference.addEventListener('change', this.onMotionPreferenceChange)
     this.orbitControls.minDistance = 1.6
     this.orbitControls.maxDistance = 8
     this.orbitControls.maxPolarAngle = Math.PI * 0.48
     this.orbitControls.enabled = false
+  }
+
+  private onMotionPreferenceChange = (event: MediaQueryListEvent): void => {
+    this.orbitControls.enableDamping = !event.matches
+    if (event.matches) this.orbitControls.update()
   }
 
   get mode(): CameraMode {
@@ -85,6 +92,7 @@ export class CameraManager {
   }
 
   dispose(): void {
+    this.motionPreference.removeEventListener('change', this.onMotionPreferenceChange)
     this.orbitControls.dispose()
   }
 }

@@ -50,6 +50,7 @@ export class GameRenderer {
     this.renderer.shadowMap.enabled = true
     this.renderer.setSize(host.clientWidth, host.clientHeight, false)
     this.renderer.domElement.setAttribute('aria-label', '3D pool table. Drag backwards from the cue ball to aim and release to shoot.')
+    this.renderer.domElement.tabIndex = 0
     host.append(this.renderer.domElement)
 
     this.addLighting()
