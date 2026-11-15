@@ -164,9 +164,9 @@ export class AIController {
 
         const ignoredCueAndTarget = new Set([cue.id, target.id])
         const cuePathClear = segmentClear(world.balls, cue.position, ghost, ignoredCueAndTarget)
-        if (!segmentClear(world.balls, target.position, pocket, ignoredCueAndTarget)) continue
+        const objectPathClear = segmentClear(world.balls, target.position, pocket, ignoredCueAndTarget)
 
-        if (cuePathClear) {
+        if (cuePathClear && objectPathClear) {
           const routeLength = cueDistance + objectDistance
           const desiredSpeed = Math.sqrt(
             2 * world.config.rollingDeceleration * routeLength,
@@ -184,7 +184,7 @@ export class AIController {
             routeLength,
             routeType: 'direct',
           })
-        } else {
+        } else if (!cuePathClear && objectPathClear) {
           // A kick shot mirrors the desired cue-ball contact point across a
           // cushion, so a banked cue-ball path can reach the same ghost ball.
           const halfLength = world.config.tableLength / 2
