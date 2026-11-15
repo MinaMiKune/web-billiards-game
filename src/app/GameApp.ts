@@ -855,7 +855,6 @@ export class GameApp {
         this.soundEffects.playPocket()
         this.tactileFeedback.pocket(telemetry.pocketedBallNumbers.length)
       }
-      if (telemetry.firstContactBallNumber !== null) this.tactileFeedback.impact(telemetry.firstContactBallNumber)
       const shooter = this.ruleState.currentPlayer
       const resolution = this.rules.resolveShot(this.ruleState, {
         ...telemetry,
