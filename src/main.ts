@@ -47,6 +47,13 @@ app.innerHTML = `
               <option value="5">5 · Master</option>
             </select>
           </label>
+          <label class="opponent-control" for="break-requirement">
+            <span class="section-label">BREAK REQUIREMENT</span>
+            <select id="break-requirement">
+              <option value="relaxed">Relaxed</option>
+              <option value="four-rails">4 object balls to rails</option>
+            </select>
+          </label>
           <label class="opponent-control" for="break-eight-rule">
             <span class="section-label">8-BALL ON BREAK</span>
             <select id="break-eight-rule">
