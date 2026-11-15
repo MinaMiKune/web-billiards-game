@@ -45,6 +45,8 @@ const messages: Record<string, [string, string, string]> = {
   'Expert': ['专家', '專家', 'エキスパート'],
   'Master': ['大师', '大師', 'マスター'],
   'SHOT POWER': ['击球力度', '擊球力度', 'ショットの強さ'],
+  'CUE ELEVATION': ['球杆仰角', '球桿仰角', 'キューの仰角'],
+  'Raise the cue to lift the cue ball': ['抬高球杆以击出跳球', '抬高球桿以擊出跳球', 'キューを上げてジャンプショット'],
   'SOUND': ['音效', '音效', 'サウンド'],
   'CALL SHOT': ['叫球规则', '叫球規則', 'コールショット'],
   '8-BALL ON BREAK': ['开球时 8 号球规则', '開球時 8 號球規則', 'ブレイク時の 8 ボール'],
