@@ -130,6 +130,17 @@ Selected decisions:
 - [ ] Validate solver behavior against captured reference-shot datasets and stress-test dense multi-ball clusters.
 - [ ] Add vertical ball motion, jump/massé and measured cushion/jaw geometry in later physics increments.
 
+## Phase 5E — Vertical ball dynamics (active)
+
+- [x] Add ball height and vertical velocity to authoritative simulation state and render interpolation.
+- [x] Support optional cue elevation for elevated cue-ball launch trajectories.
+- [x] Integrate gravity, airborne cloth-friction suppression and damped cloth landing response.
+- [x] Upgrade ball-ball collision geometry and impulses to three dimensions, including vertical impulse transfer.
+- [x] Allow elevated balls to clear the simplified cushion nose and update airborne contact shadows.
+- [x] Add deterministic tests for elevated shots, airborne friction, 3D ball contacts and cushion clearance.
+- [ ] Calibrate cue elevation, jump limits, landing bounce and cushion height against measured shots.
+- [ ] Add player-facing cue-elevation control and advanced masse/jump-shot interaction after physics validation.
+
 ## Phase 6 — Release readiness (active before stable 1.0)
 
 - [ ] Complete gameplay acceptance across full local and AI matches.
