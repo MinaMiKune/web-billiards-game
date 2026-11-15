@@ -12,12 +12,12 @@ app.innerHTML = `
   <main class="shell">
     <header class="topbar">
       <div class="brand">
-        <p class="eyebrow">WEB BILLIARDS · 3D PROTOTYPE</p>
+        <p class="eyebrow">WEB BILLIARDS · PLAY NOW</p>
         <h1>BREAK <span>&</span> RUN</h1>
       </div>
       <div class="topbar-meta">
         <span class="live-dot"></span>
-        <span>PHYSICS PLAYGROUND</span>
+        <span>8-BALL MATCH</span>
         <label class="language-control" for="language-select"><span class="section-label">LANGUAGE</span><select id="language-select" aria-label="Language"><option value="en">English</option><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option><option value="ja">日本語</option></select></label>
       </div>
     </header>
@@ -151,7 +151,7 @@ app.innerHTML = `
 
       <div class="scene-frame">
         <div id="scene-host" class="scene-host" aria-label="Interactive 3D billiards table"></div>
-        <div id="interaction-hint" class="scene-hint">DRAG BACK FROM THE CUE BALL TO AIM · RELEASE TO SHOOT</div>
+        <div id="interaction-hint" class="scene-hint">DRAG BACK FROM THE WHITE BALL TO AIM · RELEASE TO SHOOT</div>
       </div>
 
       <div class="camera-bar">
