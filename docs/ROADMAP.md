@@ -97,7 +97,8 @@ Selected decisions:
 - [x] Show live power percentage and contextual release/shot-in-motion guidance during pointer aiming.
 - [ ] Complete touch-first layout verification at 320px and on real mobile browsers.
 - [x] Add a one-tap rematch action beside the completed-match result while preserving the selected game mode and AI difficulty.
-- [ ] Improve shot-result feedback with clearer pocket/foul/turn outcome emphasis.
+- [x] Show a localized latest-shot outcome callout that distinguishes pots, fouls and dry shots.
+- [ ] Complete real-device touch/browser verification at 320px and cross-browser checks.
 
 ## Phase 6 — Multiplayer (not active)
 
