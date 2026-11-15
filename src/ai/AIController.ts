@@ -445,7 +445,7 @@ export class AIController {
       for (const z of zCandidates) {
         const position = { x, z }
         const simulation = world.clone()
-        if (!simulation.placeCueBall(position)) continue
+        if (!simulation.placeCueBall(position, state.ballInHandZone)) continue
         const cue = simulation.cueBall
         let visibleTargets = 0
         let nearestDistance = Number.POSITIVE_INFINITY

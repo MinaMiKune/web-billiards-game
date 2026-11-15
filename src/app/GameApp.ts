@@ -348,14 +348,16 @@ export class GameApp {
     if (!point) return
 
     if (this.ruleState.ballInHand) {
-      if (this.world.placeCueBall(point)) {
+      if (this.world.placeCueBall(point, this.ruleState.ballInHandZone)) {
         this.ruleState = this.rules.placeBallInHand(this.ruleState)
         this.statusElement.textContent = translateGameMessage(this.ruleState.lastMessage)
         this.updateTurnStatus()
         this.renderer.updateBalls(this.world.getRenderBalls(1))
         this.scheduleAiTurn()
       } else {
-        this.statusElement.textContent = t('Choose a clear spot away from balls and pockets')
+        this.statusElement.textContent = this.ruleState.ballInHandZone === 'behind-head-string'
+          ? t('Cue ball must stay behind the head string')
+          : t('Choose a clear spot away from balls and pockets')
       }
       return
     }
@@ -558,7 +560,11 @@ export class GameApp {
           ? t('Game over')
           : t('Groups assigned')
     const groupLabel = currentGroup ? ` · ${t(currentGroup === 'solids' ? 'SOLIDS' : 'STRIPES')}` : ''
-    const ballInHandLabel = this.ruleState.ballInHand ? ` · ${t('BALL IN HAND — CLICK TO PLACE')}` : ''
+    const ballInHandLabel = this.ruleState.ballInHand
+      ? ` · ${t(this.ruleState.ballInHandZone === 'behind-head-string'
+        ? 'BALL IN HAND — BEHIND HEAD STRING'
+        : 'BALL IN HAND — CLICK TO PLACE')}`
+      : ''
     const winnerName = this.ruleState.winner === null
       ? ''
       : this.ruleState.winner === 1 && this.opponentMode === 'ai'

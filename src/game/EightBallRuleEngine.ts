@@ -1,6 +1,7 @@
 export type PlayerId = 0 | 1
 export type BallGroup = 'solids' | 'stripes'
 export type EightBallPhase = 'break' | 'open-table' | 'groups-assigned' | 'game-over'
+export type BallInHandZone = 'anywhere' | 'behind-head-string'
 
 export interface EightBallState {
   phase: EightBallPhase
@@ -8,6 +9,7 @@ export interface EightBallState {
   playerGroups: [BallGroup | null, BallGroup | null]
   remainingBalls: number[]
   ballInHand: boolean
+  ballInHandZone: BallInHandZone
   winner: PlayerId | null
   lastMessage: string
 }
@@ -50,6 +52,7 @@ export function createInitialEightBallState(currentPlayer: PlayerId = 0): EightB
     playerGroups: [null, null],
     remainingBalls: Array.from({ length: 15 }, (_, index) => index + 1),
     ballInHand: false,
+    ballInHandZone: 'anywhere',
     winner: null,
     lastMessage: `Player ${currentPlayer + 1} breaks`,
   }
@@ -121,6 +124,7 @@ export class EightBallRuleEngine {
           currentPlayer: player,
           remainingBalls: removePocketedBalls(state.remainingBalls, pocketed),
           ballInHand: false,
+          ballInHandZone: 'anywhere',
           winner,
           lastMessage: shot.cueBallPocketed
             ? `Player ${winner + 1} wins · foul on the 8-ball`
@@ -239,6 +243,7 @@ export class EightBallRuleEngine {
       playerGroups: nextGroups,
       remainingBalls: remainingAfterShot,
       ballInHand: isFoul,
+      ballInHandZone: isFoul && state.phase === 'break' ? 'behind-head-string' : 'anywhere',
       winner: null,
       lastMessage: message,
     }
@@ -250,6 +255,7 @@ export class EightBallRuleEngine {
     return {
       ...state,
       ballInHand: false,
+      ballInHandZone: 'anywhere',
       lastMessage: `Player ${state.currentPlayer + 1} · ball placed`,
     }
   }

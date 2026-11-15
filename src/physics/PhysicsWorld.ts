@@ -169,7 +169,7 @@ export class PhysicsWorld {
     return copy
   }
 
-  placeCueBall(position: Vec2): boolean {
+  placeCueBall(position: Vec2, zone: 'anywhere' | 'behind-head-string' = 'anywhere'): boolean {
     if (this.isMoving) return false
 
     const cue = this.cueBall
@@ -179,6 +179,7 @@ export class PhysicsWorld {
     const zLimit = halfWidth - cue.radius
 
     if (Math.abs(position.x) > xLimit || Math.abs(position.z) > zLimit) return false
+    if (zone === 'behind-head-string' && position.x > -this.config.tableLength / 4) return false
 
     const nearCornerPocket = [
       { x: -halfLength, z: -halfWidth },

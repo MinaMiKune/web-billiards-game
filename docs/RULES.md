@@ -41,7 +41,7 @@ The current rules engine detects:
 - wrong first contact;
 - no ball reaching a cushion after first contact when no object ball is pocketed.
 
-A foul passes the turn and grants ball in hand. The player clicks a clear position on the table to place the cue ball. Placement is rejected outside the playing rectangle, too close to a pocket mouth, or overlapping another active ball.
+A foul passes the turn and grants ball in hand. The player clicks a clear position on the table to place the cue ball. A foul during the break restricts placement to behind the head string; other fouls allow placement anywhere in the legal playing area. Placement is rejected outside the playing rectangle, too close to a pocket mouth, or overlapping another active ball.
 
 This implementation currently allows placement anywhere in the legal playing area; behind-the-head-string restrictions are not yet modeled.
 

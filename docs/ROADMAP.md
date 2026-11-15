@@ -49,6 +49,7 @@ Selected decisions:
 - [x] Add ball-in-hand placement with collision and pocket-area validation.
 - [x] Add optional called-ball/called-pocket rules for human and AI shots.
 - [x] Add an optional four-object-ball-to-rail requirement for dry breaks.
+- [x] Restrict break-foul ball in hand to behind the head string.
 - [ ] Add remaining tournament foul and ball-in-hand variations.
 - [x] Add game-flow UI for shot history, player groups and match result summary.
 
