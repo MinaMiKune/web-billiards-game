@@ -31,19 +31,19 @@ The cloth-contact slip velocity is computed from the ball's linear velocity and 
 - Vertical spin (follow/draw): initialized from the selected cue contact offset.
 - Side spin: represented as angular velocity about the vertical axis and gradually dissipated.
 - Ball-ball impacts apply a normal impulse plus a Coulomb-limited tangential impulse at the contact point. This allows side spin to transfer into a small throw and angular-velocity change.
-- Cushion impacts use a Coulomb-limited tangential friction impulse; side spin can change the tangential rebound velocity.
-- The current contact model is still planar and simplified: it omits cushion height, vertical ball motion, jaw curvature and measured cloth calibration.
+- Straight-cushion and angled-jaw impacts use a normal restitution response plus a Coulomb-limited tangential friction impulse; side spin can change the tangential rebound velocity.
+- The current contact model is still planar and simplified: it omits cushion height, vertical ball motion, curved/rounded jaw profiles and measured cloth calibration.
 
 This is a game-oriented approximation and is not calibrated to a specific cloth, ball set or table.
 
 ## Pocket and cushion model
 
-- Four corner openings use circular capture regions.
-- Two side pockets use a configurable half-width.
-- Missed openings are caught by the cushion boundary.
+- Four corner openings use circular capture regions; two side pockets use a configurable half-width.
+- A first-pass planar jaw model adds finite angled segments at the corner and side-pocket mouths. Ball-to-segment contacts use the same restitution and tangential-friction response as straight cushions.
+- Clean captures are resolved before jaw contacts. Near-misses can be deflected by the angled jaws, with the straight cushion boundary retained as a fallback.
 - Captured balls emit a pocket target and a normalized drop-progress value; rendering animates the ball down into the selected mouth and hides it when the animation completes.
 - The drop is presentation-only and does not feed back into the authoritative table-plane simulation.
-- Full pocket shelf, jaw normals and calibration against measured pocket geometry remain future work.
+- The jaw segments are an initial, configurable game approximation rather than measured table geometry. Pocket shelves, rounded/curved jaws and calibration of opening width, jaw depth and trajectories against a physical table remain future work.
 
 ## State model
 
@@ -62,6 +62,7 @@ Maintain deterministic cases for:
 - side spin creates a tangential component on cushion rebound;
 - straight cushion reflection;
 - corner and side pocket captures;
-- pocket near-miss rebounds from the cushion.
+- angled jaw deflections for corner and side-pocket near-misses;
+- pocket near-miss rebounds from the straight cushion fallback.
 
 Do not claim professional accuracy without calibration data and measured validation fixtures.
