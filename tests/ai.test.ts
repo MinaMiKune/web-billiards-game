@@ -29,6 +29,7 @@ describe('AIController', () => {
 
     expect(plan).not.toBeNull()
     expect(plan?.targetBallNumber).toBe(1)
+    expect(['direct', 'bank']).toContain(plan?.routeType)
     expect(plan?.command.power).toBeGreaterThan(0)
     expect(plan?.command.power).toBeLessThanOrEqual(1)
     expect(Math.hypot(
