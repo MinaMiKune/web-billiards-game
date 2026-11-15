@@ -59,7 +59,7 @@ Selected decisions:
 - [x] Add AI opponent mode and automatic turn execution.
 - [x] Add legal ball-in-hand position search for the AI.
 - [x] Add physics-validated bank-shot and kick-shot candidate planning.
-- [ ] Add multi-rail planning.
+- [x] Add two-rail object-ball planning using unfolded-table reflection.
 - [x] Move AI candidate simulation off the main thread into a Web Worker.
 - [x] Improve safety-ball and cue-ball position evaluation.
 
