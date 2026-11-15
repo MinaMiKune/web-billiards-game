@@ -115,7 +115,7 @@ Selected decisions:
 - [x] Add per-ball contact shadows that track pocket-drop presentation.
 - [x] Add best-effort mobile vibration feedback for cue strike, first-contact result and pocket events, with unsupported-device fallback.
 - [x] Add distinct procedural audio primitives for ball and rail impacts.
-- [ ] Upgrade collision event reporting so impact audio and haptics can fire at the moment of contact rather than after the shot settles.
+- [x] Emit deterministic per-step ball/rail contact events and connect impact audio and haptics at the moment of contact.
 - [ ] Replace procedural presentation assets with licensed, authored high-resolution PBR assets and documented attribution.
 - [ ] Validate cue proportions, table details, shadows, sound mix and haptic patterns on real devices.
 - [ ] Rework and validate collision/friction integration against captured reference shots; deterministic software tests are not physical calibration.
