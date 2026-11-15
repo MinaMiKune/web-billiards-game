@@ -12,9 +12,21 @@ export interface EightBallState {
   lastMessage: string
 }
 
+export interface PocketedBallEvent {
+  ballNumber: number
+  pocketIndex: number
+}
+
+export interface EightBallRulesOptions {
+  callShotRequired: boolean
+}
+
 export interface ShotResult {
   firstContactBallNumber: number | null
   pocketedBallNumbers: number[]
+  pocketedBallEvents?: PocketedBallEvent[]
+  calledBallNumber?: number | null
+  calledPocketIndex?: number | null
   cueBallPocketed: boolean
   railContactAfterFirstHit: boolean
 }
@@ -57,6 +69,16 @@ function removePocketedBalls(remaining: number[], pocketed: number[]): number[] 
 }
 
 export class EightBallRuleEngine {
+  private options: EightBallRulesOptions
+
+  constructor(options: Partial<EightBallRulesOptions> = {}) {
+    this.options = { callShotRequired: false, ...options }
+  }
+
+  setOptions(options: Partial<EightBallRulesOptions>): void {
+    this.options = { ...this.options, ...options }
+  }
+
   resolveShot(state: EightBallState, shot: ShotResult): ShotResolution {
     if (state.phase === 'game-over') {
       return { state, foulReasons: [], rerack: false }
@@ -65,6 +87,22 @@ export class EightBallRuleEngine {
     const pocketed = uniquePocketedBalls(shot.pocketedBallNumbers)
     const eightPocketed = pocketed.includes(8)
     const objectBallsPocketed = pocketed.filter((number) => number !== 8)
+    const callShotApplies = this.options.callShotRequired && state.phase !== 'break'
+    const calledShotMade = !callShotApplies || (
+      shot.calledBallNumber !== null &&
+      shot.calledBallNumber !== undefined &&
+      shot.calledPocketIndex !== null &&
+      shot.calledPocketIndex !== undefined &&
+      (shot.pocketedBallEvents ?? []).some((event) =>
+        event.ballNumber === shot.calledBallNumber &&
+        event.pocketIndex === shot.calledPocketIndex,
+      )
+    )
+    const scoringObjectBallsPocketed = callShotApplies
+      ? calledShotMade && shot.calledBallNumber !== null && shot.calledBallNumber !== undefined
+        ? objectBallsPocketed.filter((number) => number === shot.calledBallNumber)
+        : []
+      : objectBallsPocketed
     const player = state.currentPlayer
 
     // This first playable ruleset uses a simple re-rack house rule if the 8 is made on the break.
@@ -108,6 +146,7 @@ export class EightBallRuleEngine {
         ownGroup !== null &&
         ownBallsBeforeShot.length === 0 &&
         shot.firstContactBallNumber === 8 &&
+        (!callShotApplies || (calledShotMade && shot.calledBallNumber === 8)) &&
         foulReasons.length === 0
 
       const winner = legalEight ? player : oppositePlayer(player)
@@ -129,7 +168,7 @@ export class EightBallRuleEngine {
     let assignedGroup: BallGroup | null = null
 
     if (state.phase === 'open-table' && ownGroup === null && foulReasons.length === 0) {
-      const firstGroupBall = objectBallsPocketed.find((number) => number !== 8)
+      const firstGroupBall = scoringObjectBallsPocketed.find((number) => number !== 8)
       if (firstGroupBall !== undefined) {
         assignedGroup = firstGroupBall <= 7 ? 'solids' : 'stripes'
         nextGroups[player] = assignedGroup
@@ -139,7 +178,7 @@ export class EightBallRuleEngine {
 
     const effectiveGroup = ownGroup ?? assignedGroup
     const ownBallPocketed = effectiveGroup !== null &&
-      objectBallsPocketed.some((number) => isGroupBall(number, effectiveGroup))
+      scoringObjectBallsPocketed.some((number) => isGroupBall(number, effectiveGroup))
     // On the break groups are not assigned, but pocketing an object ball keeps
     // the breaker at the table for the next shot.
     const keepsTurn = state.phase === 'break'
