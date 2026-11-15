@@ -58,6 +58,7 @@ export interface PhysicsConfig {
   cushionRestitution: number
   pocketCaptureRadius: number
   sidePocketHalfWidth: number
+  pocketJawDepth: number
   pocketDropDuration: number
   stopSpeed: number
   maxShotSpeed: number
@@ -82,6 +83,7 @@ export const DEFAULT_PHYSICS_CONFIG: PhysicsConfig = {
   cushionRestitution: 0.88,
   pocketCaptureRadius: 0.098,
   sidePocketHalfWidth: 0.095,
+  pocketJawDepth: 0.045,
   pocketDropDuration: 0.42,
   stopSpeed: 0.008,
   maxShotSpeed: 2.8,
@@ -452,70 +454,149 @@ export class PhysicsWorld {
       }
     }
 
+    this.resolvePocketJawImpacts(ball, halfLength, halfWidth)
+
     if (ball.position.x > xLimit) {
       ball.position.x = xLimit
-      this.resolveCushionImpact(ball, 'x', 1)
+      this.resolveCushionImpact(ball, { x: -1, z: 0 })
     } else if (ball.position.x < -xLimit) {
       ball.position.x = -xLimit
-      this.resolveCushionImpact(ball, 'x', -1)
+      this.resolveCushionImpact(ball, { x: 1, z: 0 })
     }
 
     if (ball.position.z > zLimit) {
       ball.position.z = zLimit
-      this.resolveCushionImpact(ball, 'z', 1)
+      this.resolveCushionImpact(ball, { x: 0, z: -1 })
     } else if (ball.position.z < -zLimit) {
       ball.position.z = -zLimit
-      this.resolveCushionImpact(ball, 'z', -1)
+      this.resolveCushionImpact(ball, { x: 0, z: 1 })
     }
   }
 
-  private resolveCushionImpact(
+  private resolvePocketJawImpacts(
     ball: BallState,
-    axis: 'x' | 'z',
-    outwardSign: number,
+    halfLength: number,
+    halfWidth: number,
   ): void {
-    const normalSpeed = axis === 'x' ? ball.velocity.x : ball.velocity.z
+    const jawDepth = Math.max(0, this.config.pocketJawDepth)
+    const cornerMouthRadius = this.config.pocketCaptureRadius
+    const innerCornerOffset = Math.max(0, cornerMouthRadius - jawDepth)
+
+    for (const xSign of [-1, 1]) {
+      for (const zSign of [-1, 1]) {
+        const pocket = { x: xSign * halfLength, z: zSign * halfWidth }
+        const pocketDistance = Math.hypot(
+          ball.position.x - pocket.x,
+          ball.position.z - pocket.z,
+        )
+        if (pocketDistance <= cornerMouthRadius) continue
+
+        const innerTip = {
+          x: xSign * (halfLength - innerCornerOffset),
+          z: zSign * (halfWidth - innerCornerOffset),
+        }
+        const longRailJawStart = {
+          x: xSign * (halfLength - cornerMouthRadius),
+          z: zSign * halfWidth,
+        }
+        const endRailJawStart = {
+          x: xSign * halfLength,
+          z: zSign * (halfWidth - cornerMouthRadius),
+        }
+
+        if (this.resolveSegmentCushionImpact(ball, longRailJawStart, innerTip)) return
+        if (this.resolveSegmentCushionImpact(ball, endRailJawStart, innerTip)) return
+      }
+    }
+
+    const sideJawInnerX = this.config.sidePocketHalfWidth + ball.radius
+    for (const zSign of [-1, 1]) {
+      for (const xSign of [-1, 1]) {
+        const jawStart = {
+          x: xSign * sideJawInnerX,
+          z: zSign * (halfWidth - jawDepth),
+        }
+        const jawEnd = {
+          x: xSign * (sideJawInnerX + jawDepth),
+          z: zSign * halfWidth,
+        }
+        if (this.resolveSegmentCushionImpact(ball, jawStart, jawEnd)) return
+      }
+    }
+  }
+
+  private resolveSegmentCushionImpact(
+    ball: BallState,
+    start: Vec2,
+    end: Vec2,
+  ): boolean {
+    const segmentX = end.x - start.x
+    const segmentZ = end.z - start.z
+    const segmentLengthSquared = segmentX * segmentX + segmentZ * segmentZ
+    if (segmentLengthSquared <= 1e-12) return false
+
+    const projection = Math.max(0, Math.min(1,
+      ((ball.position.x - start.x) * segmentX +
+        (ball.position.z - start.z) * segmentZ) / segmentLengthSquared,
+    ))
+    const closestX = start.x + projection * segmentX
+    const closestZ = start.z + projection * segmentZ
+    const differenceX = ball.position.x - closestX
+    const differenceZ = ball.position.z - closestZ
+    const distanceSquared = differenceX * differenceX + differenceZ * differenceZ
+    const radiusSquared = ball.radius * ball.radius
+    if (distanceSquared >= radiusSquared) return false
+
+    const segmentLength = Math.sqrt(segmentLengthSquared)
+    let normal: Vec2
+    if (distanceSquared > 1e-12) {
+      const distance = Math.sqrt(distanceSquared)
+      normal = { x: differenceX / distance, z: differenceZ / distance }
+    } else {
+      normal = { x: -segmentZ / segmentLength, z: segmentX / segmentLength }
+    }
+
+    // The playable side of every rail/jaw points toward the table center.
+    if (normal.x * -closestX + normal.z * -closestZ < 0) {
+      normal = { x: -normal.x, z: -normal.z }
+    }
+
+    const distance = Math.sqrt(distanceSquared)
+    const penetration = ball.radius - distance
+    ball.position.x += normal.x * penetration
+    ball.position.z += normal.z * penetration
+
+    const normalSpeed = ball.velocity.x * normal.x + ball.velocity.z * normal.z
+    if (normalSpeed < -1e-8) this.resolveCushionImpact(ball, normal)
+    return true
+  }
+
+  private resolveCushionImpact(ball: BallState, normal: Vec2): void {
+    const normalSpeed = ball.velocity.x * normal.x + ball.velocity.z * normal.z
+    if (normalSpeed >= 0) return
+
     const normalImpulse = (1 + this.config.cushionRestitution) *
-      ball.mass * Math.abs(normalSpeed)
+      ball.mass * -normalSpeed
     if (this.shotTelemetry.firstContactBallNumber !== null) {
       this.shotTelemetry.railContactAfterFirstHit = true
     }
 
-    if (axis === 'x') {
-      ball.velocity.x = -outwardSign * Math.abs(normalSpeed) * this.config.cushionRestitution
-    } else {
-      ball.velocity.z = -outwardSign * Math.abs(normalSpeed) * this.config.cushionRestitution
-    }
-
-    if (normalImpulse <= 0) return
+    ball.velocity.x -= (1 + this.config.cushionRestitution) * normalSpeed * normal.x
+    ball.velocity.z -= (1 + this.config.cushionRestitution) * normalSpeed * normal.z
 
     const inertia = momentOfInertia(ball)
     const effectiveInverseMass = (1 / ball.mass) +
       (ball.radius * ball.radius / inertia)
+    const tangent = { x: -normal.z, z: normal.x }
+    const tangentialSlip = ball.velocity.x * tangent.x +
+      ball.velocity.z * tangent.z + ball.angularVelocity.y * ball.radius
+    const requestedImpulse = -tangentialSlip / effectiveInverseMass
+    const maximumImpulse = this.config.cushionFriction * normalImpulse
+    const tangentImpulse = Math.max(-maximumImpulse, Math.min(maximumImpulse, requestedImpulse))
 
-    if (axis === 'x') {
-      // Contact at (outwardSign * r, 0, 0); side spin creates tangential z slip.
-      const tangentialSlip = ball.velocity.z -
-        ball.angularVelocity.y * outwardSign * ball.radius
-      const requestedImpulse = -tangentialSlip / effectiveInverseMass
-      const maximumImpulse = this.config.cushionFriction * normalImpulse
-      const tangentImpulse = Math.sign(requestedImpulse) *
-        Math.min(Math.abs(requestedImpulse), maximumImpulse)
-      ball.velocity.z += tangentImpulse / ball.mass
-      ball.angularVelocity.y +=
-        (-outwardSign * ball.radius * tangentImpulse) / inertia
-    } else {
-      // Contact at (0, 0, outwardSign * r); side spin creates tangential x slip.
-      const tangentialSlip = ball.velocity.x +
-        ball.angularVelocity.y * outwardSign * ball.radius
-      const requestedImpulse = -tangentialSlip / effectiveInverseMass
-      const maximumImpulse = this.config.cushionFriction * normalImpulse
-      const tangentImpulse = Math.sign(requestedImpulse) *
-        Math.min(Math.abs(requestedImpulse), maximumImpulse)
-      ball.velocity.x += tangentImpulse / ball.mass
-      ball.angularVelocity.y +=
-        (outwardSign * ball.radius * tangentImpulse) / inertia
-    }
+    ball.velocity.x += tangent.x * tangentImpulse / ball.mass
+    ball.velocity.z += tangent.z * tangentImpulse / ball.mass
+    ball.angularVelocity.y += ball.radius * tangentImpulse / inertia
   }
 
   private applyBallContactFriction(
