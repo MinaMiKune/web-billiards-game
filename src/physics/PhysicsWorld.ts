@@ -46,6 +46,7 @@ export interface BallState {
   previousPosition: Vec2
   /** Ball-center height above the cloth plane, in meters. */
   height: number
+  previousHeight: number
   verticalVelocity: number
   velocity: Vec2
   angularVelocity: Vec3
@@ -228,6 +229,7 @@ export class PhysicsWorld {
     cue.position = { ...position }
     cue.previousPosition = { ...position }
     cue.height = 0
+    cue.previousHeight = 0
     cue.verticalVelocity = 0
     cue.velocity = { x: 0, z: 0 }
     cue.angularVelocity = ZERO_VEC3()
@@ -298,6 +300,7 @@ export class PhysicsWorld {
     // unusually large deltas so fast balls cannot tunnel through one another.
     for (const ball of this.balls) {
       ball.previousPosition = { ...ball.position }
+      ball.previousHeight = ball.height
       ball.previousRotation = { ...ball.rotation }
     }
     const substepCount = Math.max(1, Math.ceil(deltaSeconds / (1 / 120)))
@@ -355,7 +358,7 @@ export class PhysicsWorld {
         x: ball.previousPosition.x + (ball.position.x - ball.previousPosition.x) * blend,
         z: ball.previousPosition.z + (ball.position.z - ball.previousPosition.z) * blend,
       },
-      height: ball.height,
+      height: ball.previousHeight + (ball.height - ball.previousHeight) * blend,
       rotation: {
         x: ball.previousRotation.x + (ball.rotation.x - ball.previousRotation.x) * blend,
         y: ball.previousRotation.y + (ball.rotation.y - ball.previousRotation.y) * blend,
@@ -391,6 +394,7 @@ export class PhysicsWorld {
       position,
       previousPosition: { ...position },
       height: 0,
+      previousHeight: 0,
       verticalVelocity: 0,
       velocity: { x: 0, z: 0 },
       angularVelocity: ZERO_VEC3(),
