@@ -258,6 +258,16 @@ export class GameRenderer {
     feltMesh.receiveShadow = true
     this.scene.add(feltMesh)
 
+    const headStringGeometry = new BufferGeometry().setFromPoints([
+      new Vector3(-TABLE_LENGTH / 4, 0.002, -TABLE_WIDTH / 2 + 0.025),
+      new Vector3(-TABLE_LENGTH / 4, 0.002, TABLE_WIDTH / 2 - 0.025),
+    ])
+    const headString = new Line(
+      headStringGeometry,
+      new LineBasicMaterial({ color: '#d7c49a', transparent: true, opacity: 0.5 }),
+    )
+    this.scene.add(headString)
+
     const halfL = TABLE_LENGTH / 2
     const halfW = TABLE_WIDTH / 2
     const railHeight = 0.13
