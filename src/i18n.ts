@@ -97,6 +97,6 @@ export function t(english: string): string {
   return messages[english]?.[index] ?? english
 }
 
-export function getLocale(): Locale {
+export function getLocale(): Locale | 'en' {
   return locale
 }
