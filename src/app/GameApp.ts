@@ -4,6 +4,7 @@ import { PhysicsWorld, type BallSpin, type RenderBall } from '../physics/Physics
 import { GameRenderer } from '../rendering/GameRenderer'
 import { AIController, type AIDifficulty } from '../ai/AIController'
 import { createInitialEightBallState, EightBallRuleEngine, type EightBallState } from '../game/EightBallRuleEngine'
+import { t } from '../i18n'
 
 const FIXED_STEP = 1 / 120
 const MAX_FRAME_DELTA = 0.1
@@ -236,7 +237,7 @@ export class GameApp {
     else if (this.spin.vertical < -0.22) labels.push('Draw')
     if (this.spin.side > 0.22) labels.push('Right')
     else if (this.spin.side < -0.22) labels.push('Left')
-    this.spinValue.textContent = labels.length ? labels.join(' · ') : 'Center'
+    this.spinValue.textContent = labels.length ? labels.map(t).join(' · ') : t('Center')
   }
 
   private resetSpin(): void {
@@ -256,7 +257,7 @@ export class GameApp {
         this.renderer.updateBalls(this.world.getRenderBalls(1))
         this.scheduleAiTurn()
       } else {
-        this.statusElement.textContent = 'Choose a clear spot away from balls and pockets'
+        this.statusElement.textContent = t('Choose a clear spot away from balls and pockets')
       }
       return
     }
@@ -292,7 +293,7 @@ export class GameApp {
         this.power,
         this.spin,
       )) {
-        this.statusElement.textContent = 'Balls in motion'
+        this.statusElement.textContent = t('Balls in motion')
         this.wasMoving = true
       }
     }
@@ -403,7 +404,7 @@ export class GameApp {
           ? 'AI OPPONENT'
           : `PLAYER ${player + 1}`
       this.playerGroups[player].textContent = group
-        ? group.toUpperCase()
+        ? t(group === 'solids' ? 'SOLIDS' : 'STRIPES')
         : this.ruleState.phase === 'break'
           ? 'OPEN TABLE'
           : 'UNASSIGNED'
@@ -442,7 +443,7 @@ export class GameApp {
     }
 
     this.statusElement.classList.add('is-thinking')
-    this.statusElement.textContent = 'AI is reading the table…'
+    this.statusElement.textContent = t('AI is reading the table…')
     this.aiTimer = window.setTimeout(() => {
       this.runAiTurn()
     }, 420)
@@ -458,7 +459,7 @@ export class GameApp {
     if (this.ruleState.ballInHand) {
       const position = this.ai.chooseBallInHandPlacement(this.world, this.ruleState)
       if (!position || !this.world.placeCueBall(position)) {
-        this.statusElement.textContent = 'AI could not find a legal cue-ball position'
+        this.statusElement.textContent = t('AI could not find a legal cue-ball position')
         return
       }
       this.ruleState = this.rules.placeBallInHand(this.ruleState)
@@ -468,7 +469,7 @@ export class GameApp {
 
     const plan = this.ai.planShot(this.world, this.ruleState, this.aiDifficulty)
     if (!plan) {
-      this.statusElement.textContent = 'AI could not find a legal target'
+      this.statusElement.textContent = t('AI could not find a legal target')
       return
     }
 
@@ -477,7 +478,7 @@ export class GameApp {
       plan.command.power,
       plan.command.spin,
     )) {
-      this.statusElement.textContent = 'AI shot was rejected by the physics world'
+      this.statusElement.textContent = t('AI shot was rejected by the physics world')
       return
     }
 
