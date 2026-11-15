@@ -73,7 +73,8 @@ Selected decisions:
 - [ ] Refine lighting and add richer shot feedback.
 - [x] Add reduced-motion support and keyboard focus visibility for the interactive table.
 - [ ] Review touch controls and small-screen layouts in real browsers.
-- [ ] Add browser compatibility and repeatable performance benchmarks.
+- [x] Add repeatable AI and fixed-step physics performance benchmarks.
+- [ ] Add cross-browser compatibility tests and small-screen browser verification.
 
 ## Cross-cutting — Localization
 
