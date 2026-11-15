@@ -22,6 +22,7 @@ const messages: Record<string, [string, string, string]> = {
   'Play vs AI': ['对战 AI', '對戰 AI', 'AI と対戦'],
   'Rules & options': ['规则与选项', '規則與選項', 'ルールとオプション'],
   'New game': ['新开一局', '重新開局', '新しいゲーム'],
+  'Play again': ['再来一局', '再玩一局', 'もう一度プレイ'],
   'Pull back from the cue ball, then release to shoot': ['从母球向后拖动，松开即可击球', '從母球向後拖曳，放開即可擊球', '手球から後ろに引き、離してショット'],
   'TABLE STATUS': ['球台状态', '球桌狀態', 'テーブル状態'],
   'SHOT HISTORY': ['击球记录', '擊球紀錄', 'ショット履歴'],
