@@ -53,6 +53,7 @@ export class GameApp {
   private readonly turnElement: HTMLElement
   private readonly shotHistoryElement: HTMLOListElement
   private readonly matchSummaryElement: HTMLElement
+  private readonly rematchButton: HTMLButtonElement
   private readonly shotHistory: MatchHistoryEntry[] = []
   private totalShotCount = 0
   private callShotRequired = false
@@ -96,6 +97,7 @@ export class GameApp {
     this.turnElement = requireElement(root, '#turn-status')
     this.shotHistoryElement = requireElement<HTMLOListElement>(root, '#shot-history')
     this.matchSummaryElement = requireElement(root, '#match-summary')
+    this.rematchButton = requireElement<HTMLButtonElement>(root, '#rematch-game')
     this.interactionHint = requireElement(root, '#interaction-hint')
     this.playerCards = [
       requireElement(root, '#player-one-card'),
@@ -169,22 +171,9 @@ export class GameApp {
       })
     }
 
-    requireElement<HTMLButtonElement>(root, '#reset-rack').addEventListener('click', () => {
-      window.clearTimeout(this.aiTimer)
-      this.invalidateAiRequest()
-      this.statusElement.classList.remove('is-thinking')
-      this.world.resetRack()
-      this.pendingCalledShot = null
-      this.shotHistory.length = 0
-      this.totalShotCount = 0
-      this.renderShotHistory()
-      this.ruleState = createInitialEightBallState()
-      this.renderer.updateBalls(this.world.getRenderBalls(1))
-      this.resetSpin()
-      this.setAimVisible(false)
-      this.statusElement.textContent = translateGameMessage(this.ruleState.lastMessage)
-      this.updateTurnStatus()
-    })
+    const startNewRack = (): void => this.startNewRack()
+    requireElement<HTMLButtonElement>(root, '#reset-rack').addEventListener('click', startNewRack)
+    this.rematchButton.addEventListener('click', startNewRack)
 
     this.opponentModeInput.addEventListener('change', () => {
       this.invalidateAiRequest()
@@ -241,6 +230,24 @@ export class GameApp {
     this.spinPad.addEventListener('pointercancel', this.onSpinPointerUp)
     this.spinPad.addEventListener('keydown', this.onSpinKeyDown)
     window.addEventListener('keydown', this.onKeyDown)
+  }
+
+  private startNewRack(): void {
+    window.clearTimeout(this.aiTimer)
+    this.invalidateAiRequest()
+    this.statusElement.classList.remove('is-thinking')
+    this.world.resetRack()
+    this.pendingCalledShot = null
+    this.shotHistory.length = 0
+    this.totalShotCount = 0
+    this.renderShotHistory()
+    this.ruleState = createInitialEightBallState()
+    this.renderer.updateBalls(this.world.getRenderBalls(1))
+    this.resetSpin()
+    this.setAimVisible(false)
+    this.statusElement.textContent = translateGameMessage(this.ruleState.lastMessage)
+    this.updateTurnStatus()
+    this.scheduleAiTurn()
   }
 
   private syncCallShotControls(): void {
@@ -543,7 +550,9 @@ export class GameApp {
   }
 
   private renderMatchSummary(): void {
-    if (this.ruleState.phase !== 'game-over' || this.ruleState.winner === null) {
+    const matchComplete = this.ruleState.phase === 'game-over' && this.ruleState.winner !== null
+    this.rematchButton.hidden = !matchComplete
+    if (!matchComplete) {
       this.matchSummaryElement.hidden = true
       this.matchSummaryElement.textContent = ''
       return
