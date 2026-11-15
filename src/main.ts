@@ -90,7 +90,7 @@ app.innerHTML = `
               </label>
             </div>
           </details>
-        </div>>
+        </div>
       </div>
 
       <section class="scoreboard" aria-label="Player scores and remaining balls">
@@ -117,15 +117,19 @@ app.innerHTML = `
         </article>
       </section>
 
-      <section class="match-history" aria-label="Match history">
-        <div class="match-history-header">
-          <span class="section-label">SHOT HISTORY</span>
-          <strong id="match-summary" class="match-summary" hidden aria-live="polite"></strong>
-        </div>
-        <ol id="shot-history" class="shot-history">
-          <li class="history-empty">No shots recorded yet</li>
-        </ol>
-      </section>
+      <div class="scene-frame">
+        <div id="scene-host" class="scene-host" aria-label="Interactive 3D billiards table"></div>
+        <div id="interaction-hint" class="scene-hint">DRAG BACK FROM THE WHITE BALL TO AIM · RELEASE TO SHOOT</div>
+      </div>
+
+      <div class="shot-control-row">
+        <label class="power-control" for="shot-power">
+          <span class="section-label">SHOT POWER</span>
+          <strong id="power-value">65%</strong>
+          <input id="shot-power" type="range" min="10" max="100" value="65" />
+        </label>
+        <p class="shot-control-hint">Pull back from the cue ball, then release to shoot</p>
+      </div>
 
       <div class="spin-bar">
         <div class="spin-copy">
@@ -145,19 +149,15 @@ app.innerHTML = `
         <p class="spin-help">Drag the marker · Arrow keys also work · Home resets</p>
       </div>
 
-      <div class="shot-control-row">
-        <label class="power-control" for="shot-power">
-          <span class="section-label">SHOT POWER</span>
-          <strong id="power-value">65%</strong>
-          <input id="shot-power" type="range" min="10" max="100" value="65" />
-        </label>
-        <p class="shot-control-hint">Pull back from the cue ball, then release to shoot</p>
-      </div>
-
-      <div class="scene-frame">
-        <div id="scene-host" class="scene-host" aria-label="Interactive 3D billiards table"></div>
-        <div id="interaction-hint" class="scene-hint">DRAG BACK FROM THE WHITE BALL TO AIM · RELEASE TO SHOOT</div>
-      </div>
+      <section class="match-history" aria-label="Match history">
+        <div class="match-history-header">
+          <span class="section-label">SHOT HISTORY</span>
+          <strong id="match-summary" class="match-summary" hidden aria-live="polite"></strong>
+        </div>
+        <ol id="shot-history" class="shot-history">
+          <li class="history-empty">No shots recorded yet</li>
+        </ol>
+      </section>
 
       <div class="camera-bar">
         <div class="camera-copy">
