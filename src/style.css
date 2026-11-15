@@ -204,3 +204,7 @@ footer { margin-top:16px; gap:12px; font-size:8px; letter-spacing:.12em; }
   .opponent-control, .power-control { width: 100%; min-width: 0; }
   .toolbar-actions .button-muted { width: 100%; align-self: end; }
 }
+
+.language-control { display:grid; gap:5px; min-width:112px; margin-left:14px; }
+.language-control select { width:100%; padding:7px 9px; border:1px solid #365849; border-radius:5px; background:#10251e; color:#e9e5d9; font-size:11px; cursor:pointer; }
+@media (max-width:720px) { .topbar { flex-wrap:wrap; gap:12px; } .language-control { margin-left:0; } }
