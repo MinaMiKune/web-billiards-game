@@ -21,13 +21,11 @@ describe('shot telemetry regressions', () => {
     target.active = true
     cue.position = { x: 1.08, z: 0 }
     cue.previousPosition = { ...cue.position }
-    cue.velocity = { x: 2.8, z: 0 }
     target.position = { x: 1.15, z: 0 }
     target.previousPosition = { ...target.position }
     target.velocity = { x: 0, z: 0 }
 
     expect(world.shootCueBall({ x: 1, z: 0 }, 1)).toBe(true)
-    cue.velocity = { x: 2.8, z: 0 }
 
     for (let frame = 0; frame < 12; frame += 1) world.step(STEP)
 
