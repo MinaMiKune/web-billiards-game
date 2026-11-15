@@ -38,6 +38,7 @@ Selected decisions:
 
 ## Phase 3 — Rules and game flow
 
+- [x] Add a standard 8-ball rack arrangement with the 8 centered and opposite groups at the rear corners.
 - [x] Add a pure, deterministic American 8-ball rules engine.
 - [x] Track first cue-ball contact, pocket events and rail contact in the physics layer.
 - [x] Support break/open-table/group assignment, turn switching, fouls and 8-ball win/loss.

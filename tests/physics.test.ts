@@ -3,6 +3,40 @@ import { PhysicsWorld } from '../src/physics/PhysicsWorld'
 
 const STEP = 1 / 120
 
+describe('Eight-ball rack layout', () => {
+  it('places the 8-ball in the rack center', () => {
+    const world = new PhysicsWorld()
+    const eight = world.balls.find((ball) => ball.number === 8)
+    const expectedX = 0.48 + 2 * world.config.ballRadius * 2.04 * Math.sqrt(3) / 2
+
+    expect(eight).toBeDefined()
+    expect(eight?.position.x).toBeCloseTo(expectedX, 8)
+    expect(eight?.position.z).toBeCloseTo(0, 8)
+  })
+
+  it('places one solid and one stripe in the rear corners', () => {
+    const world = new PhysicsWorld()
+    const objectBalls = world.balls.filter((ball) => ball.number > 0)
+    const rearX = Math.max(...objectBalls.map((ball) => ball.position.x))
+    const rearCorners = objectBalls.filter((ball) =>
+      Math.abs(ball.position.x - rearX) < 1e-9,
+    ).sort((a, b) => a.position.z - b.position.z)
+
+    expect(rearCorners).toHaveLength(2)
+    expect(rearCorners[0].number).toBeGreaterThanOrEqual(1)
+    expect(rearCorners[0].number).toBeLessThanOrEqual(7)
+    expect(rearCorners[1].number).toBeGreaterThanOrEqual(9)
+    expect(rearCorners[1].number).toBeLessThanOrEqual(15)
+  })
+
+  it('contains each object-ball number exactly once', () => {
+    const world = new PhysicsWorld()
+    const numbers = world.balls.filter((ball) => ball.number > 0)
+      .map((ball) => ball.number).sort((a, b) => a - b)
+    expect(numbers).toEqual(Array.from({ length: 15 }, (_, index) => index + 1))
+  })
+})
+
 describe('PhysicsWorld', () => {
   it('keeps a stationary cue ball stationary', () => {
     const world = new PhysicsWorld()

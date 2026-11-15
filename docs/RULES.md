@@ -2,6 +2,10 @@
 
 This document describes the initial game-oriented rules subset implemented in the browser prototype. It is intentionally explicit about house-rule choices and does not claim full WPA/BCA tournament-rule coverage.
 
+## Rack arrangement
+
+The opening rack uses a triangular 15-ball layout. The 8-ball occupies the geometric center of the triangle, and the two rear corner positions contain one solid and one stripe. Remaining balls are placed in a deterministic mixed layout for reproducible breaks.
+
 ## Players and groups
 
 - Two local players take alternate turns.
