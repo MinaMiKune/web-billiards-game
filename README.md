@@ -9,6 +9,7 @@ The product direction is **game-realistic billiards**: accessible controls backe
 - [x] Three.js table scene, numbered/striped ball models and four camera modes
 - [x] Fixed-step 120 Hz physics with sliding/rolling friction, follow/draw, side spin, ball collisions, cushion friction, pocket jaws and pocket capture
 - [x] Aim, power, cue-ball contact-point controls and ball-in-hand placement
+- [x] Behind-head-string placement after break fouls; anywhere placement after other fouls
 - [x] Local two-player American 8-ball and five-level physics-planned AI opponent
 - [x] AI direct, bank, kick and two-rail shot candidates, safety evaluation and Web Worker planning
 - [x] Optional called-ball/called-pocket mode for human and AI players
