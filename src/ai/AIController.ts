@@ -274,8 +274,14 @@ export class AIController {
     const targets = getEligibleTargets(world, state)
     if (targets.length === 0) return null
 
-    const xCandidates = [-1.0, -0.78, -0.56, -0.34, -0.12, 0.1, 0.32, 0.54, 0.76, 0.98]
-    const zCandidates = [-0.48, -0.32, -0.16, 0, 0.16, 0.32, 0.48]
+    // Scale the search grid to the configured playing surface instead of assuming
+    // one fixed table size. PhysicsWorld.placeCueBall remains the legality authority.
+    const xLimit = world.config.tableLength / 2 - world.cueBall.radius
+    const zLimit = world.config.tableWidth / 2 - world.cueBall.radius
+    const xCandidates = [-0.82, -0.64, -0.46, -0.28, -0.1, 0.08, 0.26, 0.44, 0.62, 0.8]
+      .map((fraction) => fraction * xLimit)
+    const zCandidates = [-0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75]
+      .map((fraction) => fraction * zLimit)
     let bestPosition: Vec2 | null = null
     let bestScore = Number.NEGATIVE_INFINITY
 
