@@ -24,6 +24,22 @@ describe('EightBallRuleEngine', () => {
     expect(state.remainingBalls).toHaveLength(15)
   })
 
+  it('restricts break-foul ball in hand to behind the head string', () => {
+    const breakFoul = rules.resolveShot(
+      createInitialEightBallState(),
+      cleanShot({ cueBallPocketed: true }),
+    )
+    expect(breakFoul.state.ballInHand).toBe(true)
+    expect(breakFoul.state.ballInHandZone).toBe('behind-head-string')
+
+    const openTableFoul = rules.resolveShot(
+      { ...createInitialEightBallState(), phase: 'open-table' },
+      cleanShot({ cueBallPocketed: true }),
+    )
+    expect(openTableFoul.state.ballInHand).toBe(true)
+    expect(openTableFoul.state.ballInHandZone).toBe('anywhere')
+  })
+
   it('keeps the breaker at the table after pocketing an object ball', () => {
     const result = rules.resolveShot(
       createInitialEightBallState(),
