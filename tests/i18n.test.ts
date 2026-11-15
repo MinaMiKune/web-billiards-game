@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { t, translateGameMessage } from '../src/i18n'
+import { translateGameMessage } from '../src/i18n'
 
 describe('dynamic game message localization', () => {
   it('translates break messages in all supported locales', () => {
@@ -56,12 +56,12 @@ describe('dynamic game message localization', () => {
   })
 
   it('translates match history labels in all supported locales', () => {
-    expect(t('SHOT HISTORY')).toBe('击球记录')
-    expect(t('No shots recorded yet')).toBe('暂无击球记录')
-    expect(t('MATCH COMPLETE')).toBe('本局结束')
-    expect(t('First contact')).toBe('首次碰球')
-    expect(t('Pocketed')).toBe('落袋')
-    expect(t('None')).toBe('无')
+    expect(translateGameMessage('SHOT HISTORY', 'zh-CN')).toBe('击球记录')
+    expect(translateGameMessage('No shots recorded yet', 'zh-CN')).toBe('暂无击球记录')
+    expect(translateGameMessage('MATCH COMPLETE', 'zh-CN')).toBe('本局结束')
+    expect(translateGameMessage('First contact', 'zh-CN')).toBe('首次碰球')
+    expect(translateGameMessage('Pocketed', 'zh-CN')).toBe('落袋')
+    expect(translateGameMessage('None', 'zh-CN')).toBe('无')
   })
 
   it('translates winner and rerack messages', () => {
