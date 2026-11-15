@@ -68,6 +68,9 @@ export class GameApp {
   private readonly playerCounts: [HTMLElement, HTMLElement]
   private readonly powerInput: HTMLInputElement
   private readonly powerValue: HTMLElement
+  private readonly elevationInput: HTMLInputElement
+  private readonly elevationValue: HTMLElement
+  private cueElevation = 0
   private readonly spinPad: HTMLElement
   private readonly spinMarker: HTMLElement
   private readonly spinValue: HTMLElement
@@ -121,6 +124,8 @@ export class GameApp {
     ]
     this.powerInput = requireElement<HTMLInputElement>(root, '#shot-power')
     this.powerValue = requireElement(root, '#power-value')
+    this.elevationInput = requireElement<HTMLInputElement>(root, '#cue-elevation')
+    this.elevationValue = requireElement(root, '#elevation-value')
     this.spinPad = requireElement(root, '#spin-pad')
     this.spinMarker = requireElement(root, '#spin-marker')
     this.spinValue = requireElement(root, '#spin-value')
@@ -243,6 +248,13 @@ export class GameApp {
     this.syncCallShotControls()
 
     this.powerInput.setAttribute('aria-valuetext', this.powerInput.value + '%')
+    this.elevationInput.setAttribute('aria-valuetext', this.cueElevation + '°')
+    this.elevationInput.addEventListener('input', () => {
+      this.cueElevation = Number(this.elevationInput.value)
+      this.elevationValue.textContent = this.cueElevation + '°'
+      this.elevationInput.setAttribute('aria-valuetext', this.cueElevation + '°')
+      if (this.aiming) this.updateAimPreview()
+    })
     this.powerInput.addEventListener('input', () => {
       this.power = Number(this.powerInput.value) / 100
       this.powerValue.textContent = this.powerInput.value + '%'
@@ -446,7 +458,7 @@ export class GameApp {
           this.world.shootCueBall(
             { x: dx / length, z: dz / length },
             this.power,
-            this.spin,
+            { ...this.spin, elevation: this.cueElevation * Math.PI / 180 },
           )) {
           this.pendingCalledShot = calledShot
           this.soundEffects.playCue()
@@ -528,11 +540,12 @@ export class GameApp {
       { x: dx / length, z: dz / length },
       Math.min(length, 0.8),
       true,
+      this.cueElevation * Math.PI / 180,
     )
   }
 
   private setAimVisible(visible: boolean): void {
-    this.renderer.setAimPreview(this.cueRenderBall(), { x: 1, z: 0 }, 0, visible)
+    this.renderer.setAimPreview(this.cueRenderBall(), { x: 1, z: 0 }, 0, visible, this.cueElevation * Math.PI / 180)
   }
 
   private onLocaleChange = (): void => {

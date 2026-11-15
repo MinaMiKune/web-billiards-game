@@ -139,7 +139,8 @@ Selected decisions:
 - [x] Allow elevated balls to clear the simplified cushion nose and update airborne contact shadows.
 - [x] Add deterministic tests for elevated shots, airborne friction, 3D ball contacts and cushion clearance.
 - [ ] Calibrate cue elevation, jump limits, landing bounce and cushion height against measured shots.
-- [ ] Add player-facing cue-elevation control and advanced masse/jump-shot interaction after physics validation.
+- [x] Add a responsive, localized player-facing 0–25° cue-elevation slider and pitch the 3D cue model to match.
+- [ ] Validate elevation range, jump limits and landing bounce against measured shots before exposing advanced masse/jump-shot presets.
 
 ## Phase 6 — Release readiness (active before stable 1.0)
 
