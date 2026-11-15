@@ -208,3 +208,49 @@ footer { margin-top:16px; gap:12px; font-size:8px; letter-spacing:.12em; }
 .language-control { display:grid; gap:5px; min-width:112px; margin-left:14px; }
 .language-control select { width:100%; padding:7px 9px; border:1px solid #365849; border-radius:5px; background:#10251e; color:#e9e5d9; font-size:11px; cursor:pointer; }
 @media (max-width:720px) { .topbar { flex-wrap:wrap; gap:12px; } .language-control { margin-left:0; } }
+
+/* Match history and result summary */
+.match-history {
+  padding: 14px 20px 16px;
+  border-bottom: 1px solid rgba(119, 157, 136, .18);
+  background: rgba(9, 25, 19, .48);
+}
+.match-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+.match-summary {
+  color: #e6cb92;
+  font: 600 10px 'DM Mono', monospace;
+  letter-spacing: .08em;
+}
+.shot-history {
+  display: grid;
+  gap: 6px;
+  max-height: 164px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.shot-history li {
+  padding: 7px 9px;
+  border: 1px solid rgba(91, 124, 103, .2);
+  border-radius: 5px;
+  background: rgba(20, 47, 36, .32);
+  color: #b9c8bb;
+  font: 10px/1.5 'DM Mono', monospace;
+  overflow-wrap: anywhere;
+}
+.shot-history .history-empty {
+  color: #81998b;
+  border-style: dashed;
+  background: transparent;
+}
+@media (max-width: 720px) {
+  .match-history { padding: 12px 13px; }
+  .shot-history li { font-size: 9px; }
+}
