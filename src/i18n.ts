@@ -83,6 +83,8 @@ const messages: Record<string, [string, string, string]> = {
   'ball placed': ['已放置母球', '已放置母球', '手球を配置しました'],
   'pot attempt': ['进球尝试', '進球嘗試', 'ポット狙い'],
   'safety attempt': ['防守尝试', '防守嘗試', 'セーフティ狙い'],
+  'bank shot': ['借库球', '借庫球', 'バンクショット'],
+  'direct shot': ['直线球', '直線球', 'ストレートショット'],
   'target': ['目标球', '目標球', 'ターゲット'],
   'BALL IN HAND — CLICK TO PLACE': ['自由球 — 点击放置母球', '自由球 — 點擊放置母球', 'フリーボール — クリックして手球を配置'],
   'WINNER:': ['获胜者：', '獲勝者：', '勝者：'],
