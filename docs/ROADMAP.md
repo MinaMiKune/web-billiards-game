@@ -31,7 +31,8 @@ Selected decisions:
 - [x] Add basic follow/draw and side-spin state.
 - [x] Add a 2D cue-ball contact selector.
 - [x] Rotate numbered/striped ball textures with the simulated angular velocity.
-- [ ] Calibrate friction and spin parameters against reference shots.
+- [x] Establish deterministic software baselines for rolling deceleration, sliding impulse, side-spin decay and collision momentum.
+- [ ] Calibrate friction and spin parameters against measured reference shots.
 - [x] Add tangential ball-ball collision impulses and spin-dependent cushion rebound.
 - [x] Add presentation-only ball drop animation after pocket capture.
 - [x] Add first-pass angled jaw collisions for corner and side pockets with capture/near-miss regression tests.
