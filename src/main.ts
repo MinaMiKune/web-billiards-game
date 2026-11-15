@@ -80,6 +80,16 @@ app.innerHTML = `
         </article>
       </section>
 
+      <section class="match-history" aria-label="Match history">
+        <div class="match-history-header">
+          <span class="section-label">SHOT HISTORY</span>
+          <strong id="match-summary" class="match-summary" hidden aria-live="polite"></strong>
+        </div>
+        <ol id="shot-history" class="shot-history">
+          <li class="history-empty">No shots recorded yet</li>
+        </ol>
+      </section>
+
       <div class="spin-bar">
         <div class="spin-copy">
           <span class="section-label">CUE BALL CONTACT</span>
