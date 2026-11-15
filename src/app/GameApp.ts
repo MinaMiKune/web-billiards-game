@@ -215,8 +215,10 @@ export class GameApp {
   }
 
   private syncCallShotControls(): void {
+    const gameActive = this.ruleState.phase !== 'game-over'
     const enabled = this.callShotRequired && this.ruleState.phase !== 'break' &&
-      this.ruleState.phase !== 'game-over'
+      gameActive && !this.world.isMoving
+    this.callShotToggle.disabled = !gameActive || this.world.isMoving
     this.callBallInput.disabled = !enabled
     this.callPocketInput.disabled = !enabled
   }
@@ -370,6 +372,7 @@ export class GameApp {
             this.spin,
           )) {
           this.pendingCalledShot = calledShot
+          this.syncCallShotControls()
           this.statusElement.textContent = t('Balls in motion')
           this.wasMoving = true
         }
@@ -687,6 +690,7 @@ export class GameApp {
     this.pendingCalledShot = this.callShotRequired && this.ruleState.phase !== 'break'
       ? { ballNumber: plan.targetBallNumber, pocketIndex: plan.pocketIndex }
       : null
+    this.syncCallShotControls()
 
     this.statusElement.textContent =
       translateGameMessage(`AI · ${plan.style === 'pot' ? 'pot attempt' : 'safety attempt'} · ${plan.routeType === 'bank' ? 'bank shot' : plan.routeType === 'kick' ? 'kick shot' : plan.routeType === 'multi-rail' ? 'multi-rail shot' : 'direct shot'} · target ${plan.targetBallNumber}`)
