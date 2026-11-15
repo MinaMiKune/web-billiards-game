@@ -1,5 +1,6 @@
 import './style.css'
 import { GameApp } from './app/GameApp'
+import { LOCALES, setLocale, type Locale } from './i18n'
 
 const app = document.querySelector<HTMLDivElement>('#app')
 
@@ -17,6 +18,7 @@ app.innerHTML = `
       <div class="topbar-meta">
         <span class="live-dot"></span>
         <span>PHYSICS PLAYGROUND</span>
+        <label class="language-control" for="language-select"><span class="section-label">LANGUAGE</span><select id="language-select" aria-label="Language"><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option><option value="ja">日本語</option></select></label>
       </div>
     </header>
 
@@ -122,4 +124,13 @@ app.innerHTML = `
   </main>
 `
 
+const languageSelect = app.querySelector<HTMLSelectElement>('#language-select')
+const savedLocale = window.localStorage.getItem('billiards-locale') as Locale | null
+const initialLocale: Locale = savedLocale && LOCALES.some((item) => item.value === savedLocale) ? savedLocale : 'zh-CN'
+setLocale(initialLocale)
+languageSelect?.addEventListener('change', () => {
+  const locale = languageSelect.value as Locale
+  setLocale(locale)
+  window.localStorage.setItem('billiards-locale', locale)
+})
 new GameApp(app)
