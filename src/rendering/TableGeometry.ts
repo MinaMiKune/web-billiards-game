@@ -17,10 +17,19 @@ function createPocketCutoutShape(
   const sidePocketRadius = SIDE_POCKET_MOUTH_RADIUS
   const cornerPocketRadius = CORNER_POCKET_MOUTH_RADIUS
   const shape = new Shape()
-  shape.moveTo(-halfLength - outerMargin, -halfWidth - outerMargin)
-  shape.lineTo(halfLength + outerMargin, -halfWidth - outerMargin)
-  shape.lineTo(halfLength + outerMargin, halfWidth + outerMargin)
-  shape.lineTo(-halfLength - outerMargin, halfWidth + outerMargin)
+  const outerHalfLength = halfLength + outerMargin
+  const outerHalfWidth = halfWidth + outerMargin
+  const cornerRadius = Math.min(0.065, outerMargin * 0.82)
+  // Rounded outside corners replace the old sharp rectangular bed outline.
+  shape.moveTo(-outerHalfLength + cornerRadius, -outerHalfWidth)
+  shape.lineTo(outerHalfLength - cornerRadius, -outerHalfWidth)
+  shape.quadraticCurveTo(outerHalfLength, -outerHalfWidth, outerHalfLength, -outerHalfWidth + cornerRadius)
+  shape.lineTo(outerHalfLength, outerHalfWidth - cornerRadius)
+  shape.quadraticCurveTo(outerHalfLength, outerHalfWidth, outerHalfLength - cornerRadius, outerHalfWidth)
+  shape.lineTo(-outerHalfLength + cornerRadius, outerHalfWidth)
+  shape.quadraticCurveTo(-outerHalfLength, outerHalfWidth, -outerHalfLength, outerHalfWidth - cornerRadius)
+  shape.lineTo(-outerHalfLength, -outerHalfWidth + cornerRadius)
+  shape.quadraticCurveTo(-outerHalfLength, -outerHalfWidth, -outerHalfLength + cornerRadius, -outerHalfWidth)
   shape.closePath()
 
   const pocketCenters: Array<[number, number]> = [
