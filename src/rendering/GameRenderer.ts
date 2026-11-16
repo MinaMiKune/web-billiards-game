@@ -317,7 +317,10 @@ export class GameRenderer {
     // Long rails must stop before BOTH corner pockets and the side pocket.
     // The old two-piece layout started at the table corners, laying solid wood
     // directly across the corner-pocket mouths (visible as rectangular blockers).
-    const cornerRailClearance = pocketRadius + railDepth / 2 + 0.008
+    // Leave the complete pocket radius, ball radius, and rail half-depth clear.
+    // The additional 0.10m is a deliberate visual/trajectory margin: rail ends
+    // must not hang over the circular mouth from a top or oblique camera.
+    const cornerRailClearance = pocketRadius + DEFAULT_PHYSICS_CONFIG.ballRadius + railDepth / 2 + 0.10
     const railSegments = getLongRailSegments(halfL, sideJawOuterX, cornerRailClearance)
 
     for (const side of [-1, 1]) {
@@ -335,7 +338,10 @@ export class GameRenderer {
       this.addBox(cushion, 0.035, 0.045, endRailLength, side * (halfL + 0.005), railY + 0.035, 0)
     }
 
-    this.addPocketJaws(railWood, cushion, halfL, halfW, railY)
+    // Corner jaws are intentionally omitted until their mesh profile is built
+    // from the same open-pocket contour as the bed. Box-shaped corner jaws
+    // visually intruded into the mouth even when the rail endpoints were clear.
+    this.addSidePocketJaws(railWood, cushion, halfW, railY)
 
     const pocketPositions = [
       [-halfL, -halfW], [0, -halfW], [halfL, -halfW],
@@ -405,7 +411,7 @@ export class GameRenderer {
     return texture
   }
 
-  private addPocketJaws(
+  private addSidePocketJaws(
     railWood: MeshStandardMaterial,
     cushion: MeshStandardMaterial,
     halfLength: number,
@@ -414,29 +420,6 @@ export class GameRenderer {
   ): void {
     const { pocketCaptureRadius, sidePocketHalfWidth, pocketJawDepth, ballRadius } =
       DEFAULT_PHYSICS_CONFIG
-    const innerCornerOffset = Math.max(0, pocketCaptureRadius - pocketJawDepth)
-
-    for (const xSign of [-1, 1]) {
-      for (const zSign of [-1, 1]) {
-        const innerTip = {
-          x: xSign * (halfLength - innerCornerOffset),
-          z: zSign * (halfWidth - innerCornerOffset),
-        }
-        const longRailJawStart = {
-          x: xSign * (halfLength - pocketCaptureRadius),
-          z: zSign * halfWidth,
-        }
-        const endRailJawStart = {
-          x: xSign * halfLength,
-          z: zSign * (halfWidth - pocketCaptureRadius),
-        }
-        this.addAngledJaw(railWood, longRailJawStart, innerTip, railY, 0.13, 0.035)
-        this.addAngledJaw(cushion, longRailJawStart, innerTip, railY + 0.035, 0.045, 0.018)
-        this.addAngledJaw(railWood, endRailJawStart, innerTip, railY, 0.13, 0.035)
-        this.addAngledJaw(cushion, endRailJawStart, innerTip, railY + 0.035, 0.045, 0.018)
-      }
-    }
-
     const sideJawInnerX = sidePocketHalfWidth + ballRadius
     for (const zSign of [-1, 1]) {
       for (const xSign of [-1, 1]) {
