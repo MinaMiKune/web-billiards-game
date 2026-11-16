@@ -9,7 +9,7 @@ const errors = []
 async function captureTable(page, path) {
   await page.screenshot({
     path,
-    fullPage: true,
+    fullPage: false,
     animations: 'disabled',
     timeout: 60000,
   })
@@ -33,7 +33,7 @@ for (const [view, file] of [['angled', 'table-angled-desktop.png'], ['side', 'ta
   console.log('Captured camera:', view)
 }
 const canvas = await page.locator('#scene-host canvas').evaluate((el) => ({ width: el.width, height: el.height, cssWidth: el.clientWidth, cssHeight: el.clientHeight }))
-const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 })
+const mobile = await browser.newPage({ viewport: { width: 390, height: 1000 }, deviceScaleFactor: 1 })
 mobile.on('pageerror', (error) => errors.push(error.message))
 console.log('Opening mobile game')
 await mobile.goto(baseURL, { waitUntil: 'domcontentloaded' })
