@@ -276,7 +276,6 @@ export class GameRenderer {
     const cushion = new MeshStandardMaterial({ color: '#174b3a', roughness: 0.88 })
     const felt = new MeshStandardMaterial({ color: '#176447', map: this.createSurfaceTexture('felt'), roughness: 0.94 })
     const pocket = new MeshStandardMaterial({ color: '#080c0b', roughness: 1 })
-    const pocketRim = new MeshStandardMaterial({ color: '#bd9b60', roughness: 0.45, metalness: 0.3 })
 
     const body = new Mesh(new BoxGeometry(TABLE_LENGTH + 0.42, 0.2, TABLE_WIDTH + 0.42), wood)
     body.position.y = -0.12
