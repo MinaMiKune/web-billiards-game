@@ -456,17 +456,17 @@ export class GameRenderer {
     const legHeight = 0.72
     const legBottom = -0.22 - legHeight
     const legCenterY = -0.22 - legHeight / 2
-    const splay = 0.18
+    const splay = 0.10
     const bottomOffset = legHeight / 2 * Math.sin(splay)
     const xPositions = [-halfLength - 0.04, halfLength + 0.04]
-    const zPositions = [-halfWidth - 0.08, halfWidth + 0.08]
+    const zPositions = [-halfWidth - 0.135, halfWidth + 0.135]
 
     for (const x of xPositions) {
       for (const z of zPositions) {
         const xSign = Math.sign(x)
         const zSign = Math.sign(z)
         const leg = new Mesh(
-          new CylinderGeometry(0.045, 0.075, legHeight, 16),
+          new CylinderGeometry(0.03, 0.05, legHeight, 16),
           material,
         )
         leg.position.set(x, legCenterY, z)
@@ -477,7 +477,7 @@ export class GameRenderer {
         this.scene.add(leg)
 
         const foot = new Mesh(
-          new CylinderGeometry(0.08, 0.08, 0.035, 16),
+          new CylinderGeometry(0.055, 0.055, 0.035, 16),
           material,
         )
         foot.position.set(x + xSign * bottomOffset, legBottom + 0.0175, z + zSign * bottomOffset)
