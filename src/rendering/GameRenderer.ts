@@ -25,7 +25,7 @@ import {
 import type { Camera } from 'three'
 import type { Material } from 'three'
 import { DEFAULT_PHYSICS_CONFIG } from '../physics/PhysicsWorld'
-import { createClothGeometry, createTableBedGeometry } from './TableGeometry'
+import { CORNER_POCKET_MOUTH_RADIUS, SIDE_POCKET_MOUTH_RADIUS, createClothGeometry, createTableBedGeometry } from './TableGeometry'
 import { getLongRailSegments } from './RailGeometry'
 import type { RenderBall, Vec2 } from '../physics/PhysicsWorld'
 
@@ -282,7 +282,7 @@ export class GameRenderer {
     // which is exactly the "mysterious blocker" seen from an angled camera.
     const halfLength = TABLE_LENGTH / 2
     const halfWidth = TABLE_WIDTH / 2
-    const pocketRadius = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius + 0.012
+    const pocketClearance = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius + 0.012
     const bodyGeometry = createTableBedGeometry()
     const body = new Mesh(bodyGeometry, wood)
     body.position.y = -0.22
@@ -321,7 +321,7 @@ export class GameRenderer {
     // Leave the complete pocket radius, ball radius, and rail half-depth clear.
     // The additional 0.10m is a deliberate visual/trajectory margin: rail ends
     // must not hang over the circular mouth from a top or oblique camera.
-    const cornerRailClearance = pocketRadius + DEFAULT_PHYSICS_CONFIG.ballRadius + railDepth / 2 + 0.10
+    const cornerRailClearance = pocketClearance + DEFAULT_PHYSICS_CONFIG.ballRadius + railDepth / 2 + 0.10
     const railSegments = getLongRailSegments(halfL, sideJawOuterX, cornerRailClearance)
 
     for (const side of [-1, 1]) {
@@ -358,17 +358,22 @@ export class GameRenderer {
       [-halfL, halfW], [0, halfW], [halfL, halfW],
     ]
 
-    for (const [x, z] of pocketPositions) {
-      // Recessed tapered pocket throat, fully below the cloth and bed surface.
-      // The dark bottom is lower still, creating visible depth from free-camera views.
+    for (let index = 0; index < pocketPositions.length; index += 1) {
+      const [x, z] = pocketPositions[index]
+      // WPA mouth dimensions: 4 corner openings at 4.5in and 2 side openings at 5in.
+      // The dark throat and well are narrower than the rim, leaving a clear entry.
+      const mouthRadius = index === 1 || index === 4
+        ? SIDE_POCKET_MOUTH_RADIUS
+        : CORNER_POCKET_MOUTH_RADIUS
+      const throatRadius = mouthRadius * 0.72
       const throat = new Mesh(
-        new CylinderGeometry(pocketRadius * 0.68, pocketRadius, 0.14, 48, 1, true),
+        new CylinderGeometry(throatRadius, mouthRadius, 0.14, 48, 1, true),
         pocket,
       )
       throat.position.set(x, -0.105, z)
       throat.receiveShadow = true
       this.scene.add(throat)
-      const well = new Mesh(new CircleGeometry(pocketRadius * 0.68, 48), pocket)
+      const well = new Mesh(new CircleGeometry(throatRadius, 48), pocket)
       well.rotation.x = -Math.PI / 2
       well.position.set(x, -0.178, z)
       well.receiveShadow = true
