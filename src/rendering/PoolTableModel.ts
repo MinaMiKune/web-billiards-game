@@ -1,6 +1,5 @@
 import {
   CanvasTexture,
-  CircleGeometry,
   CylinderGeometry,
   ExtrudeGeometry,
   Group,
@@ -8,6 +7,7 @@ import {
   Mesh,
   MeshStandardMaterial,
   RepeatWrapping,
+  DoubleSide,
   Shape,
   ShapeGeometry,
   SRGBColorSpace,
@@ -21,6 +21,7 @@ import {
   CORNER_POCKET_MOUTH_RADIUS,
   SIDE_POCKET_MOUTH_RADIUS,
   TABLE_BED_THICKNESS,
+  createPocketThroatGeometry,
   createClothGeometry,
   createTableBedGeometry,
 } from './TableGeometry'
@@ -63,7 +64,8 @@ export const CORNER_RAIL_CLEARANCE = CORNER_POCKET_MOUTH_RADIUS + 0.045
 // Visual mouth width follows the real 5-inch cut-out. Physics keeps a wider
 // capture window for forgiving gameplay, so that tuning does not stretch the
 // visible hole into an oversized slot.
-const SIDE_JAW_INNER_X = SIDE_POCKET_MOUTH_RADIUS
+export const SIDE_POCKET_JAW_INNER_X = SIDE_POCKET_MOUTH_RADIUS * Math.SQRT1_2
+export const CORNER_POCKET_JAW_INNER_OFFSET = CORNER_POCKET_MOUTH_RADIUS * Math.SQRT1_2
 export const SIDE_RAIL_GAP_HALF = SIDE_POCKET_MOUTH_RADIUS + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
 
 export function getPoolTableLongRailSegments() {
@@ -223,41 +225,37 @@ function addPocketCollar(
   collar.receiveShadow = false
   group.add(collar)
 
-  const throat = new Mesh(
-    new CylinderGeometry(mouthRadius * 0.82, mouthRadius * 0.48, 0.23, 40, 1, true),
-    leather,
-  )
-  throat.position.set(x, -TABLE_BED_THICKNESS - 0.115, z)
+  const throat = new Mesh(createPocketThroatGeometry(mouthRadius), leather)
+  throat.position.set(x, -TABLE_BED_THICKNESS - 0.15, z)
   throat.castShadow = false
   throat.receiveShadow = false
   group.add(throat)
 
-  addPocketBag(group, x, z, mouthRadius, leather)
-}
-
-function addPocketBag(
-  group: Group,
-  x: number,
-  z: number,
-  mouthRadius: number,
-  _leather: MeshStandardMaterial,
-): void {
-  // Keep the opening visually clean from the top: a dark recessed bag reads
-  // like a real pocket instead of twelve bright radial spokes.
-  const bottomY = -TABLE_BED_THICKNESS - 0.23
-  const pocketBottom = new Mesh(
-    new CircleGeometry(mouthRadius * 0.48, 40),
-    new MeshStandardMaterial({
-      color: '#020403',
-      roughness: 1,
-      metalness: 0,
-    }),
+  // A second, narrower open-ended sleeve hangs below the slate. It has no
+  // bottom cap, so a ball entering the pocket has a genuine open drop path.
+  const bagMaterial = new MeshStandardMaterial({
+    color: '#080a08',
+    roughness: 0.98,
+    metalness: 0,
+    side: DoubleSide,
+  })
+  const bag = new Mesh(
+    new CylinderGeometry(mouthRadius * 0.55, mouthRadius * 0.32, 0.16, 40, 2, true),
+    bagMaterial,
   )
-  pocketBottom.rotation.x = -Math.PI / 2
-  pocketBottom.position.set(x, bottomY, z)
-  pocketBottom.castShadow = false
-  pocketBottom.receiveShadow = false
-  group.add(pocketBottom)
+  bag.position.set(x, -TABLE_BED_THICKNESS - 0.30, z)
+  bag.castShadow = false
+  bag.receiveShadow = false
+  group.add(bag)
+
+  const bagLowerRim = new Mesh(
+    new TorusGeometry(mouthRadius * 0.32, 0.0025, 6, 32),
+    leather,
+  )
+  bagLowerRim.rotation.x = -Math.PI / 2
+  bagLowerRim.position.set(x, -TABLE_BED_THICKNESS - 0.38, z)
+  bagLowerRim.castShadow = false
+  group.add(bagLowerRim)
 }
 
 function addDiamondSight(
@@ -337,7 +335,7 @@ function addSidePocketJaw(
   // This is a narrow tapered rubber nose, not a broad triangular panel.
   // Its centerline follows the same 45-degree jaw segment used by the
   // collision solver, while the opening remains clear on the cloth side.
-  const innerX = SIDE_JAW_INNER_X
+  const innerX = SIDE_POCKET_JAW_INNER_X
   const outerX = SIDE_RAIL_GAP_HALF
   const jawInnerZ = HALF_WIDTH - DEFAULT_PHYSICS_CONFIG.pocketJawDepth
   addCushionJawSegment(
@@ -345,8 +343,8 @@ function addSidePocketJaw(
     { x: xSign * outerX, z: zSign * HALF_WIDTH },
     { x: xSign * innerX, z: zSign * jawInnerZ },
     material,
-    0.016,
-    0.006,
+    0.034,
+    0.012,
   )
 }
 
@@ -356,10 +354,7 @@ function addCornerPocketJaws(
   zSign: number,
   material: MeshStandardMaterial,
 ): void {
-  const innerOffset = Math.max(
-    0,
-    DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius - DEFAULT_PHYSICS_CONFIG.pocketJawDepth,
-  )
+  const innerOffset = CORNER_POCKET_JAW_INNER_OFFSET
   const innerTip = {
     x: xSign * (HALF_LENGTH - innerOffset),
     z: zSign * (HALF_WIDTH - innerOffset),
@@ -374,8 +369,8 @@ function addCornerPocketJaws(
   }
 
   // Two rounded rubber noses converge toward the leather corner pocket.
-  addCushionJawSegment(group, longRailStart, innerTip, material, 0.020, 0.006)
-  addCushionJawSegment(group, endRailStart, innerTip, material, 0.020, 0.006)
+  addCushionJawSegment(group, longRailStart, innerTip, material, 0.032, 0.010)
+  addCushionJawSegment(group, endRailStart, innerTip, material, 0.032, 0.010)
 }
 
 function addRailRuns(
