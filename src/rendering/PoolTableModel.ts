@@ -41,6 +41,10 @@ export const POOL_TABLE_VISUAL_SPEC = {
   railHeight: 0.075,
   railDepth: 0.15,
   apronHeight: 0.18,
+  apronDepth: 0.11,
+  apronOutset: 0.13,
+  supportBlockDepth: 0.17,
+  centreSupportZFraction: 0.36,
   floorY: -0.78,
   woodColor: '#75432f',
   feltColor: '#0d6842',
@@ -69,8 +73,14 @@ export function getPoolTableSupportPositions(
   config: PhysicsConfig = DEFAULT_PHYSICS_CONFIG,
 ): TableSupportPosition[] {
   const supportX = [-config.tableLength * 0.40, 0, config.tableLength * 0.40]
-  const supportZ = config.tableWidth / 2 + 0.13
-  return supportX.flatMap((x) => [-supportZ, supportZ].map((z) => ({ x, z })))
+  const outerSupportZ = config.tableWidth / 2 + POOL_TABLE_VISUAL_SPEC.apronOutset
+  const centreSupportZ = config.tableWidth * POOL_TABLE_VISUAL_SPEC.centreSupportZFraction
+  return supportX.flatMap((x) => {
+    // The middle pair sits inboard on the cross-bearers, clear of the side
+    // pocket mouths; the four end legs remain below the outer apron.
+    const supportZ = x === 0 ? centreSupportZ : outerSupportZ
+    return [-supportZ, supportZ].map((z) => ({ x, z }))
+  })
 }
 
 function createWoodTexture(maxAnisotropy: number): CanvasTexture {
@@ -412,13 +422,14 @@ function addApronAndSupports(
   brass: MeshStandardMaterial,
 ): void {
   const apronHeight = POOL_TABLE_VISUAL_SPEC.apronHeight
-  const apronDepth = 0.11
+  const apronDepth = POOL_TABLE_VISUAL_SPEC.apronDepth
   const apronY = -TABLE_BED_THICKNESS - apronHeight / 2 + 0.012
-  const longApronZ = HALF_WIDTH + 0.105
-  const shortApronX = HALF_LENGTH + 0.105
+  const longApronZ = HALF_WIDTH + POOL_TABLE_VISUAL_SPEC.apronOutset
+  const shortApronX = HALF_LENGTH + POOL_TABLE_VISUAL_SPEC.apronOutset
   const longApronLength = TABLE_LENGTH + 0.24
   const shortApronLength = TABLE_WIDTH + 0.24
   const supportBlockHeight = 0.105
+  const supportBlockDepth = POOL_TABLE_VISUAL_SPEC.supportBlockDepth
   const supportBlockY = apronY + 0.005
   const legBottomY = POOL_TABLE_VISUAL_SPEC.floorY + 0.005
   const legHeight = supportBlockY - supportBlockHeight / 2 - legBottomY
@@ -466,7 +477,7 @@ function addApronAndSupports(
 
   for (const position of positions) {
     const supportBlock = addRoundedBox(
-      group, darkWood, 0.19, supportBlockHeight, 0.17,
+      group, darkWood, 0.19, supportBlockHeight, supportBlockDepth,
       position.x, supportBlockY, position.z, 0.018,
     )
     supportBlock.castShadow = true
