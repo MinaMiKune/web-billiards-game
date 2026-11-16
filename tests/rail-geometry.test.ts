@@ -9,7 +9,7 @@ describe('long rail pocket clearance', () => {
   const pocketRadius = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius + 0.012
   const sideJawOuterX = DEFAULT_PHYSICS_CONFIG.sidePocketHalfWidth +
     DEFAULT_PHYSICS_CONFIG.ballRadius + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
-  const cornerClearance = 0.14
+  const cornerClearance = 0.10
   const segments = getLongRailSegments(halfLength, sideJawOuterX, cornerClearance)
 
   it('creates two independent spans per long rail, leaving all three mouths open', () => {
@@ -65,6 +65,7 @@ describe('reference-matched table finish', () => {
     expect(rendererSource).toContain('new RoundedBoxGeometry')
     expect(rendererSource).toContain('addCornerPocketCaps(railWood')
     expect(rendererSource).toContain('opening.absarc(0, 0, mouthRadius')
+    expect(rendererSource).toContain('const outerRadius = 0.115')
     expect(rendererSource).not.toContain('Rounded diagonal corner assemblies')
     expect(rendererSource).toContain('this.renderer.shadowMap.enabled = false')
     expect(rendererSource).not.toContain('const outerTrim = new Mesh(new BoxGeometry(TABLE_LENGTH + 0.46')
