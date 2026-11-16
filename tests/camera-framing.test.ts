@@ -11,5 +11,7 @@ describe('pool table camera framing', () => {
     expect(cameraSource).toContain('position.set(2.0, 2.6, 2.6)')
     expect(cameraSource).toContain("if (mode === 'angled') {")
     expect(cameraSource).toContain('position.set(0, 0.75, 3.1)')
+    expect(cameraSource).toContain('this.target.set(0, -0.22, 0)')
+    expect(cameraSource).toContain('this.target.set(0, -0.28, 0)')
   })
 })
