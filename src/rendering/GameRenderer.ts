@@ -17,6 +17,7 @@ import {
   MeshStandardMaterial,
   Path,
   PlaneGeometry,
+  PCFSoftShadowMap,
   Scene,
   Shape,
   SphereGeometry,
@@ -57,10 +58,10 @@ export class GameRenderer {
     this.renderer.outputColorSpace = SRGBColorSpace
     this.renderer.toneMapping = ACESFilmicToneMapping
     this.renderer.toneMappingExposure = 1.12
-    // The old real-time shadow maps produced large, near-black rail silhouettes
-    // across the cloth in every camera. Ball contact shadows are rendered as
-    // dedicated soft discs, so disable the harsh global shadow map.
-    this.renderer.shadowMap.enabled = false
+    // Keep contact and furniture shadows, but use soft filtered maps rather
+    // than the hard, nearly-black silhouettes from the previous renderer.
+    this.renderer.shadowMap.enabled = true
+    this.renderer.shadowMap.type = PCFSoftShadowMap
     this.renderer.setSize(host.clientWidth, host.clientHeight, false)
     this.renderer.domElement.setAttribute('aria-label', '3D pool table. Drag backwards from the cue ball to aim and release to shoot.')
     this.renderer.domElement.tabIndex = 0
@@ -235,12 +236,17 @@ export class GameRenderer {
   }
 
   private addLighting(): void {
-    this.scene.add(new AmbientLight('#d9e8dc', 1.85))
+    this.scene.add(new AmbientLight('#d9e8dc', 1.15))
 
-    const key = new DirectionalLight('#fff3dc', 2.65)
+    const key = new DirectionalLight('#fff3dc', 1.8)
     key.position.set(-2.8, 5.4, 3.2)
-    key.castShadow = false
-    key.shadow.mapSize.set(1024, 1024)
+    key.castShadow = true
+    key.shadow.mapSize.set(2048, 2048)
+    key.shadow.radius = 5
+    key.shadow.bias = -0.00012
+    key.shadow.normalBias = 0.018
+    key.shadow.camera.near = 0.5
+    key.shadow.camera.far = 10
     key.shadow.camera.left = -3.5
     key.shadow.camera.right = 3.5
     key.shadow.camera.top = 3
@@ -249,7 +255,7 @@ export class GameRenderer {
 
     // Soft overhead pool-hall light keeps the cloth and numbered balls readable
     // across the top, angled and side cameras without changing physics state.
-    const overhead = new SpotLight('#fff0d4', 1.75, 10, 0.58, 0.62, 1.5)
+    const overhead = new SpotLight('#fff0d4', 1.25, 10, 0.58, 0.62, 1.5)
     overhead.position.set(0, 5.4, 0)
     overhead.target.position.set(0, 0, 0)
     overhead.castShadow = false
@@ -259,7 +265,7 @@ export class GameRenderer {
     overhead.shadow.bias = -0.00015
     this.scene.add(overhead, overhead.target)
 
-    const fill = new DirectionalLight('#9ed5b2', 1.15)
+    const fill = new DirectionalLight('#9ed5b2', 0.65)
     fill.position.set(3.5, 2.5, -3)
     this.scene.add(fill)
   }
