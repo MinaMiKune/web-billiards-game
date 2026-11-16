@@ -8,7 +8,6 @@ import {
   Mesh,
   MeshStandardMaterial,
   RepeatWrapping,
-  RingGeometry,
   Shape,
   ShapeGeometry,
   SRGBColorSpace,
@@ -44,6 +43,7 @@ export const POOL_TABLE_VISUAL_SPEC = {
   railHeight: 0.11,
   railDepth: 0.15,
   apronHeight: 0.18,
+  floorY: -1.05,
   woodColor: '#542719',
   feltColor: '#0d6842',
   cushionColor: '#174b35',
@@ -408,7 +408,7 @@ function addApronAndSupports(
 
   const positions = getPoolTableSupportPositions()
   const legHeight = 0.64
-  const legBottomY = -1.005
+  const legBottomY = POOL_TABLE_VISUAL_SPEC.floorY + 0.005
   const legProfile = [
     new Vector2(0.054, 0),
     new Vector2(0.064, 0.035),
