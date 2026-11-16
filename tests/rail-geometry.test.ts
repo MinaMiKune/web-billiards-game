@@ -67,6 +67,7 @@ describe('reference-matched table finish', () => {
     expect(rendererSource).toContain('new CylinderGeometry(0.045, 0.075, legHeight, 16)')
     expect(rendererSource).toContain('halfLength + 0.04')
     expect(rendererSource).toContain('halfWidth + 0.08')
+    expect(rendererSource).toContain('leg.rotation.set(-zSign * splay, 0, xSign * splay)')
     expect(rendererSource).toContain('addCornerPocketCaps(railWood')
     expect(rendererSource).toContain('opening.absarc(0, 0, mouthRadius')
     expect(rendererSource).toContain('const outerRadius = 0.115')
