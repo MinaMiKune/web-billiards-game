@@ -26,6 +26,7 @@ import type { Camera } from 'three'
 import type { Material } from 'three'
 import { DEFAULT_PHYSICS_CONFIG } from '../physics/PhysicsWorld'
 import { createClothGeometry, createTableBedGeometry } from './TableGeometry'
+import { getLongRailSegments } from './RailGeometry'
 import type { RenderBall, Vec2 } from '../physics/PhysicsWorld'
 
 const TABLE_LENGTH = DEFAULT_PHYSICS_CONFIG.tableLength
@@ -317,10 +318,7 @@ export class GameRenderer {
     // The old two-piece layout started at the table corners, laying solid wood
     // directly across the corner-pocket mouths (visible as rectangular blockers).
     const cornerRailClearance = pocketRadius + railDepth / 2 + 0.008
-    const railSegments = [
-      { start: -halfL + cornerRailClearance, end: -sideJawOuterX },
-      { start: sideJawOuterX, end: halfL - cornerRailClearance },
-    ].filter((segment) => segment.end > segment.start)
+    const railSegments = getLongRailSegments(halfL, sideJawOuterX, cornerRailClearance)
 
     for (const side of [-1, 1]) {
       for (const segment of railSegments) {
