@@ -7,7 +7,6 @@ import {
   CircleGeometry,
   CylinderGeometry,
   Color,
-  CylinderGeometry,
   DirectionalLight,
   ExtrudeGeometry,
   Line,
