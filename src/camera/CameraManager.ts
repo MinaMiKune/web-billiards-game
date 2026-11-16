@@ -53,21 +53,24 @@ export class CameraManager {
     this.orbitControls.enabled = mode === 'free'
 
     if (mode === 'top') {
+      this.target.set(0, 0, 0)
       this.topCamera.position.set(0, 4.2, 0)
       this.topCamera.lookAt(this.target)
       return
     }
 
-    this.orbitControls.target.copy(this.target)
-
     if (mode === 'angled') {
+      this.target.set(0, -0.22, 0)
       this.perspectiveCamera.position.set(2.0, 2.6, 2.6)
     } else if (mode === 'side') {
+      this.target.set(0, -0.28, 0)
       this.perspectiveCamera.position.set(0, 0.75, 3.1)
     } else {
+      this.target.set(0, 0, 0)
       this.perspectiveCamera.position.set(2.0, 2.5, 2.6)
     }
 
+    this.orbitControls.target.copy(this.target)
     this.perspectiveCamera.lookAt(this.target)
     this.orbitControls.update()
   }
