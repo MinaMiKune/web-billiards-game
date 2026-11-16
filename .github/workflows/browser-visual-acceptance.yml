@@ -1,0 +1,52 @@
+name: Browser visual acceptance
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: URL to capture (defaults to the built preview)
+        required: false
+        type: string
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'index.html'
+      - 'scripts/browser-visual-review.mjs'
+      - '.github/workflows/browser-visual-acceptance.yml'
+      - 'package.json'
+      - 'package-lock.json'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm install --no-save --package-lock=false playwright
+      - run: npx playwright install --with-deps chromium
+      - name: Start built preview
+        if: ${{ !inputs.base_url }}
+        run: |
+          npm run preview -- --host 127.0.0.1 > /tmp/vite-preview.log 2>&1 &
+          for i in {1..30}; do
+            curl --fail http://127.0.0.1:4173/ && break
+            sleep 2
+          done
+      - name: Capture real browser views
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+        run: node scripts/browser-visual-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: billiards-browser-visual-review
+          path: artifacts/browser-visual-review/
+          if-no-files-found: warn
+          retention-days: 14
