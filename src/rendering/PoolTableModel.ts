@@ -58,8 +58,11 @@ const RAIL_HEIGHT = POOL_TABLE_VISUAL_SPEC.railHeight
 const RAIL_DEPTH = POOL_TABLE_VISUAL_SPEC.railDepth
 const RAIL_Y = RAIL_HEIGHT / 2
 export const CORNER_RAIL_CLEARANCE = CORNER_POCKET_MOUTH_RADIUS + 0.045
-const SIDE_JAW_INNER_X = DEFAULT_PHYSICS_CONFIG.sidePocketHalfWidth + DEFAULT_PHYSICS_CONFIG.ballRadius
-export const SIDE_RAIL_GAP_HALF = SIDE_JAW_INNER_X + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
+// Visual mouth width follows the real 5-inch cut-out. Physics keeps a wider
+// capture window for forgiving gameplay, so that tuning does not stretch the
+// visible hole into an oversized slot.
+const SIDE_JAW_INNER_X = SIDE_POCKET_MOUTH_RADIUS
+export const SIDE_RAIL_GAP_HALF = SIDE_POCKET_MOUTH_RADIUS + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
 
 export function getPoolTableLongRailSegments() {
   return getLongRailSegments(HALF_LENGTH, SIDE_RAIL_GAP_HALF, CORNER_RAIL_CLEARANCE)
