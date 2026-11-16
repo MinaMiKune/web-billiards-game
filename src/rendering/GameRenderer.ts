@@ -270,11 +270,12 @@ export class GameRenderer {
   }
 
   private addTable(): void {
-    const wood = new MeshStandardMaterial({ color: '#9a6840', map: this.createSurfaceTexture('wood'), roughness: 0.3 })
-    const railWood = new MeshStandardMaterial({ color: '#a8794c', map: this.createSurfaceTexture('wood'), roughness: 0.28 })
-    const cushion = new MeshStandardMaterial({ color: '#174b3a', roughness: 0.88 })
-    const felt = new MeshStandardMaterial({ color: '#176447', map: this.createSurfaceTexture('felt'), roughness: 0.94 })
-    const pocket = new MeshStandardMaterial({ color: '#080c0b', roughness: 1 })
+    const wood = new MeshStandardMaterial({ color: '#74221d', map: this.createSurfaceTexture('wood'), roughness: 0.3 })
+    const railWood = new MeshStandardMaterial({ color: '#852820', map: this.createSurfaceTexture('wood'), roughness: 0.26 })
+    const cushion = new MeshStandardMaterial({ color: '#12623e', roughness: 0.88 })
+    const felt = new MeshStandardMaterial({ color: '#078b49', map: this.createSurfaceTexture('felt'), roughness: 0.94 })
+    const pocket = new MeshStandardMaterial({ color: '#050706', roughness: 1 })
+    const sight = new MeshStandardMaterial({ color: '#e8dfc9', roughness: 0.34, metalness: 0.08 })
 
     // The bed slab and cloth share the same six through-openings. Cutting
     // only the cloth leaves the solid wood slab visible beneath every pocket,
@@ -345,6 +346,13 @@ export class GameRenderer {
     // create orange slats that visibly intrude into the pocket mouths from the top view.
     this.addSidePocketCushions(cushion, halfL, halfW, railY)
 
+    // Ivory diamond sights sit flush on the red-mahogany rail caps, never over a pocket.
+    const sightXs = [-0.96, -0.64, -0.32, 0.32, 0.64, 0.96]
+    for (const side of [-1, 1]) {
+      for (const x of sightXs) this.addDiamondSight(sight, x, side * (halfW + 0.065), railY + railHeight / 2 + 0.004)
+      for (const z of [-0.32, 0, 0.32]) this.addDiamondSight(sight, side * (halfL + 0.065), z, railY + railHeight / 2 + 0.004)
+    }
+
     const pocketPositions = [
       [-halfL, -halfW], [0, -halfW], [halfL, -halfW],
       [-halfL, halfW], [0, halfW], [halfL, halfW],
@@ -395,22 +403,51 @@ export class GameRenderer {
     const context = canvas.getContext('2d')
     if (!context) throw new Error('Could not create a procedural table texture')
     if (kind === 'wood') {
-      context.fillStyle = '#8b5a35'; context.fillRect(0, 0, 512, 512)
-      for (let i = 0; i < 180; i += 1) {
-        const y = Math.random() * 512
-        context.strokeStyle = i % 5 === 0 ? 'rgba(42,20,9,0.22)' : 'rgba(226,176,112,0.12)'
-        context.lineWidth = 1 + Math.random() * 5
+      const grain = context.createLinearGradient(0, 0, 512, 512)
+      grain.addColorStop(0, '#4d1112')
+      grain.addColorStop(0.32, '#81241e')
+      grain.addColorStop(0.68, '#651916')
+      grain.addColorStop(1, '#3e1011')
+      context.fillStyle = grain; context.fillRect(0, 0, 512, 512)
+      // Reproducible flowing mahogany grain: stable between reloads and devices.
+      for (let i = 0; i < 150; i += 1) {
+        const y = (i * 37) % 512
+        const wave = (i % 7) * 2.4
+        context.strokeStyle = i % 5 === 0 ? 'rgba(24,5,5,0.30)' : 'rgba(235,157,116,0.13)'
+        context.lineWidth = 1 + (i % 4)
         context.beginPath(); context.moveTo(0, y)
-        context.bezierCurveTo(160, y - 14, 340, y + 18, 512, y + (Math.random() - 0.5) * 22); context.stroke()
+        context.bezierCurveTo(160, y - 14 + wave, 340, y + 18 - wave, 512, y + ((i % 9) - 4) * 2.5); context.stroke()
       }
+      const sheen = context.createLinearGradient(0, 0, 0, 512)
+      sheen.addColorStop(0, 'rgba(255,210,170,0.12)')
+      sheen.addColorStop(0.48, 'rgba(0,0,0,0)')
+      sheen.addColorStop(1, 'rgba(0,0,0,0.22)')
+      context.fillStyle = sheen; context.fillRect(0, 0, 512, 512)
     } else {
-      context.fillStyle = '#176447'; context.fillRect(0, 0, 512, 512)
+      const cloth = context.createRadialGradient(256, 256, 24, 256, 256, 360)
+      cloth.addColorStop(0, '#079b50')
+      cloth.addColorStop(0.72, '#087c43')
+      cloth.addColorStop(1, '#064d32')
+      context.fillStyle = cloth; context.fillRect(0, 0, 512, 512)
       for (let y = 0; y < 512; y += 3) { context.fillStyle = y % 6 === 0 ? 'rgba(255,255,255,0.035)' : 'rgba(0,20,12,0.035)'; context.fillRect(0, y, 512, 1) }
       for (let x = 0; x < 512; x += 3) { context.fillStyle = x % 6 === 0 ? 'rgba(255,255,255,0.025)' : 'rgba(0,20,12,0.025)'; context.fillRect(x, 0, 1, 512) }
     }
     const texture = new CanvasTexture(canvas); texture.colorSpace = SRGBColorSpace
     texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy()
     return texture
+  }
+
+  private addDiamondSight(
+    material: MeshStandardMaterial,
+    x: number,
+    z: number,
+    y: number,
+  ): void {
+    const marker = new Mesh(new BoxGeometry(0.025, 0.006, 0.025), material)
+    marker.position.set(x, y, z)
+    marker.rotation.y = Math.PI / 4
+    marker.castShadow = true
+    this.scene.add(marker)
   }
 
   private addSidePocketCushions(
