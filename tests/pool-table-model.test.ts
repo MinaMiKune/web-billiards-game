@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { SIDE_POCKET_MOUTH_RADIUS } from '../src/rendering/TableGeometry'
+import { DEFAULT_PHYSICS_CONFIG } from '../src/physics/PhysicsWorld'
 import {
   POOL_TABLE_VISUAL_SPEC,
   getPoolTableSupportPositions,
@@ -22,9 +24,29 @@ describe('reference-faithful pool table structure', () => {
     expect(supports.map((support) => support.x)).toEqual([
       -1.016, -1.016, 0, 0, 1.016, 1.016,
     ])
-    for (const support of supports) {
-      expect(Math.abs(support.z)).toBeCloseTo(0.765, 3)
+    const centreSupports = supports.filter((support) => support.x === 0)
+    const endSupports = supports.filter((support) => support.x !== 0)
+    expect(centreSupports.map((support) => Math.abs(support.z))).toEqual([
+      DEFAULT_PHYSICS_CONFIG.tableWidth * POOL_TABLE_VISUAL_SPEC.centreSupportZFraction,
+      DEFAULT_PHYSICS_CONFIG.tableWidth * POOL_TABLE_VISUAL_SPEC.centreSupportZFraction,
+    ])
+    for (const support of endSupports) {
+      expect(Math.abs(support.z)).toBeCloseTo(
+        DEFAULT_PHYSICS_CONFIG.tableWidth / 2 + POOL_TABLE_VISUAL_SPEC.apronOutset,
+        3,
+      )
     }
+
+    const pocketOuterEdge = DEFAULT_PHYSICS_CONFIG.tableWidth / 2 + SIDE_POCKET_MOUTH_RADIUS
+    const apronInnerEdge = DEFAULT_PHYSICS_CONFIG.tableWidth / 2 +
+      POOL_TABLE_VISUAL_SPEC.apronOutset - POOL_TABLE_VISUAL_SPEC.apronDepth / 2
+    expect(apronInnerEdge).toBeGreaterThan(pocketOuterEdge)
+
+    const centreSupportOuterEdge = Math.abs(centreSupports[0].z) +
+      POOL_TABLE_VISUAL_SPEC.supportBlockDepth / 2
+    expect(centreSupportOuterEdge).toBeLessThan(
+      DEFAULT_PHYSICS_CONFIG.tableWidth / 2 - SIDE_POCKET_MOUTH_RADIUS,
+    )
   })
 
   it('uses restrained mahogany and tournament-green finish values', () => {
