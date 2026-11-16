@@ -339,14 +339,18 @@ export class GameRenderer {
         const segmentLength = segment.end - segment.start
         const segmentCenter = (segment.start + segment.end) / 2
         this.addRoundedBox(railWood, segmentLength, railHeight, railDepth, segmentCenter, railY, side * (halfW + 0.065), 0, 0.018)
-        this.addRoundedBox(cushion, segmentLength, 0.045, 0.035, segmentCenter, railY + 0.035, side * (halfW + 0.005), 0, 0.008)
+        // Rubber must terminate inside the wooden rail end, not finish flush:
+        // a flush rectangular nose reads as a green blocker across each pocket jaw.
+        const cushionLength = Math.max(0.04, segmentLength - 0.06)
+        this.addRoundedBox(cushion, cushionLength, 0.045, 0.035, segmentCenter, railY + 0.035, side * (halfW + 0.005), 0, 0.008)
       }
 
       // Short end rails sit between the two corner pockets; they do not cross
       // either mouth because their length is already inset from both corners.
       const endRailLength = TABLE_WIDTH - 2 * cornerRailClearance
       this.addRoundedBox(railWood, railDepth, railHeight, endRailLength, side * (halfL + 0.065), railY, 0, 0, 0.018)
-      this.addRoundedBox(cushion, 0.035, 0.045, endRailLength, side * (halfL + 0.005), railY + 0.035, 0, 0, 0.008)
+      const endCushionLength = Math.max(0.04, endRailLength - 0.06)
+      this.addRoundedBox(cushion, 0.035, 0.045, endCushionLength, side * (halfL + 0.005), railY + 0.035, 0, 0, 0.008)
     }
 
     // Rounded wooden corner caps surround each corner pocket. The circular
