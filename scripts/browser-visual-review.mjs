@@ -9,9 +9,10 @@ const errors = []
 async function captureTable(page, path) {
   await page.evaluate(() => window.scrollTo(0, 0))
   await page.waitForTimeout(120)
-  await page.screenshot({
+  // Capture only the WebGL table canvas. This avoids rasterizing the entire
+  // control panel and makes pocket-mouth inspection sharper and faster.
+  await page.locator('#scene-host canvas').screenshot({
     path,
-    fullPage: false,
     animations: 'disabled',
     timeout: 60000,
   })
