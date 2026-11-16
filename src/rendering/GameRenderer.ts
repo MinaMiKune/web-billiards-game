@@ -8,14 +8,17 @@ import {
   Color,
   CylinderGeometry,
   DirectionalLight,
+  ExtrudeGeometry,
   Line,
   LineBasicMaterial,
   Mesh,
   MeshBasicMaterial,
   Group,
   MeshStandardMaterial,
+  Path,
   PlaneGeometry,
   Scene,
+  Shape,
   SphereGeometry,
   SpotLight,
   Vector3,
@@ -325,7 +328,7 @@ export class GameRenderer {
     // Leave the complete pocket radius, ball radius, and rail half-depth clear.
     // The additional 0.10m is a deliberate visual/trajectory margin: rail ends
     // must not hang over the circular mouth from a top or oblique camera.
-    const cornerRailClearance = pocketClearance + DEFAULT_PHYSICS_CONFIG.ballRadius + railDepth / 2 + 0.10
+    const cornerRailClearance = 0.14
     const railSegments = getLongRailSegments(halfL, sideJawOuterX, cornerRailClearance)
 
     for (const side of [-1, 1]) {
@@ -343,36 +346,10 @@ export class GameRenderer {
       this.addRoundedBox(cushion, 0.035, 0.045, endRailLength, side * (halfL + 0.005), railY + 0.035, 0, 0, 0.008)
     }
 
-    // Rounded diagonal corner assemblies connect the long and end rails.
-    // Their inner edges sit outside the 4.5in pocket mouths, leaving the
-    // diagonal entry visibly open instead of four disconnected floating rails.
-    for (const xSign of [-1, 1]) {
-      for (const zSign of [-1, 1]) {
-        const start = {
-          x: xSign * (halfL - cornerRailClearance),
-          z: zSign * (halfW + 0.065),
-        }
-        const end = {
-          x: xSign * (halfL + 0.065),
-          z: zSign * (halfW - cornerRailClearance),
-        }
-        const dx = end.x - start.x
-        const dz = end.z - start.z
-        const length = Math.hypot(dx, dz)
-        const angle = Math.atan2(-dz, dx)
-        const centerX = (start.x + end.x) / 2
-        const centerZ = (start.z + end.z) / 2
-        this.addRoundedBox(railWood, length, railHeight, railDepth, centerX, railY, centerZ, angle, 0.018)
-        this.addAngledCushionNose(
-          cushion,
-          { x: start.x - xSign * 0.025, z: start.z - zSign * 0.025 },
-          { x: end.x - xSign * 0.025, z: end.z - zSign * 0.025 },
-          railY + 0.035,
-          0.045,
-          0.018,
-        )
-      }
-    }
+    // Rounded wooden corner caps surround each corner pocket. The circular
+    // cut-out is a true hole in the cap; the adjacent straight rails overlap
+    // the cap slightly so the frame reads as one continuous rounded rectangle.
+    this.addCornerPocketCaps(railWood, halfL, halfW, railY, railHeight)
 
     // Side-pocket rubber noses form the characteristic angled jaws.
     this.addSidePocketCushions(cushion, halfL, halfW, railY)
@@ -468,6 +445,54 @@ export class GameRenderer {
     const texture = new CanvasTexture(canvas); texture.colorSpace = SRGBColorSpace
     texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy()
     return texture
+  }
+
+  private addCornerPocketCaps(
+    material: MeshStandardMaterial,
+    halfLength: number,
+    halfWidth: number,
+    railY: number,
+    railHeight: number,
+  ): void {
+    const outerRadius = 0.18
+    const outerCorner = 0.055
+    const mouthRadius = CORNER_POCKET_MOUTH_RADIUS + 0.009
+    const shape = new Shape()
+    shape.moveTo(-outerRadius + outerCorner, -outerRadius)
+    shape.lineTo(outerRadius - outerCorner, -outerRadius)
+    shape.quadraticCurveTo(outerRadius, -outerRadius, outerRadius, -outerRadius + outerCorner)
+    shape.lineTo(outerRadius, outerRadius - outerCorner)
+    shape.quadraticCurveTo(outerRadius, outerRadius, outerRadius - outerCorner, outerRadius)
+    shape.lineTo(-outerRadius + outerCorner, outerRadius)
+    shape.quadraticCurveTo(-outerRadius, outerRadius, -outerRadius, outerRadius - outerCorner)
+    shape.lineTo(-outerRadius, -outerRadius + outerCorner)
+    shape.quadraticCurveTo(-outerRadius, -outerRadius, -outerRadius + outerCorner, -outerRadius)
+    shape.closePath()
+
+    const opening = new Path()
+    opening.absarc(0, 0, mouthRadius, 0, Math.PI * 2, true)
+    shape.holes.push(opening)
+    const geometry = new ExtrudeGeometry(shape, {
+      depth: railHeight,
+      bevelEnabled: false,
+      curveSegments: 48,
+    })
+    geometry.rotateX(-Math.PI / 2)
+
+    for (const xSign of [-1, 1]) {
+      for (const zSign of [-1, 1]) {
+        const cap = new Mesh(geometry.clone(), material)
+        cap.position.set(
+          xSign * halfLength,
+          railY - railHeight / 2,
+          zSign * halfWidth,
+        )
+        cap.castShadow = false
+        cap.receiveShadow = false
+        this.scene.add(cap)
+      }
+    }
+    geometry.dispose()
   }
 
   private addDiamondSight(
