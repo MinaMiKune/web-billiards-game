@@ -27,7 +27,7 @@ describe('reference-faithful pool table structure', () => {
   })
 
   it('uses restrained mahogany and tournament-green finish values', () => {
-    expect(POOL_TABLE_VISUAL_SPEC.woodColor).toBe('#542719')
+    expect(POOL_TABLE_VISUAL_SPEC.woodColor).toBe('#75432f')
     expect(POOL_TABLE_VISUAL_SPEC.feltColor).toBe('#0d6842')
     expect(POOL_TABLE_VISUAL_SPEC.cushionColor).toBe('#174b35')
   })
