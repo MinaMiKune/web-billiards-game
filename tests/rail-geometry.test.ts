@@ -40,6 +40,8 @@ describe('reference-faithful table rail and pocket geometry', () => {
     expect(rendererSource).toContain('this.scene.add(table)')
     expect(rendererSource).not.toContain('private addCornerPocketCaps')
     expect(rendererSource).not.toContain('private addAngledCushionNose')
+    expect(rendererSource).toContain('this.renderer.shadowMap.autoUpdate = false')
+    expect(rendererSource).toContain('this.renderer.shadowMap.needsUpdate = true')
   })
 
   it('uses a six-leg chassis and understated tournament-table finishes', () => {
