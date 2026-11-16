@@ -63,6 +63,8 @@ describe('reference-matched table finish', () => {
       'utf8',
     )
     expect(rendererSource).toContain('new RoundedBoxGeometry')
+    expect(rendererSource).toContain('this.addTableLegs(wood, halfLength, halfWidth)')
+    expect(rendererSource).toContain('new CylinderGeometry(0.064, 0.095, legHeight, 16)')
     expect(rendererSource).toContain('addCornerPocketCaps(railWood')
     expect(rendererSource).toContain('opening.absarc(0, 0, mouthRadius')
     expect(rendererSource).toContain('const outerRadius = 0.115')
