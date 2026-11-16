@@ -8,15 +8,15 @@ const browser = await chromium.launch({ headless: true, args: ['--enable-webgl',
 const errors = []
 async function captureTable(page, path) {
   await page.evaluate(() => window.scrollTo(0, 0))
-  await page.waitForTimeout(250)
+  await page.waitForTimeout(120)
   await page.screenshot({
     path,
     fullPage: false,
     animations: 'disabled',
-    timeout: 60000,
+    timeout: 25000,
   })
 }
-const page = await browser.newPage({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 1 })
+const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 })
 page.setDefaultTimeout(12000)
 page.setDefaultNavigationTimeout(20000)
 page.on('pageerror', (error) => errors.push(error.message))
@@ -24,18 +24,18 @@ page.on('console', (message) => { if (message.type() === 'error') errors.push(me
 console.log('Opening desktop game:', baseURL)
 await page.goto(baseURL, { waitUntil: 'domcontentloaded' })
 await page.locator('#scene-host canvas').waitFor({ state: 'visible', timeout: 30000 })
-await page.waitForTimeout(1800)
+await page.waitForTimeout(1000)
 await page.locator('#dismiss-first-shot-guide').click().catch(() => {})
 await captureTable(page, `${out}/table-top-desktop.png`)
 console.log('Captured desktop top view')
 for (const [view, file] of [['angled', 'table-angled-desktop.png'], ['side', 'table-side-desktop.png'], ['free', 'table-free-desktop.png']]) {
   await page.locator(`[data-camera="${view}"]`).click()
-  await page.waitForTimeout(1200)
+  await page.waitForTimeout(550)
   await captureTable(page, `${out}/${file}`)
   console.log('Captured camera:', view)
 }
 const canvas = await page.locator('#scene-host canvas').evaluate((el) => ({ width: el.width, height: el.height, cssWidth: el.clientWidth, cssHeight: el.clientHeight }))
-const mobile = await browser.newPage({ viewport: { width: 390, height: 1000 }, deviceScaleFactor: 1 })
+const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 })
 mobile.on('pageerror', (error) => errors.push(error.message))
 console.log('Opening mobile game')
 await mobile.goto(baseURL, { waitUntil: 'domcontentloaded' })
