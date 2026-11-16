@@ -770,7 +770,7 @@ export class GameApp {
 
     if (this.ruleState.ballInHand) {
       const position = this.ai.chooseBallInHandPlacement(this.world, this.ruleState)
-      if (!position || !this.world.placeCueBall(position)) {
+      if (!position || !this.world.placeCueBall(position, this.ruleState.ballInHandZone)) {
         this.statusElement.classList.remove('is-thinking')
         this.statusElement.textContent = t('AI could not find a legal cue-ball position')
         return
