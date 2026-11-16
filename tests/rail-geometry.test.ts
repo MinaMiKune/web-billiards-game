@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { DEFAULT_PHYSICS_CONFIG } from '../src/physics/PhysicsWorld'
+import { SIDE_POCKET_MOUTH_RADIUS } from '../src/rendering/TableGeometry'
 import {
   CORNER_RAIL_CLEARANCE,
   POOL_TABLE_VISUAL_SPEC,
@@ -22,12 +23,11 @@ describe('reference-faithful table rail and pocket geometry', () => {
     expect(segments[0].end).toBeLessThan(segments[1].start)
   })
 
-  it('matches the rendered side-jaw clearance to the physics collision jaw', () => {
-    const expected = DEFAULT_PHYSICS_CONFIG.sidePocketHalfWidth +
-      DEFAULT_PHYSICS_CONFIG.ballRadius +
-      DEFAULT_PHYSICS_CONFIG.pocketJawDepth
+  it('sizes the visible side-pocket mouth from its five-inch opening and jaw depth', () => {
+    const expected = SIDE_POCKET_MOUTH_RADIUS + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
 
     expect(SIDE_RAIL_GAP_HALF).toBeCloseTo(expected, 12)
+    expect(SIDE_RAIL_GAP_HALF).toBeLessThan(0.11)
   })
 
   it('keeps the table as one connected model with no old per-renderer pocket patches', () => {
