@@ -43,6 +43,8 @@ describe('pocket jaw materials', () => {
     expect(rendererSource).toContain('addAngledCushionNose(cushion')
     expect(rendererSource).toContain('segmentLength - 0.06')
     expect(rendererSource).toContain('endRailLength - 0.06')
+    expect(rendererSource).toContain('pocketJawDepth + 0.025')
+    expect(rendererSource).toContain('railY + 0.035, 0.045, 0.035')
   })
 })
 
