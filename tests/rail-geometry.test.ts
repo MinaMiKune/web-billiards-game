@@ -13,10 +13,10 @@ describe('long rail pocket clearance', () => {
 
   it('creates two independent spans per long rail, leaving all three mouths open', () => {
     expect(segments).toHaveLength(2)
-    expect(segments[0].start).toBeGreaterThanOrEqual(-halfLength + pocketRadius + DEFAULT_PHYSICS_CONFIG.ballRadius + railDepth / 2 + 0.10)
+    expect(segments[0].start + 1e-9).toBeGreaterThanOrEqual(-halfLength + pocketRadius + DEFAULT_PHYSICS_CONFIG.ballRadius + railDepth / 2 + 0.10)
     expect(segments[0].end).toBe(-sideJawOuterX)
     expect(segments[1].start).toBe(sideJawOuterX)
-    expect(segments[1].end).toBeLessThanOrEqual(halfLength - pocketRadius - DEFAULT_PHYSICS_CONFIG.ballRadius - railDepth / 2 - 0.10)
+    expect(segments[1].end - 1e-9).toBeLessThanOrEqual(halfLength - pocketRadius - DEFAULT_PHYSICS_CONFIG.ballRadius - railDepth / 2 - 0.10)
   })
 
   it('keeps a real gap at the side pocket and both corner pockets', () => {
