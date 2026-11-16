@@ -9,15 +9,15 @@ describe('long rail pocket clearance', () => {
   const pocketRadius = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius + 0.012
   const sideJawOuterX = DEFAULT_PHYSICS_CONFIG.sidePocketHalfWidth +
     DEFAULT_PHYSICS_CONFIG.ballRadius + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
-  const cornerClearance = pocketRadius + DEFAULT_PHYSICS_CONFIG.ballRadius + railDepth / 2 + 0.10
+  const cornerClearance = 0.14
   const segments = getLongRailSegments(halfLength, sideJawOuterX, cornerClearance)
 
   it('creates two independent spans per long rail, leaving all three mouths open', () => {
     expect(segments).toHaveLength(2)
-    expect(segments[0].start + 1e-9).toBeGreaterThanOrEqual(-halfLength + pocketRadius + DEFAULT_PHYSICS_CONFIG.ballRadius + railDepth / 2 + 0.10)
+    expect(segments[0].start + 1e-9).toBeGreaterThanOrEqual(-halfLength + cornerClearance)
     expect(segments[0].end).toBe(-sideJawOuterX)
     expect(segments[1].start).toBe(sideJawOuterX)
-    expect(segments[1].end - 1e-9).toBeLessThanOrEqual(halfLength - pocketRadius - DEFAULT_PHYSICS_CONFIG.ballRadius - railDepth / 2 - 0.10)
+    expect(segments[1].end - 1e-9).toBeLessThanOrEqual(halfLength - cornerClearance)
   })
 
   it('keeps a real gap at the side pocket and both corner pockets', () => {
@@ -63,7 +63,9 @@ describe('reference-matched table finish', () => {
       'utf8',
     )
     expect(rendererSource).toContain('new RoundedBoxGeometry')
-    expect(rendererSource).toContain('Rounded diagonal corner assemblies')
+    expect(rendererSource).toContain('addCornerPocketCaps(railWood')
+    expect(rendererSource).toContain('opening.absarc(0, 0, mouthRadius')
+    expect(rendererSource).not.toContain('Rounded diagonal corner assemblies')
     expect(rendererSource).toContain('this.renderer.shadowMap.enabled = false')
     expect(rendererSource).not.toContain('const outerTrim = new Mesh(new BoxGeometry(TABLE_LENGTH + 0.46')
   })
