@@ -43,3 +43,18 @@ describe('pocket jaw materials', () => {
     expect(rendererSource).toContain('addAngledCushionNose(cushion')
   })
 })
+
+
+describe('reference-matched table finish', () => {
+  it('uses mahogany rails, vivid green cloth, and flush diamond sights', async () => {
+    const rendererSource = readFileSync(
+      new URL('../src/rendering/GameRenderer.ts', import.meta.url),
+      'utf8',
+    )
+    expect(rendererSource).toContain("color: '#852820'")
+    expect(rendererSource).toContain("color: '#078b49'")
+    expect(rendererSource).toContain('addDiamondSight(sight')
+    expect(rendererSource).toContain('new BoxGeometry(0.025, 0.006, 0.025)')
+    expect(rendererSource).not.toContain('Math.random()')
+  })
+})

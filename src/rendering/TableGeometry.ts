@@ -2,7 +2,11 @@ import { ExtrudeGeometry, Path, Shape, ShapeGeometry } from 'three'
 import { DEFAULT_PHYSICS_CONFIG, type PhysicsConfig } from '../physics/PhysicsWorld'
 
 export const TABLE_BED_THICKNESS = 0.2
-export const TABLE_BED_OUTER_MARGIN = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius + 0.016
+export const CORNER_POCKET_MOUTH_WIDTH = 0.1143
+export const SIDE_POCKET_MOUTH_WIDTH = 0.127
+export const CORNER_POCKET_MOUTH_RADIUS = CORNER_POCKET_MOUTH_WIDTH / 2
+export const SIDE_POCKET_MOUTH_RADIUS = SIDE_POCKET_MOUTH_WIDTH / 2
+export const TABLE_BED_OUTER_MARGIN = SIDE_POCKET_MOUTH_RADIUS + 0.016
 
 function createPocketCutoutShape(
   config: PhysicsConfig,
@@ -10,7 +14,8 @@ function createPocketCutoutShape(
 ): Shape {
   const halfLength = config.tableLength / 2
   const halfWidth = config.tableWidth / 2
-  const pocketRadius = config.pocketCaptureRadius + 0.012
+  const sidePocketRadius = SIDE_POCKET_MOUTH_RADIUS
+  const cornerPocketRadius = CORNER_POCKET_MOUTH_RADIUS
   const shape = new Shape()
   shape.moveTo(-halfLength - outerMargin, -halfWidth - outerMargin)
   shape.lineTo(halfLength + outerMargin, -halfWidth - outerMargin)
@@ -22,9 +27,11 @@ function createPocketCutoutShape(
     [-halfLength, -halfWidth], [0, -halfWidth], [halfLength, -halfWidth],
     [-halfLength, halfWidth], [0, halfWidth], [halfLength, halfWidth],
   ]
-  for (const [x, z] of pocketCenters) {
+  for (let index = 0; index < pocketCenters.length; index += 1) {
+    const [x, z] = pocketCenters[index]
     const opening = new Path()
-    opening.absarc(x, -z, pocketRadius, 0, Math.PI * 2, true)
+    const mouthRadius = index === 1 || index === 4 ? sidePocketRadius : cornerPocketRadius
+    opening.absarc(x, -z, mouthRadius, 0, Math.PI * 2, true)
     shape.holes.push(opening)
   }
   return shape
@@ -35,7 +42,7 @@ export function createTableBedGeometry(
   config: PhysicsConfig = DEFAULT_PHYSICS_CONFIG,
 ): ExtrudeGeometry {
   const geometry = new ExtrudeGeometry(
-    createPocketCutoutShape(config, config.pocketCaptureRadius + 0.016),
+    createPocketCutoutShape(config, SIDE_POCKET_MOUTH_RADIUS + 0.016),
     { depth: TABLE_BED_THICKNESS, bevelEnabled: false, curveSegments: 48 },
   )
   geometry.rotateX(-Math.PI / 2)
@@ -46,9 +53,8 @@ export function createTableBedGeometry(
 export function createClothGeometry(
   config: PhysicsConfig = DEFAULT_PHYSICS_CONFIG,
 ): ShapeGeometry {
-  const pocketRadius = config.pocketCaptureRadius + 0.012
   return new ShapeGeometry(
-    createPocketCutoutShape(config, pocketRadius + 0.006),
+    createPocketCutoutShape(config, SIDE_POCKET_MOUTH_RADIUS + 0.006),
     48,
   )
 }

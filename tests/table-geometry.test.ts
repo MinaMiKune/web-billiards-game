@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three'
 import { DEFAULT_PHYSICS_CONFIG } from '../src/physics/PhysicsWorld'
-import { createClothGeometry, createTableBedGeometry } from '../src/rendering/TableGeometry'
+import { CORNER_POCKET_MOUTH_RADIUS, SIDE_POCKET_MOUTH_RADIUS, createClothGeometry, createTableBedGeometry } from '../src/rendering/TableGeometry'
 
 const halfLength = DEFAULT_PHYSICS_CONFIG.tableLength / 2
 const halfWidth = DEFAULT_PHYSICS_CONFIG.tableWidth / 2
@@ -38,7 +38,7 @@ describe('table pocket cutout geometry', () => {
   it('keeps the full ball-entry quadrant clear at every corner mouth', () => {
     const mesh = new Mesh(createTableBedGeometry(), new MeshBasicMaterial())
     mesh.position.y = -0.22
-    const inset = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius * 0.62
+    const inset = CORNER_POCKET_MOUTH_RADIUS * 0.58
     for (const xSign of [-1, 1]) {
       for (const zSign of [-1, 1]) {
         const x = xSign * (halfLength - inset)
@@ -46,6 +46,20 @@ describe('table pocket cutout geometry', () => {
         expect(rayHits(mesh, x, z), `wood must not bridge corner entry ${xSign}, ${zSign}`).toBe(false)
       }
     }
+    mesh.geometry.dispose()
+    mesh.material.dispose()
+  })
+
+  it('uses regulation-sized corner and side pocket mouths', () => {
+    const mesh = new Mesh(createTableBedGeometry(), new MeshBasicMaterial())
+    mesh.position.y = -0.22
+    // Corner mouth is 4.5in wide; side mouth is 5in wide.
+    expect(rayHits(mesh, halfLength - 0.035, halfWidth - 0.035)).toBe(false)
+    expect(rayHits(mesh, halfLength - 0.052, halfWidth - 0.052)).toBe(true)
+    expect(rayHits(mesh, 0.045, halfWidth - 0.02)).toBe(false)
+    expect(rayHits(mesh, 0.068, halfWidth - 0.02)).toBe(true)
+    expect(CORNER_POCKET_MOUTH_RADIUS).toBeCloseTo(0.05715, 5)
+    expect(SIDE_POCKET_MOUTH_RADIUS).toBeCloseTo(0.0635, 5)
     mesh.geometry.dispose()
     mesh.material.dispose()
   })
