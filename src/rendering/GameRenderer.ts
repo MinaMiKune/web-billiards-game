@@ -339,8 +339,8 @@ export class GameRenderer {
       // Short end rails sit between the two corner pockets; they do not cross
       // either mouth because their length is already inset from both corners.
       const endRailLength = TABLE_WIDTH - 2 * cornerRailClearance
-      this.addRoundedBox(railWood, railDepth, railHeight, endRailLength, side * (halfL + 0.065), railY, 0, Math.PI / 2, 0.018)
-      this.addRoundedBox(cushion, 0.035, 0.045, endRailLength, side * (halfL + 0.005), railY + 0.035, 0, Math.PI / 2, 0.008)
+      this.addRoundedBox(railWood, railDepth, railHeight, endRailLength, side * (halfL + 0.065), railY, 0, 0, 0.018)
+      this.addRoundedBox(cushion, 0.035, 0.045, endRailLength, side * (halfL + 0.005), railY + 0.035, 0, 0, 0.008)
     }
 
     // Rounded diagonal corner assemblies connect the long and end rails.
