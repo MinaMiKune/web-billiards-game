@@ -5,6 +5,7 @@ import {
   BufferGeometry,
   CanvasTexture,
   CircleGeometry,
+  CylinderGeometry,
   Color,
   CylinderGeometry,
   DirectionalLight,
@@ -296,6 +297,7 @@ export class GameRenderer {
     body.castShadow = true
     body.receiveShadow = true
     this.scene.add(body)
+    this.addTableLegs(wood, halfLength, halfWidth)
 
     // A matching cloth cut-out prevents the felt from bridging the pocket.
     const feltMesh = new Mesh(createClothGeometry(), felt)
@@ -445,6 +447,40 @@ export class GameRenderer {
     const texture = new CanvasTexture(canvas); texture.colorSpace = SRGBColorSpace
     texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy()
     return texture
+  }
+
+  private addTableLegs(
+    material: MeshStandardMaterial,
+    halfLength: number,
+    halfWidth: number,
+  ): void {
+    const legHeight = 0.72
+    const legBottom = -0.22 - legHeight
+    const legCenterY = -0.22 - legHeight / 2
+    const xPositions = [-halfLength + 0.24, halfLength - 0.24]
+    const zPositions = [-halfWidth + 0.18, halfWidth - 0.18]
+
+    for (const x of xPositions) {
+      for (const z of zPositions) {
+        const leg = new Mesh(
+          new CylinderGeometry(0.064, 0.095, legHeight, 16),
+          material,
+        )
+        leg.position.set(x, legCenterY, z)
+        leg.castShadow = false
+        leg.receiveShadow = false
+        this.scene.add(leg)
+
+        const foot = new Mesh(
+          new CylinderGeometry(0.098, 0.098, 0.035, 16),
+          material,
+        )
+        foot.position.set(x, legBottom + 0.0175, z)
+        foot.castShadow = false
+        foot.receiveShadow = false
+        this.scene.add(foot)
+      }
+    }
   }
 
   private addCornerPocketCaps(
