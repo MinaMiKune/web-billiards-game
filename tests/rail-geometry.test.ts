@@ -64,6 +64,7 @@ describe('reference-matched table finish', () => {
     )
     expect(rendererSource).toContain('new RoundedBoxGeometry')
     expect(rendererSource).toContain('this.addTableLegs(wood, halfLength, halfWidth)')
+    expect(rendererSource).toContain('floor.position.y = -1.05')
     expect(rendererSource).toContain('new CylinderGeometry(0.03, 0.05, legHeight, 16)')
     expect(rendererSource).toContain('halfLength + 0.04')
     expect(rendererSource).toContain('halfWidth + 0.135')
