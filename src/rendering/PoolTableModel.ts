@@ -333,7 +333,7 @@ function addSidePocketJaw(
   zSign: number,
   material: MeshStandardMaterial,
 ): void {
-  // This is a narrow tapered rubber nose, not a broad triangular panel.
+  // Broad tapered rubber noses form the visible 45-degree pocket cheeks.
   // Its centerline follows the same 45-degree jaw segment used by the
   // collision solver, while the opening remains clear on the cloth side.
   const innerX = SIDE_POCKET_JAW_INNER_X
@@ -371,7 +371,7 @@ function addCornerPocketJaws(
 
   // Two rounded rubber noses converge toward the leather corner pocket.
   addCushionJawSegment(group, longRailStart, innerTip, material, 0.040, 0.014)
-  addCushionJawSegment(group, endRailStart, innerTip, material, 0.032, 0.010)
+  addCushionJawSegment(group, endRailStart, innerTip, material, 0.040, 0.014)
 }
 
 function addRailRuns(
