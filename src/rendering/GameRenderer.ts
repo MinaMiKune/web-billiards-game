@@ -2,7 +2,6 @@ import {
   ACESFilmicToneMapping,
   AmbientLight,
   BoxGeometry,
-  RoundedBoxGeometry,
   BufferGeometry,
   CanvasTexture,
   CircleGeometry,
@@ -25,6 +24,7 @@ import {
 } from 'three'
 import type { Camera } from 'three'
 import type { Material } from 'three'
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { DEFAULT_PHYSICS_CONFIG } from '../physics/PhysicsWorld'
 import { CORNER_POCKET_MOUTH_RADIUS, SIDE_POCKET_MOUTH_RADIUS, createClothGeometry, createTableBedGeometry } from './TableGeometry'
 import { getLongRailSegments } from './RailGeometry'
