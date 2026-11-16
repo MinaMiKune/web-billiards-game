@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three'
 import { DEFAULT_PHYSICS_CONFIG } from '../src/physics/PhysicsWorld'
-import { CORNER_POCKET_MOUTH_RADIUS, SIDE_POCKET_MOUTH_RADIUS, createClothGeometry, createTableBedGeometry } from '../src/rendering/TableGeometry'
+import { CORNER_POCKET_MOUTH_RADIUS, SIDE_POCKET_MOUTH_RADIUS, TABLE_BED_THICKNESS, createClothGeometry, createTableBedGeometry } from '../src/rendering/TableGeometry'
 
 const halfLength = DEFAULT_PHYSICS_CONFIG.tableLength / 2
 const halfWidth = DEFAULT_PHYSICS_CONFIG.tableWidth / 2
@@ -24,7 +24,7 @@ function rayHits(mesh: Mesh, x: number, z: number): boolean {
 describe('table pocket cutout geometry', () => {
   it('cuts six openings through the full wood bed slab', () => {
     const mesh = new Mesh(createTableBedGeometry(), new MeshBasicMaterial())
-    mesh.position.y = -0.22
+    mesh.position.y = -TABLE_BED_THICKNESS
 
     for (const [x, z] of pocketCenters) {
       expect(rayHits(mesh, x, z), `wood slab should be open at pocket ${x}, ${z}`).toBe(false)
