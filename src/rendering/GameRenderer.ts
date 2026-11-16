@@ -571,10 +571,12 @@ export class GameRenderer {
           z: zSign * (halfWidth - pocketJawDepth),
         }
         const end = {
-          x: xSign * (sideJawInnerX + pocketJawDepth),
-          z: zSign * halfWidth,
+          // Extend the nose slightly beneath the straight cushion so the jaw
+          // is visibly joined to the rail instead of appearing as a loose tab.
+          x: xSign * (sideJawInnerX + pocketJawDepth + 0.025),
+          z: zSign * (halfWidth + 0.005),
         }
-        this.addAngledCushionNose(cushion, start, end, railY + 0.035, 0.045, 0.018)
+        this.addAngledCushionNose(cushion, start, end, railY + 0.035, 0.045, 0.035)
       }
     }
   }
