@@ -235,6 +235,23 @@ describe('PhysicsWorld', () => {
     expect(cue.active).toBe(false)
   })
 
+
+  it('captures a ball through each of the four corner entry paths', () => {
+    for (const xSign of [-1, 1]) {
+      for (const zSign of [-1, 1]) {
+        const world = new PhysicsWorld()
+        const cue = world.cueBall
+        const xLimit = world.config.tableLength / 2 - cue.radius
+        const zLimit = world.config.tableWidth / 2 - cue.radius
+        cue.position = { x: xSign * (xLimit - 0.001), z: zSign * (zLimit - 0.001) }
+        cue.previousPosition = { ...cue.position }
+        cue.velocity = { x: xSign, z: zSign }
+        world.step(STEP)
+        expect(cue.pocketed, `ball should drop at corner ${xSign}, ${zSign}`).toBe(true)
+      }
+    }
+  })
+
   it('treats a ball outside the side-pocket mouth as a cushion hit', () => {
     const world = new PhysicsWorld()
     const cue = world.cueBall
