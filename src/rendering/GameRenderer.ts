@@ -48,7 +48,7 @@ export class GameRenderer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
     this.renderer.outputColorSpace = SRGBColorSpace
     this.renderer.toneMapping = ACESFilmicToneMapping
-    this.renderer.toneMappingExposure = 1.12
+    this.renderer.toneMappingExposure = 1.2
     // Keep contact and furniture shadows, but use soft filtered maps rather
     // than the hard, nearly-black silhouettes from the previous renderer.
     this.renderer.shadowMap.enabled = true
@@ -229,9 +229,9 @@ export class GameRenderer {
   }
 
   private addLighting(): void {
-    this.scene.add(new AmbientLight('#d9e8dc', 1.15))
+    this.scene.add(new AmbientLight('#d9e8dc', 1.5))
 
-    const key = new DirectionalLight('#fff3dc', 1.8)
+    const key = new DirectionalLight('#fff3dc', 2.25)
     key.position.set(-2.8, 5.4, 3.2)
     key.castShadow = true
     key.shadow.mapSize.set(1024, 1024)
@@ -248,7 +248,7 @@ export class GameRenderer {
 
     // Soft overhead pool-hall light keeps the cloth and numbered balls readable
     // across the top, angled and side cameras without changing physics state.
-    const overhead = new SpotLight('#fff0d4', 1.25, 10, 0.58, 0.62, 1.5)
+    const overhead = new SpotLight('#fff0d4', 1.55, 10, 0.58, 0.62, 1.5)
     overhead.position.set(0, 5.4, 0)
     overhead.target.position.set(0, 0, 0)
     overhead.castShadow = false
@@ -258,7 +258,7 @@ export class GameRenderer {
     overhead.shadow.bias = -0.00015
     this.scene.add(overhead, overhead.target)
 
-    const fill = new DirectionalLight('#9ed5b2', 0.65)
+    const fill = new DirectionalLight('#9ed5b2', 0.9)
     fill.position.set(3.5, 2.5, -3)
     this.scene.add(fill)
   }
