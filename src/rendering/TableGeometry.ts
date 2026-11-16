@@ -1,7 +1,7 @@
 import { ExtrudeGeometry, Path, Shape, ShapeGeometry } from 'three'
 import { DEFAULT_PHYSICS_CONFIG, type PhysicsConfig } from '../physics/PhysicsWorld'
 
-export const TABLE_BED_THICKNESS = 0.2
+export const TABLE_BED_THICKNESS = 0.045
 export const CORNER_POCKET_MOUTH_WIDTH = 0.1143
 export const SIDE_POCKET_MOUTH_WIDTH = 0.127
 export const CORNER_POCKET_MOUTH_RADIUS = CORNER_POCKET_MOUTH_WIDTH / 2

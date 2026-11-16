@@ -1,24 +1,21 @@
 import {
   ACESFilmicToneMapping,
   AmbientLight,
-  BoxGeometry,
   BufferGeometry,
   CanvasTexture,
   CircleGeometry,
   CylinderGeometry,
   Color,
   DirectionalLight,
-  ExtrudeGeometry,
   Line,
   LineBasicMaterial,
   Mesh,
   MeshBasicMaterial,
   Group,
   MeshStandardMaterial,
-  Path,
   PlaneGeometry,
+  PCFSoftShadowMap,
   Scene,
-  Shape,
   SphereGeometry,
   SpotLight,
   Vector3,
@@ -27,14 +24,8 @@ import {
 } from 'three'
 import type { Camera } from 'three'
 import type { Material } from 'three'
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
-import { DEFAULT_PHYSICS_CONFIG } from '../physics/PhysicsWorld'
-import { CORNER_POCKET_MOUTH_RADIUS, SIDE_POCKET_MOUTH_RADIUS, createClothGeometry, createTableBedGeometry } from './TableGeometry'
-import { getLongRailSegments } from './RailGeometry'
+import { createPoolTableModel, POOL_TABLE_VISUAL_SPEC } from './PoolTableModel'
 import type { RenderBall, Vec2 } from '../physics/PhysicsWorld'
-
-const TABLE_LENGTH = DEFAULT_PHYSICS_CONFIG.tableLength
-const TABLE_WIDTH = DEFAULT_PHYSICS_CONFIG.tableWidth
 
 function disposeMaterials(material: Material | Material[]): void {
   const materials = Array.isArray(material) ? material as Material[] : [material as Material]
@@ -57,11 +48,13 @@ export class GameRenderer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
     this.renderer.outputColorSpace = SRGBColorSpace
     this.renderer.toneMapping = ACESFilmicToneMapping
-    this.renderer.toneMappingExposure = 1.32
-    // The old real-time shadow maps produced large, near-black rail silhouettes
-    // across the cloth in every camera. Ball contact shadows are rendered as
-    // dedicated soft discs, so disable the harsh global shadow map.
-    this.renderer.shadowMap.enabled = false
+    this.renderer.toneMappingExposure = 1.2
+    // Keep contact and furniture shadows, but use soft filtered maps rather
+    // than the hard, nearly-black silhouettes from the previous renderer.
+    this.renderer.shadowMap.enabled = true
+    this.renderer.shadowMap.type = PCFSoftShadowMap
+    this.renderer.shadowMap.autoUpdate = false
+    this.renderer.shadowMap.needsUpdate = true
     this.renderer.setSize(host.clientWidth, host.clientHeight, false)
     this.renderer.domElement.setAttribute('aria-label', '3D pool table. Drag backwards from the cue ball to aim and release to shoot.')
     this.renderer.domElement.tabIndex = 0
@@ -236,12 +229,17 @@ export class GameRenderer {
   }
 
   private addLighting(): void {
-    this.scene.add(new AmbientLight('#d9e8dc', 1.85))
+    this.scene.add(new AmbientLight('#d9e8dc', 1.5))
 
-    const key = new DirectionalLight('#fff3dc', 2.65)
+    const key = new DirectionalLight('#fff3dc', 2.25)
     key.position.set(-2.8, 5.4, 3.2)
-    key.castShadow = false
+    key.castShadow = true
     key.shadow.mapSize.set(1024, 1024)
+    key.shadow.radius = 5
+    key.shadow.bias = -0.00012
+    key.shadow.normalBias = 0.018
+    key.shadow.camera.near = 0.5
+    key.shadow.camera.far = 10
     key.shadow.camera.left = -3.5
     key.shadow.camera.right = 3.5
     key.shadow.camera.top = 3
@@ -250,7 +248,7 @@ export class GameRenderer {
 
     // Soft overhead pool-hall light keeps the cloth and numbered balls readable
     // across the top, angled and side cameras without changing physics state.
-    const overhead = new SpotLight('#fff0d4', 1.75, 10, 0.58, 0.62, 1.5)
+    const overhead = new SpotLight('#fff0d4', 1.55, 10, 0.58, 0.62, 1.5)
     overhead.position.set(0, 5.4, 0)
     overhead.target.position.set(0, 0, 0)
     overhead.castShadow = false
@@ -260,7 +258,7 @@ export class GameRenderer {
     overhead.shadow.bias = -0.00015
     this.scene.add(overhead, overhead.target)
 
-    const fill = new DirectionalLight('#9ed5b2', 1.15)
+    const fill = new DirectionalLight('#9ed5b2', 0.9)
     fill.position.set(3.5, 2.5, -3)
     this.scene.add(fill)
   }
@@ -273,134 +271,15 @@ export class GameRenderer {
     floor.rotation.x = -Math.PI / 2
     // Keep the environment floor below the table feet; the old -0.27 plane hid
     // almost the entire legs and made the table look like a floating slab.
-    floor.position.y = -1.05
+    floor.position.y = POOL_TABLE_VISUAL_SPEC.floorY
     floor.receiveShadow = true
     this.scene.add(floor)
   }
 
   private addTable(): void {
-    const wood = new MeshStandardMaterial({ color: '#a43a2b', map: this.createSurfaceTexture('wood'), roughness: 0.24, metalness: 0.025 })
-    const railWood = new MeshStandardMaterial({ color: '#a33b2c', map: this.createSurfaceTexture('wood'), roughness: 0.22, metalness: 0.035 })
-    const cushion = new MeshStandardMaterial({ color: '#087b45', roughness: 0.82 })
-    const felt = new MeshStandardMaterial({ color: '#12a85a', emissive: '#07542c', emissiveIntensity: 0.28, map: this.createSurfaceTexture('felt'), roughness: 0.94 })
-    const pocket = new MeshStandardMaterial({ color: '#050706', roughness: 1 })
-    const sight = new MeshStandardMaterial({ color: '#e8dfc9', roughness: 0.34, metalness: 0.08 })
-
-    // The bed slab and cloth share the same six through-openings. Cutting
-    // only the cloth leaves the solid wood slab visible beneath every pocket,
-    // which is exactly the "mysterious blocker" seen from an angled camera.
-    const halfLength = TABLE_LENGTH / 2
-    const halfWidth = TABLE_WIDTH / 2
-    const pocketClearance = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius + 0.012
-    const bodyGeometry = createTableBedGeometry()
-    const body = new Mesh(bodyGeometry, wood)
-    body.position.y = -0.22
-    body.castShadow = true
-    body.receiveShadow = true
-    this.scene.add(body)
-    this.addTableLegs(wood, halfLength, halfWidth)
-
-    // A matching cloth cut-out prevents the felt from bridging the pocket.
-    const feltMesh = new Mesh(createClothGeometry(), felt)
-    feltMesh.rotation.x = -Math.PI / 2
-    feltMesh.position.y = -0.015
-    feltMesh.receiveShadow = true
-    this.scene.add(feltMesh)
-
-    const headStringGeometry = new BufferGeometry().setFromPoints([
-      new Vector3(-TABLE_LENGTH / 4, -0.013, -TABLE_WIDTH / 2 + 0.025),
-      new Vector3(-TABLE_LENGTH / 4, -0.013, TABLE_WIDTH / 2 - 0.025),
-    ])
-    const headString = new Line(
-      headStringGeometry,
-      new LineBasicMaterial({ color: '#d7c49a', transparent: true, opacity: 0.5 }),
-    )
-    this.scene.add(headString)
-
-    const halfL = TABLE_LENGTH / 2
-    const halfW = TABLE_WIDTH / 2
-    const railHeight = 0.13
-    const railDepth = 0.14
-    const railY = 0.045
-    const sideJawInnerX = DEFAULT_PHYSICS_CONFIG.sidePocketHalfWidth +
-      DEFAULT_PHYSICS_CONFIG.ballRadius
-    const sideJawOuterX = sideJawInnerX + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
-    // Long rails must stop before BOTH corner pockets and the side pocket.
-    // The old two-piece layout started at the table corners, laying solid wood
-    // directly across the corner-pocket mouths (visible as rectangular blockers).
-    // Leave the complete pocket radius, ball radius, and rail half-depth clear.
-    // The additional 0.10m is a deliberate visual/trajectory margin: rail ends
-    // must not hang over the circular mouth from a top or oblique camera.
-    const cornerRailClearance = 0.10
-    const railSegments = getLongRailSegments(halfL, sideJawOuterX, cornerRailClearance)
-
-    for (const side of [-1, 1]) {
-      for (const segment of railSegments) {
-        const segmentLength = segment.end - segment.start
-        const segmentCenter = (segment.start + segment.end) / 2
-        this.addRoundedBox(railWood, segmentLength, railHeight, railDepth, segmentCenter, railY, side * (halfW + 0.065), 0, 0.018)
-        // Recess the cushion at the corner end, but overlap the angled side-pocket
-        // nose by 25mm. A symmetric inset leaves a visible detached green tab.
-        const pocketSide = Math.sign(segment.center)
-        const cushionStart = segment.start + 0.03 + (pocketSide > 0 ? 0.025 : 0)
-        const cushionEnd = segment.end - 0.03 - (pocketSide < 0 ? 0.025 : 0)
-        const cushionLength = cushionEnd - cushionStart
-        const cushionCenter = (cushionStart + cushionEnd) / 2
-        this.addRoundedBox(cushion, cushionLength, 0.045, 0.035, cushionCenter, railY + 0.035, side * (halfW + 0.005), 0, 0.008)
-      }
-
-      // Short end rails sit between the two corner pockets; they do not cross
-      // either mouth because their length is already inset from both corners.
-      const endRailLength = TABLE_WIDTH - 2 * cornerRailClearance
-      this.addRoundedBox(railWood, railDepth, railHeight, endRailLength, side * (halfL + 0.065), railY, 0, 0, 0.018)
-      const endCushionLength = Math.max(0.04, endRailLength - 0.06)
-      this.addRoundedBox(cushion, 0.035, 0.045, endCushionLength, side * (halfL + 0.005), railY + 0.035, 0, 0, 0.008)
-    }
-
-    // Rounded wooden corner caps surround each corner pocket. The circular
-    // cut-out is a true hole in the cap; the adjacent straight rails overlap
-    // the cap slightly so the frame reads as one continuous rounded rectangle.
-    this.addCornerPocketCaps(railWood, halfL, halfW, railY, railHeight)
-
-    // Side-pocket rubber noses form the characteristic angled jaws.
-    this.addSidePocketCushions(cushion, halfL, halfW, railY)
-
-    // Ivory diamond sights sit flush on the red-mahogany rail caps, never over a pocket.
-    const sightXs = [-0.96, -0.64, -0.32, 0.32, 0.64, 0.96]
-    for (const side of [-1, 1]) {
-      for (const x of sightXs) this.addDiamondSight(sight, x, side * (halfW + 0.065), railY + railHeight / 2 + 0.004)
-      for (const z of [-0.32, 0, 0.32]) this.addDiamondSight(sight, side * (halfL + 0.065), z, railY + railHeight / 2 + 0.004)
-    }
-
-    const pocketPositions = [
-      [-halfL, -halfW], [0, -halfW], [halfL, -halfW],
-      [-halfL, halfW], [0, halfW], [halfL, halfW],
-    ]
-
-    for (let index = 0; index < pocketPositions.length; index += 1) {
-      const [x, z] = pocketPositions[index]
-      // WPA mouth dimensions: 4 corner openings at 4.5in and 2 side openings at 5in.
-      // The dark throat and well are narrower than the rim, leaving a clear entry.
-      const mouthRadius = index === 1 || index === 4
-        ? SIDE_POCKET_MOUTH_RADIUS
-        : CORNER_POCKET_MOUTH_RADIUS
-      const throatRadius = mouthRadius * 0.72
-      const throat = new Mesh(
-        new CylinderGeometry(throatRadius, mouthRadius, 0.14, 48, 1, true),
-        pocket,
-      )
-      throat.position.set(x, -0.105, z)
-      throat.receiveShadow = true
-      this.scene.add(throat)
-      const well = new Mesh(new CircleGeometry(throatRadius, 48), pocket)
-      well.rotation.x = -Math.PI / 2
-      well.position.set(x, -0.178, z)
-      well.receiveShadow = true
-      this.scene.add(well)
-    }
-
+    const table = createPoolTableModel(this.renderer.capabilities.getMaxAnisotropy())
+    this.scene.add(table)
   }
-
 
   private createCueStick(): void {
     const shaft = new Mesh(new CylinderGeometry(0.0032, 0.0082, 0.86, 16, 1), new MeshStandardMaterial({ color: '#d8b47c', roughness: 0.34 }))
@@ -418,241 +297,5 @@ export class GameRenderer {
     this.cueStick.traverse((object) => { if (object instanceof Mesh) object.castShadow = true })
   }
 
-  private createSurfaceTexture(kind: 'wood' | 'felt'): CanvasTexture {
-    const canvas = document.createElement('canvas')
-    canvas.width = 512; canvas.height = 512
-    const context = canvas.getContext('2d')
-    if (!context) throw new Error('Could not create a procedural table texture')
-    if (kind === 'wood') {
-      const grain = context.createLinearGradient(0, 0, 512, 512)
-      grain.addColorStop(0, '#6e1b18')
-      grain.addColorStop(0.32, '#a53a2d')
-      grain.addColorStop(0.68, '#84231e')
-      grain.addColorStop(1, '#581512')
-      context.fillStyle = grain; context.fillRect(0, 0, 512, 512)
-      // Reproducible flowing mahogany grain: stable between reloads and devices.
-      for (let i = 0; i < 64; i += 1) {
-        const y = (i * 79) % 512
-        const wave = (i % 7) * 2.4
-        context.strokeStyle = i % 5 === 0 ? 'rgba(24,5,5,0.10)' : 'rgba(255,190,150,0.065)'
-        context.lineWidth = 1 + (i % 2)
-        context.beginPath(); context.moveTo(0, y)
-        context.bezierCurveTo(160, y - 14 + wave, 340, y + 18 - wave, 512, y + ((i % 9) - 4) * 2.5); context.stroke()
-      }
-      const sheen = context.createLinearGradient(0, 0, 0, 512)
-      sheen.addColorStop(0, 'rgba(255,210,170,0.12)')
-      sheen.addColorStop(0.48, 'rgba(0,0,0,0)')
-      sheen.addColorStop(1, 'rgba(0,0,0,0.10)')
-      context.fillStyle = sheen; context.fillRect(0, 0, 512, 512)
-    } else {
-      const cloth = context.createRadialGradient(256, 256, 24, 256, 256, 360)
-      cloth.addColorStop(0, '#12b95f')
-      cloth.addColorStop(0.72, '#0b984e')
-      cloth.addColorStop(1, '#08713e')
-      context.fillStyle = cloth; context.fillRect(0, 0, 512, 512)
-      for (let y = 0; y < 512; y += 3) { context.fillStyle = y % 6 === 0 ? 'rgba(255,255,255,0.035)' : 'rgba(0,20,12,0.035)'; context.fillRect(0, y, 512, 1) }
-      for (let x = 0; x < 512; x += 3) { context.fillStyle = x % 6 === 0 ? 'rgba(255,255,255,0.025)' : 'rgba(0,20,12,0.025)'; context.fillRect(x, 0, 1, 512) }
-    }
-    const texture = new CanvasTexture(canvas); texture.colorSpace = SRGBColorSpace
-    texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy()
-    return texture
-  }
 
-  private addTableLegs(
-    material: MeshStandardMaterial,
-    halfLength: number,
-    halfWidth: number,
-  ): void {
-    const legHeight = 0.72
-    const legBottom = -0.22 - legHeight
-    const legCenterY = -0.22 - legHeight / 2
-    const splay = 0.10
-    const bottomOffset = legHeight / 2 * Math.sin(splay)
-    const xPositions = [-halfLength - 0.04, halfLength + 0.04]
-    const zPositions = [-halfWidth - 0.135, halfWidth + 0.135]
-
-    for (const x of xPositions) {
-      for (const z of zPositions) {
-        const xSign = Math.sign(x)
-        const zSign = Math.sign(z)
-        const leg = new Mesh(
-          new CylinderGeometry(0.03, 0.05, legHeight, 16),
-          material,
-        )
-        leg.position.set(x, legCenterY, z)
-        // Splayed legs emerge from beneath the wide apron instead of hiding behind it.
-        leg.rotation.set(-zSign * splay, 0, xSign * splay)
-        leg.castShadow = false
-        leg.receiveShadow = false
-        this.scene.add(leg)
-
-        const foot = new Mesh(
-          new CylinderGeometry(0.055, 0.055, 0.035, 16),
-          material,
-        )
-        foot.position.set(x + xSign * bottomOffset, legBottom + 0.0175, z + zSign * bottomOffset)
-        foot.rotation.set(-zSign * splay, 0, xSign * splay)
-        foot.castShadow = false
-        foot.receiveShadow = false
-        this.scene.add(foot)
-      }
-    }
-  }
-
-  private addCornerPocketCaps(
-    material: MeshStandardMaterial,
-    halfLength: number,
-    halfWidth: number,
-    railY: number,
-    railHeight: number,
-  ): void {
-    const outerRadius = 0.115
-    const outerCorner = 0.09
-    const mouthRadius = CORNER_POCKET_MOUTH_RADIUS + 0.009
-    const shape = new Shape()
-    shape.moveTo(-outerRadius + outerCorner, -outerRadius)
-    shape.lineTo(outerRadius - outerCorner, -outerRadius)
-    shape.quadraticCurveTo(outerRadius, -outerRadius, outerRadius, -outerRadius + outerCorner)
-    shape.lineTo(outerRadius, outerRadius - outerCorner)
-    shape.quadraticCurveTo(outerRadius, outerRadius, outerRadius - outerCorner, outerRadius)
-    shape.lineTo(-outerRadius + outerCorner, outerRadius)
-    shape.quadraticCurveTo(-outerRadius, outerRadius, -outerRadius, outerRadius - outerCorner)
-    shape.lineTo(-outerRadius, -outerRadius + outerCorner)
-    shape.quadraticCurveTo(-outerRadius, -outerRadius, -outerRadius + outerCorner, -outerRadius)
-    shape.closePath()
-
-    const opening = new Path()
-    opening.absarc(0, 0, mouthRadius, 0, Math.PI * 2, true)
-    shape.holes.push(opening)
-    const geometry = new ExtrudeGeometry(shape, {
-      depth: railHeight,
-      bevelEnabled: false,
-      curveSegments: 48,
-    })
-    geometry.rotateX(-Math.PI / 2)
-
-    for (const xSign of [-1, 1]) {
-      for (const zSign of [-1, 1]) {
-        const cap = new Mesh(geometry.clone(), material)
-        cap.position.set(
-          xSign * halfLength,
-          railY - railHeight / 2,
-          zSign * halfWidth,
-        )
-        cap.castShadow = false
-        cap.receiveShadow = false
-        this.scene.add(cap)
-      }
-    }
-    geometry.dispose()
-  }
-
-  private addDiamondSight(
-    material: MeshStandardMaterial,
-    x: number,
-    z: number,
-    y: number,
-  ): void {
-    const marker = new Mesh(new BoxGeometry(0.025, 0.006, 0.025), material)
-    marker.position.set(x, y, z)
-    marker.rotation.y = Math.PI / 4
-    marker.castShadow = true
-    this.scene.add(marker)
-  }
-
-  private addSidePocketCushions(
-    cushion: MeshStandardMaterial,
-    halfLength: number,
-    halfWidth: number,
-    railY: number,
-  ): void {
-    const { sidePocketHalfWidth, pocketJawDepth, ballRadius } = DEFAULT_PHYSICS_CONFIG
-    const sideJawInnerX = sidePocketHalfWidth + ballRadius
-    for (const zSign of [-1, 1]) {
-      for (const xSign of [-1, 1]) {
-        const start = {
-          x: xSign * sideJawInnerX,
-          z: zSign * (halfWidth - pocketJawDepth),
-        }
-        const end = {
-          // Extend the nose slightly beneath the straight cushion so the jaw
-          // is visibly joined to the rail instead of appearing as a loose tab.
-          x: xSign * (sideJawInnerX + pocketJawDepth + 0.025),
-          z: zSign * (halfWidth + 0.005),
-        }
-        this.addAngledCushionNose(cushion, start, end, railY + 0.035, 0.045, 0.035)
-      }
-    }
-  }
-
-  /** Rubber-only jaw nose; wooden jaw blocks are intentionally absent from all pocket mouths. */
-  private addAngledCushionNose(
-    material: MeshStandardMaterial,
-    start: Vec2,
-    end: Vec2,
-    y: number,
-    height: number,
-    width: number,
-  ): void {
-    const dx = end.x - start.x
-    const dz = end.z - start.z
-    const length = Math.hypot(dx, dz)
-    if (length <= 1e-6) return
-
-    // A cushion jaw is a tapered wedge, not a rectangular green slat.
-    // Its pointed end faces the cloth; its broad base overlaps the straight rail.
-    const perpendicularX = (-dz / length) * (width / 2)
-    const perpendicularZ = (dx / length) * (width / 2)
-    const wedge = new Shape()
-    wedge.moveTo(start.x, start.z)
-    wedge.lineTo(end.x + perpendicularX, end.z + perpendicularZ)
-    wedge.lineTo(end.x - perpendicularX, end.z - perpendicularZ)
-    wedge.closePath()
-    const geometry = new ExtrudeGeometry(wedge, { depth: height, bevelEnabled: false, curveSegments: 8 })
-    geometry.rotateX(-Math.PI / 2)
-    const nose = new Mesh(geometry, material)
-    nose.position.y = y - height / 2
-    nose.castShadow = false
-    nose.receiveShadow = false
-    this.scene.add(nose)
-  }
-
-  private addRoundedBox(
-    material: MeshStandardMaterial,
-    length: number,
-    height: number,
-    depth: number,
-    x: number,
-    y: number,
-    z: number,
-    rotationY: number,
-    radius: number,
-  ): void {
-    const safeRadius = Math.min(radius, height * 0.24, depth * 0.24, length * 0.12)
-    const mesh = new Mesh(
-      new RoundedBoxGeometry(length, height, depth, 4, safeRadius),
-      material,
-    )
-    mesh.position.set(x, y, z)
-    mesh.rotation.y = rotationY
-    mesh.receiveShadow = false
-    mesh.castShadow = false
-    this.scene.add(mesh)
-  }
-
-  private addBox(
-    material: MeshStandardMaterial,
-    length: number,
-    height: number,
-    depth: number,
-    x: number,
-    y: number,
-    z: number,
-  ): void {
-    const mesh = new Mesh(new BoxGeometry(length, height, depth), material)
-    mesh.position.set(x, y, z)
-    mesh.castShadow = true
-    mesh.receiveShadow = true
-    this.scene.add(mesh)
-  }
 }
