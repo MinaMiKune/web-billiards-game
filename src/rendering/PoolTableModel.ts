@@ -51,6 +51,7 @@ export const POOL_TABLE_VISUAL_SPEC = {
   woodColor: '#75432f',
   feltColor: '#0d6842',
   cushionColor: '#113c2a',
+  pocketJawColor: '#236b45',
 } as const
 
 const TABLE_LENGTH = DEFAULT_PHYSICS_CONFIG.tableLength
@@ -216,7 +217,7 @@ function addPocketCollar(
   // The inner rim is deliberately outside the actual cut-out; it never bridges
   // the six openings in the cloth or slate bed.
   const collar = new Mesh(
-    new TorusGeometry(mouthRadius + 0.010, 0.007, 10, 48),
+    new TorusGeometry(mouthRadius + 0.012, 0.009, 12, 56),
     leather,
   )
   collar.rotation.x = -Math.PI / 2
@@ -343,8 +344,8 @@ function addSidePocketJaw(
     { x: xSign * outerX, z: zSign * HALF_WIDTH },
     { x: xSign * innerX, z: zSign * jawInnerZ },
     material,
-    0.034,
-    0.012,
+    0.042,
+    0.014,
   )
 }
 
@@ -369,7 +370,7 @@ function addCornerPocketJaws(
   }
 
   // Two rounded rubber noses converge toward the leather corner pocket.
-  addCushionJawSegment(group, longRailStart, innerTip, material, 0.032, 0.010)
+  addCushionJawSegment(group, longRailStart, innerTip, material, 0.040, 0.014)
   addCushionJawSegment(group, endRailStart, innerTip, material, 0.032, 0.010)
 }
 
@@ -402,7 +403,7 @@ function addRailRuns(
     }
 
     for (const xSign of [-1, 1]) {
-      addSidePocketJaw(group, xSign, side, cushion)
+      addSidePocketJaw(group, xSign, side, pocketJaw)
     }
 
     // End rails meet the long rails through open corner pockets.
@@ -568,6 +569,11 @@ export function createPoolTableModel(maxAnisotropy = 4): Group {
     roughness: 0.82,
     metalness: 0,
   })
+  const pocketJaw = new MeshStandardMaterial({
+    color: POOL_TABLE_VISUAL_SPEC.pocketJawColor,
+    roughness: 0.86,
+    metalness: 0,
+  })
   const leather = new MeshStandardMaterial({
     color: '#050706',
     roughness: 0.88,
@@ -599,7 +605,7 @@ export function createPoolTableModel(maxAnisotropy = 4): Group {
   addRailRuns(group, railWood, cushion)
   for (const xSign of [-1, 1]) {
     for (const zSign of [-1, 1]) {
-      addCornerPocketJaws(group, xSign, zSign, cushion)
+      addCornerPocketJaws(group, xSign, zSign, pocketJaw)
     }
   }
   addApronAndSupports(group, wood, darkWood, brass)
