@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { DEFAULT_PHYSICS_CONFIG } from '../src/physics/PhysicsWorld'
 import { getLongRailSegments } from '../src/rendering/RailGeometry'
 
@@ -26,5 +27,19 @@ describe('long rail pocket clearance', () => {
       expect(segment.center - segment.length / 2).toBeCloseTo(segment.start, 12)
       expect(segment.center + segment.length / 2).toBeCloseTo(segment.end, 12)
     }
+  })
+})
+
+
+describe('pocket jaw materials', () => {
+  it('does not generate separate wooden slats at the pocket mouths', () => {
+    const rendererSource = readFileSync(
+      new URL('../src/rendering/GameRenderer.ts', import.meta.url),
+      'utf8',
+    )
+    expect(rendererSource).not.toContain('addSidePocketJaws')
+    expect(rendererSource).not.toContain('addAngledJaw(railWood')
+    expect(rendererSource).toContain('addSidePocketCushions(cushion')
+    expect(rendererSource).toContain('addAngledCushionNose(cushion')
   })
 })
