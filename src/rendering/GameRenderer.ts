@@ -18,9 +18,7 @@ import {
   PlaneGeometry,
   Scene,
   SphereGeometry,
-  Shape,
   ShapeGeometry,
-  Path,
   SpotLight,
   Vector3,
   WebGLRenderer,
@@ -29,6 +27,7 @@ import {
 import type { Camera } from 'three'
 import type { Material } from 'three'
 import { DEFAULT_PHYSICS_CONFIG } from '../physics/PhysicsWorld'
+import { createClothGeometry, createTableBedGeometry } from './TableGeometry'
 import type { RenderBall, Vec2 } from '../physics/PhysicsWorld'
 
 const TABLE_LENGTH = DEFAULT_PHYSICS_CONFIG.tableLength
@@ -284,31 +283,7 @@ export class GameRenderer {
     const halfLength = TABLE_LENGTH / 2
     const halfWidth = TABLE_WIDTH / 2
     const pocketRadius = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius + 0.012
-    const pocketCenters: Array<[number, number]> = [
-      [-halfLength, -halfWidth], [0, -halfWidth], [halfLength, -halfWidth],
-      [-halfLength, halfWidth], [0, halfWidth], [halfLength, halfWidth],
-    ]
-    const createBedShape = (outerMargin = pocketRadius + 0.006): Shape => {
-      const shape = new Shape()
-      shape.moveTo(-halfLength - outerMargin, -halfWidth - outerMargin)
-      shape.lineTo(halfLength + outerMargin, -halfWidth - outerMargin)
-      shape.lineTo(halfLength + outerMargin, halfWidth + outerMargin)
-      shape.lineTo(-halfLength - outerMargin, halfWidth + outerMargin)
-      shape.closePath()
-      for (const [x, z] of pocketCenters) {
-        const opening = new Path()
-        opening.absarc(x, -z, pocketRadius, 0, Math.PI * 2, true)
-        shape.holes.push(opening)
-      }
-      return shape
-    }
-
-    const bodyGeometry = new ExtrudeGeometry(createBedShape(0.21), {
-      depth: 0.2,
-      bevelEnabled: false,
-      curveSegments: 48,
-    })
-    bodyGeometry.rotateX(-Math.PI / 2)
+    const bodyGeometry = createTableBedGeometry()
     const body = new Mesh(bodyGeometry, wood)
     body.position.y = -0.22
     body.castShadow = true
@@ -316,8 +291,7 @@ export class GameRenderer {
     this.scene.add(body)
 
     // A matching cloth cut-out prevents the felt from bridging the pocket.
-    const feltShape = createBedShape()
-    const feltMesh = new Mesh(new ShapeGeometry(feltShape, 48), felt)
+    const feltMesh = new Mesh(createClothGeometry(), felt)
     feltMesh.rotation.x = -Math.PI / 2
     feltMesh.position.y = -0.015
     feltMesh.receiveShadow = true
