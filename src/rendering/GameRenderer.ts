@@ -456,8 +456,8 @@ export class GameRenderer {
     const legHeight = 0.72
     const legBottom = -0.22 - legHeight
     const legCenterY = -0.22 - legHeight / 2
-    const xPositions = [-halfLength + 0.24, halfLength - 0.24]
-    const zPositions = [-halfWidth + 0.18, halfWidth - 0.18]
+    const xPositions = [-halfLength - 0.02, halfLength + 0.02]
+    const zPositions = [-halfWidth - 0.02, halfWidth + 0.02]
 
     for (const x of xPositions) {
       for (const z of zPositions) {
