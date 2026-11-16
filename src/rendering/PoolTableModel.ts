@@ -45,6 +45,7 @@ export const POOL_TABLE_VISUAL_SPEC = {
   apronOutset: 0.13,
   supportBlockDepth: 0.17,
   centreSupportZFraction: 0.36,
+  crossBracePocketClearance: 0.012,
   floorY: -0.78,
   woodColor: '#75432f',
   feltColor: '#0d6842',
@@ -67,6 +68,19 @@ export const SIDE_RAIL_GAP_HALF = SIDE_POCKET_MOUTH_RADIUS + DEFAULT_PHYSICS_CON
 
 export function getPoolTableLongRailSegments() {
   return getLongRailSegments(HALF_LENGTH, SIDE_RAIL_GAP_HALF, CORNER_RAIL_CLEARANCE)
+}
+
+export function getPoolTableCrossBraceDepth(
+  x: number,
+  config: PhysicsConfig = DEFAULT_PHYSICS_CONFIG,
+): number {
+  if (Math.abs(x) < 1e-9) {
+    // The centre cross-bearer must stop before both side-pocket mouths.
+    return config.tableWidth - 2 * (
+      SIDE_POCKET_MOUTH_RADIUS + POOL_TABLE_VISUAL_SPEC.crossBracePocketClearance
+    )
+  }
+  return config.tableWidth + 0.08
 }
 
 export function getPoolTableSupportPositions(
@@ -510,7 +524,17 @@ function addApronAndSupports(
   const bearerY = -TABLE_BED_THICKNESS - 0.035
   addRoundedBox(group, darkWood, TABLE_LENGTH - 0.18, 0.075, 0.11, 0, bearerY, 0, 0.012)
   for (const x of [-TABLE_LENGTH * 0.40, 0, TABLE_LENGTH * 0.40]) {
-    addRoundedBox(group, darkWood, 0.09, 0.065, TABLE_WIDTH + 0.08, x, bearerY, 0, 0.01)
+    addRoundedBox(
+      group,
+      darkWood,
+      0.09,
+      0.065,
+      getPoolTableCrossBraceDepth(x),
+      x,
+      bearerY,
+      0,
+      0.01,
+    )
   }
 }
 
