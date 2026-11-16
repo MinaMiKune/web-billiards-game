@@ -341,7 +341,9 @@ export class GameRenderer {
     // Corner jaws are intentionally omitted until their mesh profile is built
     // from the same open-pocket contour as the bed. Box-shaped corner jaws
     // visually intruded into the mouth even when the rail endpoints were clear.
-    this.addSidePocketJaws(railWood, cushion, halfL, halfW, railY)
+    // Keep only the green rubber cushion noses at side pockets. Separate wood jaw blocks
+    // create orange slats that visibly intrude into the pocket mouths from the top view.
+    this.addSidePocketCushions(cushion, halfL, halfW, railY)
 
     const pocketPositions = [
       [-halfL, -halfW], [0, -halfW], [halfL, -halfW],
@@ -411,15 +413,13 @@ export class GameRenderer {
     return texture
   }
 
-  private addSidePocketJaws(
-    railWood: MeshStandardMaterial,
+  private addSidePocketCushions(
     cushion: MeshStandardMaterial,
     halfLength: number,
     halfWidth: number,
     railY: number,
   ): void {
-    const { pocketCaptureRadius, sidePocketHalfWidth, pocketJawDepth, ballRadius } =
-      DEFAULT_PHYSICS_CONFIG
+    const { sidePocketHalfWidth, pocketJawDepth, ballRadius } = DEFAULT_PHYSICS_CONFIG
     const sideJawInnerX = sidePocketHalfWidth + ballRadius
     for (const zSign of [-1, 1]) {
       for (const xSign of [-1, 1]) {
@@ -431,13 +431,13 @@ export class GameRenderer {
           x: xSign * (sideJawInnerX + pocketJawDepth),
           z: zSign * halfWidth,
         }
-        this.addAngledJaw(railWood, start, end, railY, 0.13, 0.035)
-        this.addAngledJaw(cushion, start, end, railY + 0.035, 0.045, 0.018)
+        this.addAngledCushionNose(cushion, start, end, railY + 0.035, 0.045, 0.018)
       }
     }
   }
 
-  private addAngledJaw(
+  /** Rubber-only jaw nose; wooden jaw blocks are intentionally absent from all pocket mouths. */
+  private addAngledCushionNose(
     material: MeshStandardMaterial,
     start: Vec2,
     end: Vec2,
@@ -450,12 +450,12 @@ export class GameRenderer {
     const length = Math.hypot(dx, dz)
     if (length <= 1e-6) return
 
-    const jaw = new Mesh(new BoxGeometry(length, height, width), material)
-    jaw.position.set((start.x + end.x) / 2, y, (start.z + end.z) / 2)
-    jaw.rotation.y = Math.atan2(-dz, dx)
-    jaw.castShadow = true
-    jaw.receiveShadow = true
-    this.scene.add(jaw)
+    const nose = new Mesh(new BoxGeometry(length, height, width), material)
+    nose.position.set((start.x + end.x) / 2, y, (start.z + end.z) / 2)
+    nose.rotation.y = Math.atan2(-dz, dx)
+    nose.castShadow = true
+    nose.receiveShadow = true
+    this.scene.add(nose)
   }
 
   private addBox(
