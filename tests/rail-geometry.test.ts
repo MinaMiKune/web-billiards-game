@@ -47,7 +47,7 @@ describe('reference-faithful table rail and pocket geometry', () => {
   it('uses a six-leg chassis and understated tournament-table finishes', () => {
     expect(POOL_TABLE_VISUAL_SPEC.pocketCount).toBe(6)
     expect(POOL_TABLE_VISUAL_SPEC.supportLegCount).toBe(6)
-    expect(POOL_TABLE_VISUAL_SPEC.woodColor).toBe('#542719')
+    expect(POOL_TABLE_VISUAL_SPEC.woodColor).toBe('#75432f')
     expect(POOL_TABLE_VISUAL_SPEC.feltColor).toBe('#0d6842')
     expect(POOL_TABLE_VISUAL_SPEC.cushionColor).toBe('#174b35')
 
