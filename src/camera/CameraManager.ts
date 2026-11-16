@@ -10,7 +10,7 @@ export type CameraMode = 'top' | 'angled' | 'side' | 'free'
 
 export class CameraManager {
   private readonly topCamera = new OrthographicCamera(-1.7, 1.7, 1, -1, 0.1, 30)
-  private readonly perspectiveCamera = new PerspectiveCamera(38, 1, 0.05, 40)
+  private readonly perspectiveCamera = new PerspectiveCamera(34, 1, 0.05, 40)
   private readonly orbitControls: OrbitControls
   private activeMode: CameraMode = 'top'
   private readonly target = new Vector3(0, 0, 0)
@@ -21,7 +21,7 @@ export class CameraManager {
     this.topCamera.position.set(0, 4.2, 0)
     this.topCamera.lookAt(this.target)
 
-    this.perspectiveCamera.position.set(2.7, 3.1, 3.4)
+    this.perspectiveCamera.position.set(2.0, 2.6, 2.6)
     this.perspectiveCamera.lookAt(this.target)
 
     this.orbitControls = new OrbitControls(this.perspectiveCamera, canvas)
@@ -53,21 +53,24 @@ export class CameraManager {
     this.orbitControls.enabled = mode === 'free'
 
     if (mode === 'top') {
+      this.target.set(0, 0, 0)
       this.topCamera.position.set(0, 4.2, 0)
       this.topCamera.lookAt(this.target)
       return
     }
 
-    this.orbitControls.target.copy(this.target)
-
     if (mode === 'angled') {
-      this.perspectiveCamera.position.set(2.7, 3.1, 3.4)
+      this.target.set(0, -0.22, 0)
+      this.perspectiveCamera.position.set(2.0, 2.6, 2.6)
     } else if (mode === 'side') {
-      this.perspectiveCamera.position.set(0, 0.92, 3.8)
+      this.target.set(0, -0.28, 0)
+      this.perspectiveCamera.position.set(0, 0.75, 3.1)
     } else {
-      this.perspectiveCamera.position.set(2.5, 3.0, 3.2)
+      this.target.set(0, 0, 0)
+      this.perspectiveCamera.position.set(2.0, 2.5, 2.6)
     }
 
+    this.orbitControls.target.copy(this.target)
     this.perspectiveCamera.lookAt(this.target)
     this.orbitControls.update()
   }
