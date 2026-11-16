@@ -5,6 +5,7 @@ import { DEFAULT_PHYSICS_CONFIG } from '../src/physics/PhysicsWorld'
 import {
   POOL_TABLE_VISUAL_SPEC,
   getPoolTableSupportPositions,
+  getPoolTableCrossBraceDepth,
 } from '../src/rendering/PoolTableModel'
 
 describe('reference-faithful pool table structure', () => {
@@ -50,9 +51,17 @@ describe('reference-faithful pool table structure', () => {
 
     const centreSupportOuterEdge = Math.abs(centreSupports[0].z) +
       POOL_TABLE_VISUAL_SPEC.supportBlockDepth / 2
-    expect(centreSupportOuterEdge).toBeLessThan(
-      DEFAULT_PHYSICS_CONFIG.tableWidth / 2 - SIDE_POCKET_MOUTH_RADIUS,
-    )
+    const sidePocketInnerEdge = DEFAULT_PHYSICS_CONFIG.tableWidth / 2 -
+      SIDE_POCKET_MOUTH_RADIUS
+    expect(centreSupportOuterEdge).toBeLessThan(sidePocketInnerEdge)
+
+    const centreCrossBraceHalfSpan = getPoolTableCrossBraceDepth(0) / 2
+    expect(centreCrossBraceHalfSpan).toBeLessThan(sidePocketInnerEdge)
+    expect(
+      sidePocketInnerEdge - centreCrossBraceHalfSpan,
+    ).toBeCloseTo(POOL_TABLE_VISUAL_SPEC.crossBracePocketClearance, 12)
+    expect(getPoolTableCrossBraceDepth(DEFAULT_PHYSICS_CONFIG.tableLength * 0.4))
+      .toBeGreaterThan(DEFAULT_PHYSICS_CONFIG.tableWidth)
   })
 
   it('uses restrained mahogany and tournament-green finish values', () => {
