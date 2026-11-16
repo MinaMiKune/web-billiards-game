@@ -1,10 +1,11 @@
-# Public Beta 0.3.0-beta.1
+# Public Beta 0.3.0-beta.2
 
 ## What this preview includes
 
 - Browser-based American 8-ball with local two-player and five AI difficulty levels.
 - Four camera views, touch/mouse aiming, power, spin and cue elevation controls.
-- Reworked 3D table presentation, ball materials, cue model, contact shadows and procedural sound/haptics.
+- Reworked 3D table presentation with six through-cut pocket mouths in both felt and wood, ball materials, cue model, contact shadows and procedural sound/haptics.
+- Separated cue-ball aiming gestures from free-camera orbit gestures; added geometry raycast regression coverage for all six pockets.
 - English, Simplified Chinese, Traditional Chinese and Japanese.
 
 ## Known limitations
