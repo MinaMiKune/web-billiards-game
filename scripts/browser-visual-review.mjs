@@ -13,7 +13,7 @@ async function captureTable(page, path) {
     path,
     fullPage: false,
     animations: 'disabled',
-    timeout: 25000,
+    timeout: 60000,
   })
 }
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 })
