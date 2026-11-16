@@ -61,9 +61,9 @@ export class CameraManager {
     this.orbitControls.target.copy(this.target)
 
     if (mode === 'angled') {
-      this.perspectiveCamera.position.set(2.7, 3.1, 3.4)
+      this.perspectiveCamera.position.set(2.0, 2.6, 2.6)
     } else if (mode === 'side') {
-      this.perspectiveCamera.position.set(0, 1.05, 3.1)
+      this.perspectiveCamera.position.set(0, 0.75, 3.1)
     } else {
       this.perspectiveCamera.position.set(2.0, 2.5, 2.6)
     }
