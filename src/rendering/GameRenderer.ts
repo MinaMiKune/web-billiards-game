@@ -288,12 +288,12 @@ export class GameRenderer {
       [-halfLength, -halfWidth], [0, -halfWidth], [halfLength, -halfWidth],
       [-halfLength, halfWidth], [0, halfWidth], [halfLength, halfWidth],
     ]
-    const createBedShape = (): Shape => {
+    const createBedShape = (outerMargin = pocketRadius + 0.006): Shape => {
       const shape = new Shape()
-      shape.moveTo(-halfLength, -halfWidth)
-      shape.lineTo(halfLength, -halfWidth)
-      shape.lineTo(halfLength, halfWidth)
-      shape.lineTo(-halfLength, halfWidth)
+      shape.moveTo(-halfLength - outerMargin, -halfWidth - outerMargin)
+      shape.lineTo(halfLength + outerMargin, -halfWidth - outerMargin)
+      shape.lineTo(halfLength + outerMargin, halfWidth + outerMargin)
+      shape.lineTo(-halfLength - outerMargin, halfWidth + outerMargin)
       shape.closePath()
       for (const [x, z] of pocketCenters) {
         const opening = new Path()
@@ -303,7 +303,7 @@ export class GameRenderer {
       return shape
     }
 
-    const bodyGeometry = new ExtrudeGeometry(createBedShape(), {
+    const bodyGeometry = new ExtrudeGeometry(createBedShape(0.21), {
       depth: 0.2,
       bevelEnabled: false,
       curveSegments: 48,
