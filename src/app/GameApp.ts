@@ -184,7 +184,7 @@ export class GameApp {
 
   private bindControls(root: HTMLElement): void {
     const canvas = this.renderer.canvas
-    canvas.addEventListener('pointerdown', this.onPointerDown)
+    canvas.addEventListener('pointerdown', this.onPointerDown, true)
     canvas.addEventListener('pointermove', this.onPointerMove)
     canvas.addEventListener('pointerup', this.onPointerUp)
     canvas.addEventListener('pointercancel', this.onPointerCancel)
@@ -419,6 +419,10 @@ export class GameApp {
     const cueHitRadius = event.pointerType === 'touch' ? 0.22 : 0.16
     if (Math.hypot(point.x - cue.x, point.z - cue.z) > cueHitRadius) return
 
+    // Run in the capture phase so OrbitControls never sees a cue-aim gesture.
+    // Aiming owns this pointer from the initial press through release; blank-table
+    // drags still bubble to OrbitControls and rotate the free camera normally.
+    event.stopImmediatePropagation()
     event.preventDefault()
     this.aiming = true
     this.aimPoint = point

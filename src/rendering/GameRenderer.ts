@@ -25,6 +25,7 @@ import {
 import type { Camera } from 'three'
 import type { Material } from 'three'
 import { DEFAULT_PHYSICS_CONFIG } from '../physics/PhysicsWorld'
+import { createClothGeometry, createTableBedGeometry } from './TableGeometry'
 import type { RenderBall, Vec2 } from '../physics/PhysicsWorld'
 
 const TABLE_LENGTH = DEFAULT_PHYSICS_CONFIG.tableLength
@@ -273,15 +274,22 @@ export class GameRenderer {
     const cushion = new MeshStandardMaterial({ color: '#174b3a', roughness: 0.88 })
     const felt = new MeshStandardMaterial({ color: '#176447', map: this.createSurfaceTexture('felt'), roughness: 0.94 })
     const pocket = new MeshStandardMaterial({ color: '#080c0b', roughness: 1 })
-    const pocketRim = new MeshStandardMaterial({ color: '#bd9b60', roughness: 0.45, metalness: 0.3 })
 
-    const body = new Mesh(new BoxGeometry(TABLE_LENGTH + 0.42, 0.2, TABLE_WIDTH + 0.42), wood)
-    body.position.y = -0.12
+    // The bed slab and cloth share the same six through-openings. Cutting
+    // only the cloth leaves the solid wood slab visible beneath every pocket,
+    // which is exactly the "mysterious blocker" seen from an angled camera.
+    const halfLength = TABLE_LENGTH / 2
+    const halfWidth = TABLE_WIDTH / 2
+    const pocketRadius = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius + 0.012
+    const bodyGeometry = createTableBedGeometry()
+    const body = new Mesh(bodyGeometry, wood)
+    body.position.y = -0.22
     body.castShadow = true
     body.receiveShadow = true
     this.scene.add(body)
 
-    const feltMesh = new Mesh(new PlaneGeometry(TABLE_LENGTH, TABLE_WIDTH), felt)
+    // A matching cloth cut-out prevents the felt from bridging the pocket.
+    const feltMesh = new Mesh(createClothGeometry(), felt)
     feltMesh.rotation.x = -Math.PI / 2
     feltMesh.position.y = -0.015
     feltMesh.receiveShadow = true
@@ -325,19 +333,20 @@ export class GameRenderer {
     ]
 
     for (const [x, z] of pocketPositions) {
-      const rim = new Mesh(new CircleGeometry(0.083, 32), pocketRim)
-      rim.rotation.x = -Math.PI / 2
-      rim.position.set(x, -0.004, z)
-      this.scene.add(rim)
-
-      const hole = new Mesh(new CircleGeometry(0.068, 32), pocket)
-      hole.rotation.x = -Math.PI / 2
-      hole.position.set(x, 0.001, z)
-      this.scene.add(hole)
-
-      const drop = new Mesh(new CylinderGeometry(0.067, 0.045, 0.065, 32), pocket)
-      drop.position.set(x, -0.052, z)
-      this.scene.add(drop)
+      // Recessed tapered pocket throat, fully below the cloth and bed surface.
+      // The dark bottom is lower still, creating visible depth from free-camera views.
+      const throat = new Mesh(
+        new CylinderGeometry(pocketRadius * 0.68, pocketRadius, 0.14, 48, 1, true),
+        pocket,
+      )
+      throat.position.set(x, -0.105, z)
+      throat.receiveShadow = true
+      this.scene.add(throat)
+      const well = new Mesh(new CircleGeometry(pocketRadius * 0.68, 48), pocket)
+      well.rotation.x = -Math.PI / 2
+      well.position.set(x, -0.178, z)
+      well.receiveShadow = true
+      this.scene.add(well)
     }
 
     const outerTrim = new Mesh(new BoxGeometry(TABLE_LENGTH + 0.46, 0.035, TABLE_WIDTH + 0.46), railWood)
@@ -411,10 +420,10 @@ export class GameRenderer {
           x: xSign * halfLength,
           z: zSign * (halfWidth - pocketCaptureRadius),
         }
-        this.addAngledJaw(railWood, longRailJawStart, innerTip, railY, 0.13, 0.09)
-        this.addAngledJaw(cushion, longRailJawStart, innerTip, railY + 0.035, 0.045, 0.035)
-        this.addAngledJaw(railWood, endRailJawStart, innerTip, railY, 0.13, 0.09)
-        this.addAngledJaw(cushion, endRailJawStart, innerTip, railY + 0.035, 0.045, 0.035)
+        this.addAngledJaw(railWood, longRailJawStart, innerTip, railY, 0.13, 0.035)
+        this.addAngledJaw(cushion, longRailJawStart, innerTip, railY + 0.035, 0.045, 0.018)
+        this.addAngledJaw(railWood, endRailJawStart, innerTip, railY, 0.13, 0.035)
+        this.addAngledJaw(cushion, endRailJawStart, innerTip, railY + 0.035, 0.045, 0.018)
       }
     }
 
@@ -429,8 +438,8 @@ export class GameRenderer {
           x: xSign * (sideJawInnerX + pocketJawDepth),
           z: zSign * halfWidth,
         }
-        this.addAngledJaw(railWood, start, end, railY, 0.13, 0.09)
-        this.addAngledJaw(cushion, start, end, railY + 0.035, 0.045, 0.035)
+        this.addAngledJaw(railWood, start, end, railY, 0.13, 0.035)
+        this.addAngledJaw(cushion, start, end, railY + 0.035, 0.045, 0.018)
       }
     }
   }
