@@ -451,6 +451,10 @@ function addApronAndSupports(
   const shortApronX = HALF_LENGTH + 0.105
   const longApronLength = TABLE_LENGTH + 0.24
   const shortApronLength = TABLE_WIDTH + 0.24
+  const supportBlockHeight = 0.105
+  const supportBlockY = apronY + 0.005
+  const legBottomY = POOL_TABLE_VISUAL_SPEC.floorY + 0.005
+  const legHeight = supportBlockY - supportBlockHeight / 2 - legBottomY
 
   for (const side of [-1, 1]) {
     addRoundedBox(
@@ -475,8 +479,6 @@ function addApronAndSupports(
   }
 
   const positions = getPoolTableSupportPositions()
-  const legHeight = 0.375
-  const legBottomY = POOL_TABLE_VISUAL_SPEC.floorY + 0.005
   const legScale = legHeight / 0.64
   const legProfile = [
     [0.054, 0],
@@ -497,8 +499,8 @@ function addApronAndSupports(
 
   for (const position of positions) {
     const supportBlock = addRoundedBox(
-      group, darkWood, 0.19, 0.105, 0.17,
-      position.x, -0.350, position.z, 0.018,
+      group, darkWood, 0.19, supportBlockHeight, 0.17,
+      position.x, supportBlockY, position.z, 0.018,
     )
     supportBlock.castShadow = true
 
@@ -525,11 +527,12 @@ function addApronAndSupports(
     group.add(foot)
   }
 
-  // Longitudinal slate bearer and three cross braces make the underside read
-  // as a supported table chassis, not a thin floating red board.
-  addRoundedBox(group, darkWood, TABLE_LENGTH - 0.18, 0.075, 0.11, 0, -0.405, 0, 0.012)
-  for (const x of [-HALF_LENGTH * 0.66, 0, HALF_LENGTH * 0.66]) {
-    addRoundedBox(group, darkWood, 0.09, 0.065, TABLE_WIDTH + 0.08, x, -0.405, 0, 0.01)
+  // Slate bearers sit immediately below the 45 mm bed and connect directly
+  // to the six leg blocks through three full-width cross braces.
+  const bearerY = -TABLE_BED_THICKNESS - 0.035
+  addRoundedBox(group, darkWood, TABLE_LENGTH - 0.18, 0.075, 0.11, 0, bearerY, 0, 0.012)
+  for (const x of [-TABLE_LENGTH * 0.40, 0, TABLE_LENGTH * 0.40]) {
+    addRoundedBox(group, darkWood, 0.09, 0.065, TABLE_WIDTH + 0.08, x, bearerY, 0, 0.01)
   }
 }
 
