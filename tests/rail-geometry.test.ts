@@ -35,7 +35,8 @@ describe('reference-faithful table rail and pocket geometry', () => {
       new URL('../src/rendering/GameRenderer.ts', import.meta.url),
       'utf8',
     )
-    expect(rendererSource).toContain("import { createPoolTableModel } from './PoolTableModel'")
+    expect(rendererSource).toContain("from './PoolTableModel'")
+    expect(rendererSource).toContain('createPoolTableModel(this.renderer')
     expect(rendererSource).toContain('this.scene.add(table)')
     expect(rendererSource).not.toContain('private addCornerPocketCaps')
     expect(rendererSource).not.toContain('private addAngledCushionNose')
