@@ -1,25 +1,21 @@
 import {
   ACESFilmicToneMapping,
   AmbientLight,
-  BoxGeometry,
   BufferGeometry,
   CanvasTexture,
   CircleGeometry,
   CylinderGeometry,
   Color,
   DirectionalLight,
-  ExtrudeGeometry,
   Line,
   LineBasicMaterial,
   Mesh,
   MeshBasicMaterial,
   Group,
   MeshStandardMaterial,
-  Path,
   PlaneGeometry,
   PCFSoftShadowMap,
   Scene,
-  Shape,
   SphereGeometry,
   SpotLight,
   Vector3,
@@ -28,12 +24,8 @@ import {
 } from 'three'
 import type { Camera } from 'three'
 import type { Material } from 'three'
-import { DEFAULT_PHYSICS_CONFIG } from '../physics/PhysicsWorld'
 import { createPoolTableModel } from './PoolTableModel'
 import type { RenderBall, Vec2 } from '../physics/PhysicsWorld'
-
-const TABLE_LENGTH = DEFAULT_PHYSICS_CONFIG.tableLength
-const TABLE_WIDTH = DEFAULT_PHYSICS_CONFIG.tableWidth
 
 function disposeMaterials(material: Material | Material[]): void {
   const materials = Array.isArray(material) ? material as Material[] : [material as Material]
