@@ -19,6 +19,7 @@ import {
 } from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { DEFAULT_PHYSICS_CONFIG, type PhysicsConfig } from '../physics/PhysicsWorld'
+import { getLongRailSegments } from './RailGeometry'
 import {
   CORNER_POCKET_MOUTH_RADIUS,
   SIDE_POCKET_MOUTH_RADIUS,
@@ -55,8 +56,13 @@ const HALF_WIDTH = TABLE_WIDTH / 2
 const RAIL_HEIGHT = POOL_TABLE_VISUAL_SPEC.railHeight
 const RAIL_DEPTH = POOL_TABLE_VISUAL_SPEC.railDepth
 const RAIL_Y = RAIL_HEIGHT / 2
-const CORNER_RAIL_CLEARANCE = CORNER_POCKET_MOUTH_RADIUS + 0.045
-const SIDE_RAIL_GAP_HALF = SIDE_POCKET_MOUTH_RADIUS + DEFAULT_PHYSICS_CONFIG.ballRadius + 0.018
+export const CORNER_RAIL_CLEARANCE = CORNER_POCKET_MOUTH_RADIUS + 0.045
+const SIDE_JAW_INNER_X = DEFAULT_PHYSICS_CONFIG.sidePocketHalfWidth + DEFAULT_PHYSICS_CONFIG.ballRadius
+export const SIDE_RAIL_GAP_HALF = SIDE_JAW_INNER_X + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
+
+export function getPoolTableLongRailSegments() {
+  return getLongRailSegments(HALF_LENGTH, SIDE_RAIL_GAP_HALF, CORNER_RAIL_CLEARANCE)
+}
 
 export function getPoolTableSupportPositions(
   config: PhysicsConfig = DEFAULT_PHYSICS_CONFIG,
@@ -280,14 +286,14 @@ function addSidePocketJaw(
   sideGapHalf: number,
   material: MeshStandardMaterial,
 ): void {
-  const innerX = DEFAULT_PHYSICS_CONFIG.sidePocketHalfWidth +
-    DEFAULT_PHYSICS_CONFIG.ballRadius * 0.72
-  const outerX = sideGapHalf + 0.006
+  const innerX = SIDE_JAW_INNER_X
+  const outerX = sideGapHalf
+  const jawInnerZ = HALF_WIDTH - DEFAULT_PHYSICS_CONFIG.pocketJawDepth
   const points: Array<[number, number]> = [
-    [xSign * outerX, zSign * (HALF_WIDTH + 0.010)],
-    [xSign * outerX, zSign * (HALF_WIDTH - 0.017)],
-    [xSign * innerX, zSign * (HALF_WIDTH - 0.053)],
-    [xSign * innerX, zSign * (HALF_WIDTH - 0.028)],
+    [xSign * outerX, zSign * (HALF_WIDTH + 0.006)],
+    [xSign * outerX, zSign * (HALF_WIDTH - 0.014)],
+    [xSign * innerX, zSign * (jawInnerZ - 0.008)],
+    [xSign * innerX, zSign * (jawInnerZ + 0.018)],
   ]
 
   const shape = new Shape()
@@ -318,10 +324,7 @@ function addRailRuns(
   railWood: MeshStandardMaterial,
   cushion: MeshStandardMaterial,
 ): void {
-  const longSegments: Array<[number, number]> = [
-    [-HALF_LENGTH + CORNER_RAIL_CLEARANCE, -SIDE_RAIL_GAP_HALF],
-    [SIDE_RAIL_GAP_HALF, HALF_LENGTH - CORNER_RAIL_CLEARANCE],
-  ]
+  const longSegments = getPoolTableLongRailSegments().map(({ start, end }) => [start, end] as const)
 
   // Long rails: the cushion nose is on the cloth-facing edge, not outside it.
   for (const side of [-1, 1]) {
