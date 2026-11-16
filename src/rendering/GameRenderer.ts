@@ -53,6 +53,8 @@ export class GameRenderer {
     // than the hard, nearly-black silhouettes from the previous renderer.
     this.renderer.shadowMap.enabled = true
     this.renderer.shadowMap.type = PCFSoftShadowMap
+    this.renderer.shadowMap.autoUpdate = false
+    this.renderer.shadowMap.needsUpdate = true
     this.renderer.setSize(host.clientWidth, host.clientHeight, false)
     this.renderer.domElement.setAttribute('aria-label', '3D pool table. Drag backwards from the cue ball to aim and release to shoot.')
     this.renderer.domElement.tabIndex = 0
@@ -232,7 +234,7 @@ export class GameRenderer {
     const key = new DirectionalLight('#fff3dc', 1.8)
     key.position.set(-2.8, 5.4, 3.2)
     key.castShadow = true
-    key.shadow.mapSize.set(2048, 2048)
+    key.shadow.mapSize.set(1024, 1024)
     key.shadow.radius = 5
     key.shadow.bias = -0.00012
     key.shadow.normalBias = 0.018
