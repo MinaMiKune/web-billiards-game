@@ -1,4 +1,4 @@
-import { ExtrudeGeometry, Path, Shape, ShapeGeometry } from 'three'
+import { CylinderGeometry, ExtrudeGeometry, Path, Shape, ShapeGeometry } from 'three'
 import { DEFAULT_PHYSICS_CONFIG, type PhysicsConfig } from '../physics/PhysicsWorld'
 
 export const TABLE_BED_THICKNESS = 0.045
@@ -65,5 +65,21 @@ export function createClothGeometry(
   return new ShapeGeometry(
     createPocketCutoutShape(config, SIDE_POCKET_MOUTH_RADIUS + 0.006),
     48,
+  )
+}
+
+
+/**
+ * Open-ended throat under a pocket mouth. Both ends remain open; the bag is
+ * a hanging cavity, never a flat disk that visually seals the pocket.
+ */
+export function createPocketThroatGeometry(mouthRadius: number): CylinderGeometry {
+  return new CylinderGeometry(
+    mouthRadius * 0.86,
+    mouthRadius * 0.55,
+    0.30,
+    48,
+    2,
+    true,
   )
 }
