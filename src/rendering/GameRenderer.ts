@@ -271,7 +271,9 @@ export class GameRenderer {
       new MeshStandardMaterial({ color: '#101b17', roughness: 0.95 }),
     )
     floor.rotation.x = -Math.PI / 2
-    floor.position.y = -0.27
+    // Keep the environment floor below the table feet; the old -0.27 plane hid
+    // almost the entire legs and made the table look like a floating slab.
+    floor.position.y = -1.05
     floor.receiveShadow = true
     this.scene.add(floor)
   }
