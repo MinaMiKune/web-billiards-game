@@ -47,7 +47,7 @@ export const POOL_TABLE_VISUAL_SPEC = {
   floorY: -0.78,
   woodColor: '#75432f',
   feltColor: '#0d6842',
-  cushionColor: '#174b35',
+  cushionColor: '#113c2a',
 } as const
 
 const TABLE_LENGTH = DEFAULT_PHYSICS_CONFIG.tableLength
@@ -219,7 +219,7 @@ function addPocketBag(
   leather: MeshStandardMaterial,
 ): void {
   const netMaterial = new MeshStandardMaterial({
-    color: '#211a16',
+    color: '#090807',
     roughness: 0.94,
     metalness: 0,
   })
@@ -253,7 +253,7 @@ function addPocketBag(
       new Vector3(x + cos * ringData[0].radius, middleY, z + sin * ringData[0].radius),
       new Vector3(x + cos * ringData[1].radius, bottomY, z + sin * ringData[1].radius),
     ])
-    const cord = new Mesh(new TubeGeometry(curve, 12, 0.0012, 4, false), netMaterial)
+    const cord = new Mesh(new TubeGeometry(curve, 12, 0.0004, 4, false), netMaterial)
     cord.castShadow = false
     group.add(cord)
   }
@@ -354,8 +354,8 @@ function addSidePocketJaw(
     { x: xSign * outerX, z: zSign * HALF_WIDTH },
     { x: xSign * innerX, z: zSign * jawInnerZ },
     material,
-    0.020,
-    0.009,
+    0.016,
+    0.006,
   )
 }
 
@@ -383,8 +383,8 @@ function addCornerPocketJaws(
   }
 
   // Two rounded rubber noses converge toward the leather corner pocket.
-  addCushionJawSegment(group, longRailStart, innerTip, material, 0.026, 0.009)
-  addCushionJawSegment(group, endRailStart, innerTip, material, 0.026, 0.009)
+  addCushionJawSegment(group, longRailStart, innerTip, material, 0.020, 0.006)
+  addCushionJawSegment(group, endRailStart, innerTip, material, 0.020, 0.006)
 }
 
 function addRailRuns(
