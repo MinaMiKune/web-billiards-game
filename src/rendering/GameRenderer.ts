@@ -24,7 +24,7 @@ import {
 } from 'three'
 import type { Camera } from 'three'
 import type { Material } from 'three'
-import { createPoolTableModel } from './PoolTableModel'
+import { createPoolTableModel, POOL_TABLE_VISUAL_SPEC } from './PoolTableModel'
 import type { RenderBall, Vec2 } from '../physics/PhysicsWorld'
 
 function disposeMaterials(material: Material | Material[]): void {
@@ -269,7 +269,7 @@ export class GameRenderer {
     floor.rotation.x = -Math.PI / 2
     // Keep the environment floor below the table feet; the old -0.27 plane hid
     // almost the entire legs and made the table look like a floating slab.
-    floor.position.y = -1.05
+    floor.position.y = POOL_TABLE_VISUAL_SPEC.floorY
     floor.receiveShadow = true
     this.scene.add(floor)
   }
