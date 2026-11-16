@@ -70,6 +70,7 @@ describe('reference-faithful pool table structure', () => {
     expect(POOL_TABLE_VISUAL_SPEC.woodColor).toBe('#75432f')
     expect(POOL_TABLE_VISUAL_SPEC.feltColor).toBe('#0d6842')
     expect(POOL_TABLE_VISUAL_SPEC.cushionColor).toBe('#113c2a')
+    expect(POOL_TABLE_VISUAL_SPEC.pocketJawColor).toBe('#236b45')
   })  
   it('keeps pocket interiors dark and free of top-down radial spokes', () => {
     const modelSource = readFileSync(
