@@ -29,8 +29,7 @@ import type { Camera } from 'three'
 import type { Material } from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { DEFAULT_PHYSICS_CONFIG } from '../physics/PhysicsWorld'
-import { CORNER_POCKET_MOUTH_RADIUS, SIDE_POCKET_MOUTH_RADIUS, createClothGeometry, createTableBedGeometry } from './TableGeometry'
-import { getLongRailSegments } from './RailGeometry'
+import { createPoolTableModel } from './PoolTableModel'
 import type { RenderBall, Vec2 } from '../physics/PhysicsWorld'
 
 const TABLE_LENGTH = DEFAULT_PHYSICS_CONFIG.tableLength
@@ -57,7 +56,7 @@ export class GameRenderer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
     this.renderer.outputColorSpace = SRGBColorSpace
     this.renderer.toneMapping = ACESFilmicToneMapping
-    this.renderer.toneMappingExposure = 1.32
+    this.renderer.toneMappingExposure = 1.12
     // The old real-time shadow maps produced large, near-black rail silhouettes
     // across the cloth in every camera. Ball contact shadows are rendered as
     // dedicated soft discs, so disable the harsh global shadow map.
@@ -279,128 +278,9 @@ export class GameRenderer {
   }
 
   private addTable(): void {
-    const wood = new MeshStandardMaterial({ color: '#a43a2b', map: this.createSurfaceTexture('wood'), roughness: 0.24, metalness: 0.025 })
-    const railWood = new MeshStandardMaterial({ color: '#a33b2c', map: this.createSurfaceTexture('wood'), roughness: 0.22, metalness: 0.035 })
-    const cushion = new MeshStandardMaterial({ color: '#087b45', roughness: 0.82 })
-    const felt = new MeshStandardMaterial({ color: '#12a85a', emissive: '#07542c', emissiveIntensity: 0.28, map: this.createSurfaceTexture('felt'), roughness: 0.94 })
-    const pocket = new MeshStandardMaterial({ color: '#050706', roughness: 1 })
-    const sight = new MeshStandardMaterial({ color: '#e8dfc9', roughness: 0.34, metalness: 0.08 })
-
-    // The bed slab and cloth share the same six through-openings. Cutting
-    // only the cloth leaves the solid wood slab visible beneath every pocket,
-    // which is exactly the "mysterious blocker" seen from an angled camera.
-    const halfLength = TABLE_LENGTH / 2
-    const halfWidth = TABLE_WIDTH / 2
-    const pocketClearance = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius + 0.012
-    const bodyGeometry = createTableBedGeometry()
-    const body = new Mesh(bodyGeometry, wood)
-    body.position.y = -0.22
-    body.castShadow = true
-    body.receiveShadow = true
-    this.scene.add(body)
-    this.addTableLegs(wood, halfLength, halfWidth)
-
-    // A matching cloth cut-out prevents the felt from bridging the pocket.
-    const feltMesh = new Mesh(createClothGeometry(), felt)
-    feltMesh.rotation.x = -Math.PI / 2
-    feltMesh.position.y = -0.015
-    feltMesh.receiveShadow = true
-    this.scene.add(feltMesh)
-
-    const headStringGeometry = new BufferGeometry().setFromPoints([
-      new Vector3(-TABLE_LENGTH / 4, -0.013, -TABLE_WIDTH / 2 + 0.025),
-      new Vector3(-TABLE_LENGTH / 4, -0.013, TABLE_WIDTH / 2 - 0.025),
-    ])
-    const headString = new Line(
-      headStringGeometry,
-      new LineBasicMaterial({ color: '#d7c49a', transparent: true, opacity: 0.5 }),
-    )
-    this.scene.add(headString)
-
-    const halfL = TABLE_LENGTH / 2
-    const halfW = TABLE_WIDTH / 2
-    const railHeight = 0.13
-    const railDepth = 0.14
-    const railY = 0.045
-    const sideJawInnerX = DEFAULT_PHYSICS_CONFIG.sidePocketHalfWidth +
-      DEFAULT_PHYSICS_CONFIG.ballRadius
-    const sideJawOuterX = sideJawInnerX + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
-    // Long rails must stop before BOTH corner pockets and the side pocket.
-    // The old two-piece layout started at the table corners, laying solid wood
-    // directly across the corner-pocket mouths (visible as rectangular blockers).
-    // Leave the complete pocket radius, ball radius, and rail half-depth clear.
-    // The additional 0.10m is a deliberate visual/trajectory margin: rail ends
-    // must not hang over the circular mouth from a top or oblique camera.
-    const cornerRailClearance = 0.10
-    const railSegments = getLongRailSegments(halfL, sideJawOuterX, cornerRailClearance)
-
-    for (const side of [-1, 1]) {
-      for (const segment of railSegments) {
-        const segmentLength = segment.end - segment.start
-        const segmentCenter = (segment.start + segment.end) / 2
-        this.addRoundedBox(railWood, segmentLength, railHeight, railDepth, segmentCenter, railY, side * (halfW + 0.065), 0, 0.018)
-        // Recess the cushion at the corner end, but overlap the angled side-pocket
-        // nose by 25mm. A symmetric inset leaves a visible detached green tab.
-        const pocketSide = Math.sign(segment.center)
-        const cushionStart = segment.start + 0.03 + (pocketSide > 0 ? 0.025 : 0)
-        const cushionEnd = segment.end - 0.03 - (pocketSide < 0 ? 0.025 : 0)
-        const cushionLength = cushionEnd - cushionStart
-        const cushionCenter = (cushionStart + cushionEnd) / 2
-        this.addRoundedBox(cushion, cushionLength, 0.045, 0.035, cushionCenter, railY + 0.035, side * (halfW + 0.005), 0, 0.008)
-      }
-
-      // Short end rails sit between the two corner pockets; they do not cross
-      // either mouth because their length is already inset from both corners.
-      const endRailLength = TABLE_WIDTH - 2 * cornerRailClearance
-      this.addRoundedBox(railWood, railDepth, railHeight, endRailLength, side * (halfL + 0.065), railY, 0, 0, 0.018)
-      const endCushionLength = Math.max(0.04, endRailLength - 0.06)
-      this.addRoundedBox(cushion, 0.035, 0.045, endCushionLength, side * (halfL + 0.005), railY + 0.035, 0, 0, 0.008)
-    }
-
-    // Rounded wooden corner caps surround each corner pocket. The circular
-    // cut-out is a true hole in the cap; the adjacent straight rails overlap
-    // the cap slightly so the frame reads as one continuous rounded rectangle.
-    this.addCornerPocketCaps(railWood, halfL, halfW, railY, railHeight)
-
-    // Side-pocket rubber noses form the characteristic angled jaws.
-    this.addSidePocketCushions(cushion, halfL, halfW, railY)
-
-    // Ivory diamond sights sit flush on the red-mahogany rail caps, never over a pocket.
-    const sightXs = [-0.96, -0.64, -0.32, 0.32, 0.64, 0.96]
-    for (const side of [-1, 1]) {
-      for (const x of sightXs) this.addDiamondSight(sight, x, side * (halfW + 0.065), railY + railHeight / 2 + 0.004)
-      for (const z of [-0.32, 0, 0.32]) this.addDiamondSight(sight, side * (halfL + 0.065), z, railY + railHeight / 2 + 0.004)
-    }
-
-    const pocketPositions = [
-      [-halfL, -halfW], [0, -halfW], [halfL, -halfW],
-      [-halfL, halfW], [0, halfW], [halfL, halfW],
-    ]
-
-    for (let index = 0; index < pocketPositions.length; index += 1) {
-      const [x, z] = pocketPositions[index]
-      // WPA mouth dimensions: 4 corner openings at 4.5in and 2 side openings at 5in.
-      // The dark throat and well are narrower than the rim, leaving a clear entry.
-      const mouthRadius = index === 1 || index === 4
-        ? SIDE_POCKET_MOUTH_RADIUS
-        : CORNER_POCKET_MOUTH_RADIUS
-      const throatRadius = mouthRadius * 0.72
-      const throat = new Mesh(
-        new CylinderGeometry(throatRadius, mouthRadius, 0.14, 48, 1, true),
-        pocket,
-      )
-      throat.position.set(x, -0.105, z)
-      throat.receiveShadow = true
-      this.scene.add(throat)
-      const well = new Mesh(new CircleGeometry(throatRadius, 48), pocket)
-      well.rotation.x = -Math.PI / 2
-      well.position.set(x, -0.178, z)
-      well.receiveShadow = true
-      this.scene.add(well)
-    }
-
+    const table = createPoolTableModel(this.renderer.capabilities.getMaxAnisotropy())
+    this.scene.add(table)
   }
-
 
   private createCueStick(): void {
     const shaft = new Mesh(new CylinderGeometry(0.0032, 0.0082, 0.86, 16, 1), new MeshStandardMaterial({ color: '#d8b47c', roughness: 0.34 }))
