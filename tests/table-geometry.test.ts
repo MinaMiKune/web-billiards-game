@@ -22,7 +22,8 @@ function rayHits(mesh: Mesh, x: number, z: number): boolean {
 }
 
 describe('table pocket cutout geometry', () => {
-  it('cuts six openings through the full wood bed slab', () => {
+  it('uses a realistic 45 mm bed slab and cuts six through-openings', () => {
+    expect(TABLE_BED_THICKNESS).toBe(0.045)
     const mesh = new Mesh(createTableBedGeometry(), new MeshBasicMaterial())
     mesh.position.y = -TABLE_BED_THICKNESS
 
@@ -37,7 +38,7 @@ describe('table pocket cutout geometry', () => {
 
   it('keeps the full ball-entry quadrant clear at every corner mouth', () => {
     const mesh = new Mesh(createTableBedGeometry(), new MeshBasicMaterial())
-    mesh.position.y = -0.22
+    mesh.position.y = -TABLE_BED_THICKNESS
     const inset = CORNER_POCKET_MOUTH_RADIUS * 0.58
     for (const xSign of [-1, 1]) {
       for (const zSign of [-1, 1]) {
@@ -52,7 +53,7 @@ describe('table pocket cutout geometry', () => {
 
   it('uses regulation-sized corner and side pocket mouths', () => {
     const mesh = new Mesh(createTableBedGeometry(), new MeshBasicMaterial())
-    mesh.position.y = -0.22
+    mesh.position.y = -TABLE_BED_THICKNESS
     // Corner mouth is 4.5in wide; side mouth is 5in wide.
     expect(rayHits(mesh, halfLength - 0.035, halfWidth - 0.035)).toBe(false)
     expect(rayHits(mesh, halfLength - 0.052, halfWidth - 0.052)).toBe(true)
