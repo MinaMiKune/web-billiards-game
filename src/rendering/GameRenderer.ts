@@ -2,6 +2,7 @@ import {
   ACESFilmicToneMapping,
   AmbientLight,
   BoxGeometry,
+  RoundedBoxGeometry,
   BufferGeometry,
   CanvasTexture,
   CircleGeometry,
@@ -53,8 +54,11 @@ export class GameRenderer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
     this.renderer.outputColorSpace = SRGBColorSpace
     this.renderer.toneMapping = ACESFilmicToneMapping
-    this.renderer.toneMappingExposure = 1.12
-    this.renderer.shadowMap.enabled = true
+    this.renderer.toneMappingExposure = 1.32
+    // The old real-time shadow maps produced large, near-black rail silhouettes
+    // across the cloth in every camera. Ball contact shadows are rendered as
+    // dedicated soft discs, so disable the harsh global shadow map.
+    this.renderer.shadowMap.enabled = false
     this.renderer.setSize(host.clientWidth, host.clientHeight, false)
     this.renderer.domElement.setAttribute('aria-label', '3D pool table. Drag backwards from the cue ball to aim and release to shoot.')
     this.renderer.domElement.tabIndex = 0
@@ -229,11 +233,11 @@ export class GameRenderer {
   }
 
   private addLighting(): void {
-    this.scene.add(new AmbientLight('#c5d4c8', 1.2))
+    this.scene.add(new AmbientLight('#d9e8dc', 1.85))
 
-    const key = new DirectionalLight('#fff0d0', 2.35)
+    const key = new DirectionalLight('#fff3dc', 2.65)
     key.position.set(-2.8, 5.4, 3.2)
-    key.castShadow = true
+    key.castShadow = false
     key.shadow.mapSize.set(1024, 1024)
     key.shadow.camera.left = -3.5
     key.shadow.camera.right = 3.5
@@ -243,17 +247,17 @@ export class GameRenderer {
 
     // Soft overhead pool-hall light keeps the cloth and numbered balls readable
     // across the top, angled and side cameras without changing physics state.
-    const overhead = new SpotLight('#f6e8c9', 1.15, 9, 0.48, 0.68, 1.5)
+    const overhead = new SpotLight('#fff0d4', 1.75, 10, 0.58, 0.62, 1.5)
     overhead.position.set(0, 5.4, 0)
     overhead.target.position.set(0, 0, 0)
-    overhead.castShadow = true
+    overhead.castShadow = false
     overhead.shadow.mapSize.set(1024, 1024)
     overhead.shadow.camera.near = 0.5
     overhead.shadow.camera.far = 9
     overhead.shadow.bias = -0.00015
     this.scene.add(overhead, overhead.target)
 
-    const fill = new DirectionalLight('#7fae9a', 0.72)
+    const fill = new DirectionalLight('#9ed5b2', 1.15)
     fill.position.set(3.5, 2.5, -3)
     this.scene.add(fill)
   }
@@ -270,10 +274,10 @@ export class GameRenderer {
   }
 
   private addTable(): void {
-    const wood = new MeshStandardMaterial({ color: '#74221d', map: this.createSurfaceTexture('wood'), roughness: 0.3 })
-    const railWood = new MeshStandardMaterial({ color: '#852820', map: this.createSurfaceTexture('wood'), roughness: 0.26 })
-    const cushion = new MeshStandardMaterial({ color: '#12623e', roughness: 0.88 })
-    const felt = new MeshStandardMaterial({ color: '#078b49', map: this.createSurfaceTexture('felt'), roughness: 0.94 })
+    const wood = new MeshStandardMaterial({ color: '#a43a2b', map: this.createSurfaceTexture('wood'), roughness: 0.34 })
+    const railWood = new MeshStandardMaterial({ color: '#a33b2c', map: this.createSurfaceTexture('wood'), roughness: 0.3 })
+    const cushion = new MeshStandardMaterial({ color: '#087b45', roughness: 0.82 })
+    const felt = new MeshStandardMaterial({ color: '#12a85a', emissive: '#07542c', emissiveIntensity: 0.28, map: this.createSurfaceTexture('felt'), roughness: 0.94 })
     const pocket = new MeshStandardMaterial({ color: '#050706', roughness: 1 })
     const sight = new MeshStandardMaterial({ color: '#e8dfc9', roughness: 0.34, metalness: 0.08 })
 
@@ -328,22 +332,49 @@ export class GameRenderer {
       for (const segment of railSegments) {
         const segmentLength = segment.end - segment.start
         const segmentCenter = (segment.start + segment.end) / 2
-        this.addBox(railWood, segmentLength, railHeight, railDepth, segmentCenter, railY, side * (halfW + 0.065))
-        this.addBox(cushion, segmentLength, 0.045, 0.035, segmentCenter, railY + 0.035, side * (halfW + 0.005))
+        this.addRoundedBox(railWood, segmentLength, railHeight, railDepth, segmentCenter, railY, side * (halfW + 0.065), 0, 0.018)
+        this.addRoundedBox(cushion, segmentLength, 0.045, 0.035, segmentCenter, railY + 0.035, side * (halfW + 0.005), 0, 0.008)
       }
 
       // Short end rails sit between the two corner pockets; they do not cross
       // either mouth because their length is already inset from both corners.
       const endRailLength = TABLE_WIDTH - 2 * cornerRailClearance
-      this.addBox(railWood, railDepth, railHeight, endRailLength, side * (halfL + 0.065), railY, 0)
-      this.addBox(cushion, 0.035, 0.045, endRailLength, side * (halfL + 0.005), railY + 0.035, 0)
+      this.addRoundedBox(railWood, railDepth, railHeight, endRailLength, side * (halfL + 0.065), railY, 0, Math.PI / 2, 0.018)
+      this.addRoundedBox(cushion, 0.035, 0.045, endRailLength, side * (halfL + 0.005), railY + 0.035, 0, Math.PI / 2, 0.008)
     }
 
-    // Corner jaws are intentionally omitted until their mesh profile is built
-    // from the same open-pocket contour as the bed. Box-shaped corner jaws
-    // visually intruded into the mouth even when the rail endpoints were clear.
-    // Keep only the green rubber cushion noses at side pockets. Separate wood jaw blocks
-    // create orange slats that visibly intrude into the pocket mouths from the top view.
+    // Rounded diagonal corner assemblies connect the long and end rails.
+    // Their inner edges sit outside the 4.5in pocket mouths, leaving the
+    // diagonal entry visibly open instead of four disconnected floating rails.
+    for (const xSign of [-1, 1]) {
+      for (const zSign of [-1, 1]) {
+        const start = {
+          x: xSign * (halfL - cornerRailClearance),
+          z: zSign * (halfW + 0.065),
+        }
+        const end = {
+          x: xSign * (halfL + 0.065),
+          z: zSign * (halfW - cornerRailClearance),
+        }
+        const dx = end.x - start.x
+        const dz = end.z - start.z
+        const length = Math.hypot(dx, dz)
+        const angle = Math.atan2(-dz, dx)
+        const centerX = (start.x + end.x) / 2
+        const centerZ = (start.z + end.z) / 2
+        this.addRoundedBox(railWood, length, railHeight, railDepth, centerX, railY, centerZ, angle, 0.018)
+        this.addAngledCushionNose(
+          cushion,
+          { x: start.x - xSign * 0.025, z: start.z - zSign * 0.025 },
+          { x: end.x - xSign * 0.025, z: end.z - zSign * 0.025 },
+          railY + 0.035,
+          0.045,
+          0.018,
+        )
+      }
+    }
+
+    // Side-pocket rubber noses form the characteristic angled jaws.
     this.addSidePocketCushions(cushion, halfL, halfW, railY)
 
     // Ivory diamond sights sit flush on the red-mahogany rail caps, never over a pocket.
@@ -380,9 +411,6 @@ export class GameRenderer {
       this.scene.add(well)
     }
 
-    const outerTrim = new Mesh(new BoxGeometry(TABLE_LENGTH + 0.46, 0.035, TABLE_WIDTH + 0.46), railWood)
-    outerTrim.position.y = -0.225
-    this.scene.add(outerTrim)
   }
 
 
@@ -409,16 +437,16 @@ export class GameRenderer {
     if (!context) throw new Error('Could not create a procedural table texture')
     if (kind === 'wood') {
       const grain = context.createLinearGradient(0, 0, 512, 512)
-      grain.addColorStop(0, '#4d1112')
-      grain.addColorStop(0.32, '#81241e')
-      grain.addColorStop(0.68, '#651916')
-      grain.addColorStop(1, '#3e1011')
+      grain.addColorStop(0, '#6e1b18')
+      grain.addColorStop(0.32, '#a53a2d')
+      grain.addColorStop(0.68, '#84231e')
+      grain.addColorStop(1, '#581512')
       context.fillStyle = grain; context.fillRect(0, 0, 512, 512)
       // Reproducible flowing mahogany grain: stable between reloads and devices.
       for (let i = 0; i < 150; i += 1) {
         const y = (i * 37) % 512
         const wave = (i % 7) * 2.4
-        context.strokeStyle = i % 5 === 0 ? 'rgba(24,5,5,0.30)' : 'rgba(235,157,116,0.13)'
+        context.strokeStyle = i % 5 === 0 ? 'rgba(24,5,5,0.18)' : 'rgba(255,190,150,0.16)'
         context.lineWidth = 1 + (i % 4)
         context.beginPath(); context.moveTo(0, y)
         context.bezierCurveTo(160, y - 14 + wave, 340, y + 18 - wave, 512, y + ((i % 9) - 4) * 2.5); context.stroke()
@@ -426,13 +454,13 @@ export class GameRenderer {
       const sheen = context.createLinearGradient(0, 0, 0, 512)
       sheen.addColorStop(0, 'rgba(255,210,170,0.12)')
       sheen.addColorStop(0.48, 'rgba(0,0,0,0)')
-      sheen.addColorStop(1, 'rgba(0,0,0,0.22)')
+      sheen.addColorStop(1, 'rgba(0,0,0,0.10)')
       context.fillStyle = sheen; context.fillRect(0, 0, 512, 512)
     } else {
       const cloth = context.createRadialGradient(256, 256, 24, 256, 256, 360)
-      cloth.addColorStop(0, '#079b50')
-      cloth.addColorStop(0.72, '#087c43')
-      cloth.addColorStop(1, '#064d32')
+      cloth.addColorStop(0, '#12b95f')
+      cloth.addColorStop(0.72, '#0b984e')
+      cloth.addColorStop(1, '#08713e')
       context.fillStyle = cloth; context.fillRect(0, 0, 512, 512)
       for (let y = 0; y < 512; y += 3) { context.fillStyle = y % 6 === 0 ? 'rgba(255,255,255,0.035)' : 'rgba(0,20,12,0.035)'; context.fillRect(0, y, 512, 1) }
       for (let x = 0; x < 512; x += 3) { context.fillStyle = x % 6 === 0 ? 'rgba(255,255,255,0.025)' : 'rgba(0,20,12,0.025)'; context.fillRect(x, 0, 1, 512) }
@@ -495,9 +523,32 @@ export class GameRenderer {
     const nose = new Mesh(new BoxGeometry(length, height, width), material)
     nose.position.set((start.x + end.x) / 2, y, (start.z + end.z) / 2)
     nose.rotation.y = Math.atan2(-dz, dx)
-    nose.castShadow = true
-    nose.receiveShadow = true
+    nose.castShadow = false
+    nose.receiveShadow = false
     this.scene.add(nose)
+  }
+
+  private addRoundedBox(
+    material: MeshStandardMaterial,
+    length: number,
+    height: number,
+    depth: number,
+    x: number,
+    y: number,
+    z: number,
+    rotationY: number,
+    radius: number,
+  ): void {
+    const safeRadius = Math.min(radius, height * 0.24, depth * 0.24, length * 0.12)
+    const mesh = new Mesh(
+      new RoundedBoxGeometry(length, height, depth, 4, safeRadius),
+      material,
+    )
+    mesh.position.set(x, y, z)
+    mesh.rotation.y = rotationY
+    mesh.receiveShadow = false
+    mesh.castShadow = false
+    this.scene.add(mesh)
   }
 
   private addBox(
