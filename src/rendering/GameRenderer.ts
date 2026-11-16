@@ -599,9 +599,19 @@ export class GameRenderer {
     const length = Math.hypot(dx, dz)
     if (length <= 1e-6) return
 
-    const nose = new Mesh(new BoxGeometry(length, height, width), material)
-    nose.position.set((start.x + end.x) / 2, y, (start.z + end.z) / 2)
-    nose.rotation.y = Math.atan2(-dz, dx)
+    // A cushion jaw is a tapered wedge, not a rectangular green slat.
+    // Its pointed end faces the cloth; its broad base overlaps the straight rail.
+    const perpendicularX = (-dz / length) * (width / 2)
+    const perpendicularZ = (dx / length) * (width / 2)
+    const wedge = new Shape()
+    wedge.moveTo(start.x, start.z)
+    wedge.lineTo(end.x + perpendicularX, end.z + perpendicularZ)
+    wedge.lineTo(end.x - perpendicularX, end.z - perpendicularZ)
+    wedge.closePath()
+    const geometry = new ExtrudeGeometry(wedge, { depth: height, bevelEnabled: false, curveSegments: 8 })
+    geometry.rotateX(-Math.PI / 2)
+    const nose = new Mesh(geometry, material)
+    nose.position.y = y - height / 2
     nose.castShadow = false
     nose.receiveShadow = false
     this.scene.add(nose)
