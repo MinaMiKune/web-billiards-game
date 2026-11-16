@@ -41,6 +41,8 @@ describe('pocket jaw materials', () => {
     expect(rendererSource).not.toContain('addAngledJaw(railWood')
     expect(rendererSource).toContain('addSidePocketCushions(cushion')
     expect(rendererSource).toContain('addAngledCushionNose(cushion')
+    expect(rendererSource).toContain('segmentLength - 0.06')
+    expect(rendererSource).toContain('endRailLength - 0.06')
   })
 })
 
