@@ -2,9 +2,12 @@
 export class TactileFeedback {
   private enabled = true
   private readonly supported = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
+  private lastPulseAt = Number.NEGATIVE_INFINITY
+  private static readonly MIN_PULSE_INTERVAL_MS = 36
 
   setEnabled(enabled: boolean): void {
     this.enabled = enabled
+    if (!enabled) this.stopVibration()
   }
 
   shot(power: number): void {
@@ -26,13 +29,23 @@ export class TactileFeedback {
   }
 
   dispose(): void {
-    if (this.supported) {
-      try { navigator.vibrate(0) } catch { /* Device feedback is optional. */ }
-    }
+    this.stopVibration()
+  }
+
+  private stopVibration(): void {
+    if (!this.supported) return
+    try { navigator.vibrate(0) } catch { /* Device feedback is optional. */ }
   }
 
   private pulse(pattern: number | number[]): void {
-    if (!this.enabled || !this.supported || document.visibilityState === 'hidden') return
+    if (!this.enabled || !this.supported) return
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+
+    // Contact events can arrive on consecutive render frames. Throttle the
+    // physical vibration channel so sustained contacts do not become a buzz.
+    const now = Date.now()
+    if (now - this.lastPulseAt < TactileFeedback.MIN_PULSE_INTERVAL_MS) return
+    this.lastPulseAt = now
     try { navigator.vibrate(pattern) } catch { /* iOS and some browsers do not expose vibration. */ }
   }
 }
