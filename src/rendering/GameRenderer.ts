@@ -341,7 +341,7 @@ export class GameRenderer {
     // Corner jaws are intentionally omitted until their mesh profile is built
     // from the same open-pocket contour as the bed. Box-shaped corner jaws
     // visually intruded into the mouth even when the rail endpoints were clear.
-    this.addSidePocketJaws(railWood, cushion, halfW, railY)
+    this.addSidePocketJaws(railWood, cushion, halfL, halfW, railY)
 
     const pocketPositions = [
       [-halfL, -halfW], [0, -halfW], [halfL, -halfW],
