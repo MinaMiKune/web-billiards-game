@@ -41,10 +41,10 @@ export interface TableSupportPosition {
 export const POOL_TABLE_VISUAL_SPEC = {
   pocketCount: 6,
   supportLegCount: 6,
-  railHeight: 0.11,
+  railHeight: 0.075,
   railDepth: 0.15,
   apronHeight: 0.18,
-  floorY: -1.05,
+  floorY: -0.78,
   woodColor: '#75432f',
   feltColor: '#0d6842',
   cushionColor: '#174b35',
@@ -322,7 +322,7 @@ function addCushionJawSegment(
   shape.closePath()
 
   const geometry = new ExtrudeGeometry(shape, {
-    depth: 0.043,
+    depth: 0.039,
     bevelEnabled: true,
     bevelSegments: 2,
     bevelSize: 0.002,
@@ -406,7 +406,7 @@ function addRailRuns(
         group,
         cushion,
         Math.max(0.04, length - 0.018),
-        0.047,
+        0.039,
         0.036,
         center,
         0.022,
@@ -428,7 +428,7 @@ function addRailRuns(
       group,
       cushion,
       0.036,
-      0.047,
+      0.039,
       endLength - 0.018,
       endCushionX,
       0.022,
@@ -475,22 +475,23 @@ function addApronAndSupports(
   }
 
   const positions = getPoolTableSupportPositions()
-  const legHeight = 0.64
+  const legHeight = 0.375
   const legBottomY = POOL_TABLE_VISUAL_SPEC.floorY + 0.005
+  const legScale = legHeight / 0.64
   const legProfile = [
-    new Vector2(0.054, 0),
-    new Vector2(0.064, 0.035),
-    new Vector2(0.059, 0.075),
-    new Vector2(0.046, 0.13),
-    new Vector2(0.052, 0.19),
-    new Vector2(0.073, 0.245),
-    new Vector2(0.079, 0.29),
-    new Vector2(0.067, 0.34),
-    new Vector2(0.052, 0.405),
-    new Vector2(0.048, 0.49),
-    new Vector2(0.059, 0.555),
-    new Vector2(0.071, legHeight),
-  ]
+    [0.054, 0],
+    [0.064, 0.035],
+    [0.059, 0.075],
+    [0.046, 0.13],
+    [0.052, 0.19],
+    [0.073, 0.245],
+    [0.079, 0.29],
+    [0.067, 0.34],
+    [0.052, 0.405],
+    [0.048, 0.49],
+    [0.059, 0.555],
+    [0.071, 0.64],
+  ].map(([radius, height]) => new Vector2(radius, height * legScale))
   const legGeometry = new LatheGeometry(legProfile, 28)
   legGeometry.computeVertexNormals()
 
