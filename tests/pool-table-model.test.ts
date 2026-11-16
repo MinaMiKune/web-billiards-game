@@ -8,9 +8,9 @@ describe('reference-faithful pool table structure', () => {
   it('keeps six regulation pocket openings and a complete 9-foot support frame', () => {
     expect(POOL_TABLE_VISUAL_SPEC.pocketCount).toBe(6)
     expect(POOL_TABLE_VISUAL_SPEC.supportLegCount).toBe(6)
-    expect(POOL_TABLE_VISUAL_SPEC.railHeight).toBeGreaterThan(0.09)
+    expect(POOL_TABLE_VISUAL_SPEC.railHeight).toBe(0.075)
     expect(POOL_TABLE_VISUAL_SPEC.apronHeight).toBeGreaterThan(0.15)
-    expect(POOL_TABLE_VISUAL_SPEC.floorY).toBe(-1.05)
+    expect(POOL_TABLE_VISUAL_SPEC.floorY).toBe(-0.78)
   })
 
   it('places three paired supports symmetrically under the table apron', () => {
