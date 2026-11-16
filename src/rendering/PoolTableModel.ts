@@ -378,6 +378,7 @@ function addRailRuns(
   group: Group,
   railWood: MeshStandardMaterial,
   cushion: MeshStandardMaterial,
+  pocketJaw: MeshStandardMaterial,
 ): void {
   const longSegments = getPoolTableLongRailSegments().map(({ start, end }) => [start, end] as const)
 
@@ -602,7 +603,7 @@ export function createPoolTableModel(maxAnisotropy = 4): Group {
   cloth.receiveShadow = true
   group.add(cloth)
 
-  addRailRuns(group, railWood, cushion)
+  addRailRuns(group, railWood, cushion, pocketJaw)
   for (const xSign of [-1, 1]) {
     for (const zSign of [-1, 1]) {
       addCornerPocketJaws(group, xSign, zSign, pocketJaw)
