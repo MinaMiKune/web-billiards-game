@@ -7,6 +7,7 @@ import {
   CircleGeometry,
   Color,
   CylinderGeometry,
+  ExtrudeGeometry,
   DirectionalLight,
   Line,
   LineBasicMaterial,
@@ -277,33 +278,45 @@ export class GameRenderer {
     const felt = new MeshStandardMaterial({ color: '#176447', map: this.createSurfaceTexture('felt'), roughness: 0.94 })
     const pocket = new MeshStandardMaterial({ color: '#080c0b', roughness: 1 })
 
-    const body = new Mesh(new BoxGeometry(TABLE_LENGTH + 0.42, 0.2, TABLE_WIDTH + 0.42), wood)
-    body.position.y = -0.12
-    body.castShadow = true
-    body.receiveShadow = true
-    this.scene.add(body)
-
-    // Build the cloth as a true cut-out shape. A full rectangle with black
-    // discs painted over it looks like a blocked pocket and leaves no visual
-    // opening in oblique views.
+    // The bed slab and cloth share the same six through-openings. Cutting
+    // only the cloth leaves the solid wood slab visible beneath every pocket,
+    // which is exactly the "mysterious blocker" seen from an angled camera.
     const halfLength = TABLE_LENGTH / 2
     const halfWidth = TABLE_WIDTH / 2
-    const feltShape = new Shape()
-    feltShape.moveTo(-halfLength, -halfWidth)
-    feltShape.lineTo(halfLength, -halfWidth)
-    feltShape.lineTo(halfLength, halfWidth)
-    feltShape.lineTo(-halfLength, halfWidth)
-    feltShape.closePath()
-    const pocketRadius = Math.max(DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius * 0.82, DEFAULT_PHYSICS_CONFIG.ballRadius * 1.45)
+    const pocketRadius = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius + 0.012
     const pocketCenters: Array<[number, number]> = [
       [-halfLength, -halfWidth], [0, -halfWidth], [halfLength, -halfWidth],
       [-halfLength, halfWidth], [0, halfWidth], [halfLength, halfWidth],
     ]
-    for (const [x, z] of pocketCenters) {
-      const cutout = new Path()
-      cutout.absarc(x, -z, pocketRadius, 0, Math.PI * 2, true)
-      feltShape.holes.push(cutout)
+    const createBedShape = (): Shape => {
+      const shape = new Shape()
+      shape.moveTo(-halfLength, -halfWidth)
+      shape.lineTo(halfLength, -halfWidth)
+      shape.lineTo(halfLength, halfWidth)
+      shape.lineTo(-halfLength, halfWidth)
+      shape.closePath()
+      for (const [x, z] of pocketCenters) {
+        const opening = new Path()
+        opening.absarc(x, -z, pocketRadius, 0, Math.PI * 2, true)
+        shape.holes.push(opening)
+      }
+      return shape
     }
+
+    const bodyGeometry = new ExtrudeGeometry(createBedShape(), {
+      depth: 0.2,
+      bevelEnabled: false,
+      curveSegments: 48,
+    })
+    bodyGeometry.rotateX(-Math.PI / 2)
+    const body = new Mesh(bodyGeometry, wood)
+    body.position.y = -0.22
+    body.castShadow = true
+    body.receiveShadow = true
+    this.scene.add(body)
+
+    // A matching cloth cut-out prevents the felt from bridging the pocket.
+    const feltShape = createBedShape()
     const feltMesh = new Mesh(new ShapeGeometry(feltShape, 48), felt)
     feltMesh.rotation.x = -Math.PI / 2
     feltMesh.position.y = -0.015
@@ -348,12 +361,20 @@ export class GameRenderer {
     ]
 
     for (const [x, z] of pocketPositions) {
-      // The well sits below the cloth opening; no disc or raised rim overlaps
-      // the playable surface, so a ball can visibly enter from the table edge.
-      const drop = new Mesh(new CylinderGeometry(pocketRadius, pocketRadius * 0.72, 0.085, 40), pocket)
-      drop.position.set(x, -0.072, z)
-      drop.receiveShadow = true
-      this.scene.add(drop)
+      // Recessed tapered pocket throat, fully below the cloth and bed surface.
+      // The dark bottom is lower still, creating visible depth from free-camera views.
+      const throat = new Mesh(
+        new CylinderGeometry(pocketRadius * 0.68, pocketRadius, 0.14, 48, 1, true),
+        pocket,
+      )
+      throat.position.set(x, -0.105, z)
+      throat.receiveShadow = true
+      this.scene.add(throat)
+      const well = new Mesh(new CircleGeometry(pocketRadius * 0.68, 48), pocket)
+      well.rotation.x = -Math.PI / 2
+      well.position.set(x, -0.178, z)
+      well.receiveShadow = true
+      this.scene.add(well)
     }
 
     const outerTrim = new Mesh(new BoxGeometry(TABLE_LENGTH + 0.46, 0.035, TABLE_WIDTH + 0.46), railWood)
