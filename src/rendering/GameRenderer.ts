@@ -277,8 +277,8 @@ export class GameRenderer {
   }
 
   private addTable(): void {
-    const wood = new MeshStandardMaterial({ color: '#a43a2b', map: this.createSurfaceTexture('wood'), roughness: 0.34 })
-    const railWood = new MeshStandardMaterial({ color: '#a33b2c', map: this.createSurfaceTexture('wood'), roughness: 0.3 })
+    const wood = new MeshStandardMaterial({ color: '#a43a2b', map: this.createSurfaceTexture('wood'), roughness: 0.24, metalness: 0.025 })
+    const railWood = new MeshStandardMaterial({ color: '#a33b2c', map: this.createSurfaceTexture('wood'), roughness: 0.22, metalness: 0.035 })
     const cushion = new MeshStandardMaterial({ color: '#087b45', roughness: 0.82 })
     const felt = new MeshStandardMaterial({ color: '#12a85a', emissive: '#07542c', emissiveIntensity: 0.28, map: this.createSurfaceTexture('felt'), roughness: 0.94 })
     const pocket = new MeshStandardMaterial({ color: '#050706', roughness: 1 })
@@ -420,11 +420,11 @@ export class GameRenderer {
       grain.addColorStop(1, '#581512')
       context.fillStyle = grain; context.fillRect(0, 0, 512, 512)
       // Reproducible flowing mahogany grain: stable between reloads and devices.
-      for (let i = 0; i < 150; i += 1) {
-        const y = (i * 37) % 512
+      for (let i = 0; i < 64; i += 1) {
+        const y = (i * 79) % 512
         const wave = (i % 7) * 2.4
-        context.strokeStyle = i % 5 === 0 ? 'rgba(24,5,5,0.18)' : 'rgba(255,190,150,0.16)'
-        context.lineWidth = 1 + (i % 4)
+        context.strokeStyle = i % 5 === 0 ? 'rgba(24,5,5,0.10)' : 'rgba(255,190,150,0.065)'
+        context.lineWidth = 1 + (i % 2)
         context.beginPath(); context.moveTo(0, y)
         context.bezierCurveTo(160, y - 14 + wave, 340, y + 18 - wave, 512, y + ((i % 9) - 4) * 2.5); context.stroke()
       }
