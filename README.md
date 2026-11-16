@@ -6,6 +6,8 @@ A browser-based 8-ball game built with TypeScript, Vite and Three.js.
 
 ## Current status
 
+**First public beta target: `0.3.0-beta.1`.** This is a preview build for gameplay feedback, not a stable release. See [Beta testing notes](docs/BETA_TESTING.md) for known limitations and how to report issues.
+
 - [x] Three.js table scene, numbered/striped ball models and four camera modes
 - [x] Fixed-step 120 Hz physics with sliding/rolling friction, follow/draw, side spin, ball collisions, cushion friction, pocket jaws and pocket capture
 - [x] Aim, power, cue-ball contact-point controls and ball-in-hand placement

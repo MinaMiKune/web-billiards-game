@@ -1,0 +1,91 @@
+name: Publish public beta
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: public-beta
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      is_beta: ${{ steps.version.outputs.is_beta }}
+      already_published: ${{ steps.version.outputs.already_published }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        name: Detect an unpublished prerelease version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" != *-* ]]; then
+            echo "is_beta=false" >> "$GITHUB_OUTPUT"
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "is_beta=true" >> "$GITHUB_OUTPUT"
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  verify:
+    if: needs.detect.outputs.is_beta == 'true' && needs.detect.outputs.already_published == 'false'
+    needs: detect
+    name: Verify beta candidate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Confirm package and lockfile versions match
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; const p=JSON.parse(fs.readFileSync('package.json')); const l=JSON.parse(fs.readFileSync('package-lock.json')); if (!p.version.includes('-') || l.version !== p.version || l.packages[''].version !== p.version) process.exit(1)"
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run bench:performance
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    if: needs.detect.outputs.is_beta == 'true' && needs.detect.outputs.already_published == 'false'
+    needs: [detect, verify]
+    name: Deploy verified beta to GitHub Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  publish:
+    if: needs.detect.outputs.is_beta == 'true' && needs.detect.outputs.already_published == 'false'
+    needs: [detect, verify, deploy]
+    name: Publish GitHub prerelease
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create prerelease from the verified main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.detect.outputs.version }}
+        run: gh release create "v$VERSION" --target "$GITHUB_SHA" --prerelease --title "Web Billiards v$VERSION" --generate-notes

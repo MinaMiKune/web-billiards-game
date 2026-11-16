@@ -2,6 +2,10 @@
 
 This document defines the evidence required before publishing the first stable release. A green CI run or a successful GitHub Pages deployment is necessary, but neither is a substitute for gameplay and device validation.
 
+## Beta vs. stable release
+
+A public beta may be published after the exact commit passes automated CI and the GitHub Pages deployment completes. The beta must clearly disclose known gaps: actual-device browser QA is incomplete and the physics engine has not been calibrated against measured shots from a named physical table. These limitations do not block collecting preview feedback, but they do block a stable 1.0.0 claim.
+
 ## Release target
 
 - Product: immediately playable, browser-based American 8-ball.

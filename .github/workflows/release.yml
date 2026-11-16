@@ -30,6 +30,10 @@ jobs:
         shell: bash
         run: |
           VERSION="v$(node -p "require('./package.json').version")"
+          if [[ "$(node -p "require('./package.json').version")" == *-* ]]; then
+            echo "Prerelease versions must use the beta release workflow"
+            exit 1
+          fi
           if [ "$GITHUB_REF_NAME" != "$VERSION" ]; then
             echo "Tag $GITHUB_REF_NAME does not match package version $VERSION"
             exit 1
