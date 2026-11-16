@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { SIDE_POCKET_MOUTH_RADIUS } from '../src/rendering/TableGeometry'
+import { CORNER_POCKET_MOUTH_RADIUS, SIDE_POCKET_MOUTH_RADIUS } from '../src/rendering/TableGeometry'
 import { DEFAULT_PHYSICS_CONFIG } from '../src/physics/PhysicsWorld'
 import {
   POOL_TABLE_VISUAL_SPEC,
@@ -41,6 +41,12 @@ describe('reference-faithful pool table structure', () => {
     const apronInnerEdge = DEFAULT_PHYSICS_CONFIG.tableWidth / 2 +
       POOL_TABLE_VISUAL_SPEC.apronOutset - POOL_TABLE_VISUAL_SPEC.apronDepth / 2
     expect(apronInnerEdge).toBeGreaterThan(pocketOuterEdge)
+
+    const cornerPocketOuterEdge = DEFAULT_PHYSICS_CONFIG.tableLength / 2 +
+      CORNER_POCKET_MOUTH_RADIUS
+    const endApronInnerEdge = DEFAULT_PHYSICS_CONFIG.tableLength / 2 +
+      POOL_TABLE_VISUAL_SPEC.apronOutset - POOL_TABLE_VISUAL_SPEC.apronDepth / 2
+    expect(endApronInnerEdge).toBeGreaterThan(cornerPocketOuterEdge)
 
     const centreSupportOuterEdge = Math.abs(centreSupports[0].z) +
       POOL_TABLE_VISUAL_SPEC.supportBlockDepth / 2
