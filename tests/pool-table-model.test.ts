@@ -10,6 +10,7 @@ describe('reference-faithful pool table structure', () => {
     expect(POOL_TABLE_VISUAL_SPEC.supportLegCount).toBe(6)
     expect(POOL_TABLE_VISUAL_SPEC.railHeight).toBeGreaterThan(0.09)
     expect(POOL_TABLE_VISUAL_SPEC.apronHeight).toBeGreaterThan(0.15)
+    expect(POOL_TABLE_VISUAL_SPEC.floorY).toBe(-1.05)
   })
 
   it('places three paired supports symmetrically under the table apron', () => {
