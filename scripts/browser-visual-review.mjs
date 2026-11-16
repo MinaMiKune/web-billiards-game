@@ -9,9 +9,10 @@ const errors = []
 async function captureTable(page, path) {
   await page.evaluate(() => window.scrollTo(0, 0))
   await page.waitForTimeout(120)
-  await page.screenshot({
+  // Capture only the WebGL table canvas. This avoids rasterizing the entire
+  // control panel and makes pocket-mouth inspection sharper and faster.
+  await page.locator('#scene-host canvas').screenshot({
     path,
-    fullPage: false,
     animations: 'disabled',
     timeout: 60000,
   })
@@ -28,12 +29,6 @@ await page.waitForTimeout(1000)
 await page.locator('#dismiss-first-shot-guide').click().catch(() => {})
 await captureTable(page, `${out}/table-top-desktop.png`)
 console.log('Captured desktop top view')
-for (const [view, file] of [['angled', 'table-angled-desktop.png'], ['side', 'table-side-desktop.png'], ['free', 'table-free-desktop.png']]) {
-  await page.locator(`[data-camera="${view}"]`).click()
-  await page.waitForTimeout(550)
-  await captureTable(page, `${out}/${file}`)
-  console.log('Captured camera:', view)
-}
 const canvas = await page.locator('#scene-host canvas').evaluate((el) => ({ width: el.width, height: el.height, cssWidth: el.clientWidth, cssHeight: el.clientHeight }))
 const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 })
 mobile.on('pageerror', (error) => errors.push(error.message))
@@ -45,6 +40,6 @@ await mobile.locator('#dismiss-first-shot-guide').click().catch(() => {})
 await captureTable(mobile, `${out}/table-top-mobile.png`)
 console.log('Captured mobile top view')
 await browser.close()
-const report = { baseURL, canvas, errors, screenshots: ['table-top-desktop.png', 'table-angled-desktop.png', 'table-side-desktop.png', 'table-free-desktop.png', 'table-top-mobile.png'] }
+const report = { baseURL, canvas, errors, screenshots: ['table-top-desktop.png', 'table-top-mobile.png'] }
 console.log(JSON.stringify(report, null, 2))
 if (canvas.width === 0 || canvas.height === 0 || errors.length) process.exit(1)

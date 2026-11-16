@@ -5,6 +5,8 @@ import { DEFAULT_PHYSICS_CONFIG } from '../src/physics/PhysicsWorld'
 import {
   POOL_TABLE_VISUAL_SPEC,
   getPoolTableSupportPositions,
+  SIDE_POCKET_JAW_INNER_X,
+  CORNER_POCKET_JAW_INNER_OFFSET,
   getPoolTableCrossBraceDepth,
 } from '../src/rendering/PoolTableModel'
 
@@ -68,6 +70,7 @@ describe('reference-faithful pool table structure', () => {
     expect(POOL_TABLE_VISUAL_SPEC.woodColor).toBe('#75432f')
     expect(POOL_TABLE_VISUAL_SPEC.feltColor).toBe('#0d6842')
     expect(POOL_TABLE_VISUAL_SPEC.cushionColor).toBe('#113c2a')
+    expect(POOL_TABLE_VISUAL_SPEC.pocketJawColor).toBe('#236b45')
   })  
   it('keeps pocket interiors dark and free of top-down radial spokes', () => {
     const modelSource = readFileSync(
@@ -76,8 +79,16 @@ describe('reference-faithful pool table structure', () => {
     )
     expect(modelSource).not.toContain('CatmullRomCurve3')
     expect(modelSource).not.toContain('TubeGeometry')
-    expect(modelSource).toContain("color: '#050706'")
-    expect(modelSource).toContain("color: '#020403'")
+    expect(modelSource).not.toContain('new CircleGeometry')
+    expect(modelSource).not.toContain('pocketBottom')
+    expect(modelSource).toContain('createPocketThroatGeometry(mouthRadius)')
+    expect(modelSource).toContain('open-ended sleeve')
+    expect(SIDE_POCKET_JAW_INNER_X).toBeCloseTo(SIDE_POCKET_MOUTH_RADIUS / Math.SQRT2, 12)
+    expect(CORNER_POCKET_JAW_INNER_OFFSET).toBeCloseTo(CORNER_POCKET_MOUTH_RADIUS / Math.SQRT2, 12)
+    expect(Math.hypot(SIDE_POCKET_JAW_INNER_X, SIDE_POCKET_JAW_INNER_X))
+      .toBeCloseTo(SIDE_POCKET_MOUTH_RADIUS, 12)
+    expect(Math.hypot(CORNER_POCKET_JAW_INNER_OFFSET, CORNER_POCKET_JAW_INNER_OFFSET))
+      .toBeCloseTo(CORNER_POCKET_MOUTH_RADIUS, 12)
   })
 
 })

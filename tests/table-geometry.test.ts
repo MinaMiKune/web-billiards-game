@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three'
+import { CylinderGeometry, Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three'
 import { DEFAULT_PHYSICS_CONFIG } from '../src/physics/PhysicsWorld'
-import { CORNER_POCKET_MOUTH_RADIUS, SIDE_POCKET_MOUTH_RADIUS, TABLE_BED_THICKNESS, createClothGeometry, createTableBedGeometry } from '../src/rendering/TableGeometry'
+import { CORNER_POCKET_MOUTH_RADIUS, SIDE_POCKET_MOUTH_RADIUS, TABLE_BED_THICKNESS, createClothGeometry, createPocketThroatGeometry, createTableBedGeometry } from '../src/rendering/TableGeometry'
 
 const halfLength = DEFAULT_PHYSICS_CONFIG.tableLength / 2
 const halfWidth = DEFAULT_PHYSICS_CONFIG.tableWidth / 2
@@ -63,6 +63,25 @@ describe('table pocket cutout geometry', () => {
     expect(SIDE_POCKET_MOUTH_RADIUS).toBeCloseTo(0.0635, 5)
     mesh.geometry.dispose()
     mesh.material.dispose()
+  })
+
+  it('keeps every pocket throat genuinely open at its lower end', () => {
+    for (const radius of [CORNER_POCKET_MOUTH_RADIUS, SIDE_POCKET_MOUTH_RADIUS]) {
+      const throatGeometry = createPocketThroatGeometry(radius)
+      expect(throatGeometry).toBeInstanceOf(CylinderGeometry)
+      expect(throatGeometry.parameters.openEnded).toBe(true)
+      const throat = new Mesh(throatGeometry, new MeshBasicMaterial())
+      throat.updateMatrixWorld(true)
+      const centreRay = new Raycaster(
+        new Vector3(0, 0.5, 0),
+        new Vector3(0, -1, 0),
+        0,
+        1,
+      )
+      expect(centreRay.intersectObject(throat, false)).toHaveLength(0)
+      throat.geometry.dispose()
+      throat.material.dispose()
+    }
   })
 
   it('cuts the same six openings through the playing cloth', () => {
