@@ -7,6 +7,8 @@ await mkdir(out, { recursive: true })
 const browser = await chromium.launch({ headless: true, args: ['--enable-webgl', '--use-gl=angle', '--use-angle=swiftshader'] })
 const errors = []
 async function captureTable(page, path) {
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.waitForTimeout(250)
   await page.screenshot({
     path,
     fullPage: false,
