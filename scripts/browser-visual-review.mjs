@@ -7,20 +7,11 @@ await mkdir(out, { recursive: true })
 const browser = await chromium.launch({ headless: true, args: ['--enable-webgl', '--use-gl=angle', '--use-angle=swiftshader'] })
 const errors = []
 async function captureTable(page, path) {
-  const scene = page.locator('#scene-host')
-  await scene.scrollIntoViewIfNeeded()
-  const bounds = await scene.boundingBox()
-  if (!bounds || bounds.width < 100 || bounds.height < 100) throw new Error('3D scene host has no visible area')
   await page.screenshot({
     path,
-    clip: {
-      x: Math.max(0, Math.floor(bounds.x)),
-      y: Math.max(0, Math.floor(bounds.y)),
-      width: Math.floor(bounds.width),
-      height: Math.floor(bounds.height),
-    },
+    fullPage: true,
     animations: 'disabled',
-    timeout: 30000,
+    timeout: 60000,
   })
 }
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 1 })
