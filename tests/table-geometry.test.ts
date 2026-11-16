@@ -34,6 +34,22 @@ describe('table pocket cutout geometry', () => {
     mesh.material.dispose()
   })
 
+
+  it('keeps the full ball-entry quadrant clear at every corner mouth', () => {
+    const mesh = new Mesh(createTableBedGeometry(), new MeshBasicMaterial())
+    mesh.position.y = -0.22
+    const inset = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius * 0.62
+    for (const xSign of [-1, 1]) {
+      for (const zSign of [-1, 1]) {
+        const x = xSign * (halfLength - inset)
+        const z = zSign * (halfWidth - inset)
+        expect(rayHits(mesh, x, z), `wood must not bridge corner entry ${xSign}, ${zSign}`).toBe(false)
+      }
+    }
+    mesh.geometry.dispose()
+    mesh.material.dispose()
+  })
+
   it('cuts the same six openings through the playing cloth', () => {
     const mesh = new Mesh(createClothGeometry(), new MeshBasicMaterial())
     mesh.rotation.x = -Math.PI / 2

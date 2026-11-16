@@ -2,7 +2,7 @@ import { ExtrudeGeometry, Path, Shape, ShapeGeometry } from 'three'
 import { DEFAULT_PHYSICS_CONFIG, type PhysicsConfig } from '../physics/PhysicsWorld'
 
 export const TABLE_BED_THICKNESS = 0.2
-export const TABLE_BED_OUTER_MARGIN = 0.21
+export const TABLE_BED_OUTER_MARGIN = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius + 0.016
 
 function createPocketCutoutShape(
   config: PhysicsConfig,
@@ -35,7 +35,7 @@ export function createTableBedGeometry(
   config: PhysicsConfig = DEFAULT_PHYSICS_CONFIG,
 ): ExtrudeGeometry {
   const geometry = new ExtrudeGeometry(
-    createPocketCutoutShape(config, TABLE_BED_OUTER_MARGIN),
+    createPocketCutoutShape(config, config.pocketCaptureRadius + 0.016),
     { depth: TABLE_BED_THICKNESS, bevelEnabled: false, curveSegments: 48 },
   )
   geometry.rotateX(-Math.PI / 2)

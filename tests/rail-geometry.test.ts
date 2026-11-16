@@ -8,15 +8,15 @@ describe('long rail pocket clearance', () => {
   const pocketRadius = DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius + 0.012
   const sideJawOuterX = DEFAULT_PHYSICS_CONFIG.sidePocketHalfWidth +
     DEFAULT_PHYSICS_CONFIG.ballRadius + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
-  const cornerClearance = pocketRadius + railDepth / 2 + 0.008
+  const cornerClearance = pocketRadius + DEFAULT_PHYSICS_CONFIG.ballRadius + railDepth / 2 + 0.10
   const segments = getLongRailSegments(halfLength, sideJawOuterX, cornerClearance)
 
   it('creates two independent spans per long rail, leaving all three mouths open', () => {
     expect(segments).toHaveLength(2)
-    expect(segments[0].start).toBeGreaterThan(-halfLength + pocketRadius + railDepth / 2)
+    expect(segments[0].start + 1e-9).toBeGreaterThanOrEqual(-halfLength + pocketRadius + DEFAULT_PHYSICS_CONFIG.ballRadius + railDepth / 2 + 0.10)
     expect(segments[0].end).toBe(-sideJawOuterX)
     expect(segments[1].start).toBe(sideJawOuterX)
-    expect(segments[1].end).toBeLessThan(halfLength - pocketRadius - railDepth / 2)
+    expect(segments[1].end - 1e-9).toBeLessThanOrEqual(halfLength - pocketRadius - DEFAULT_PHYSICS_CONFIG.ballRadius - railDepth / 2 - 0.10)
   })
 
   it('keeps a real gap at the side pocket and both corner pockets', () => {
