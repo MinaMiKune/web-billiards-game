@@ -1,6 +1,5 @@
 import {
   CanvasTexture,
-  CatmullRomCurve3,
   CircleGeometry,
   CylinderGeometry,
   ExtrudeGeometry,
@@ -13,9 +12,7 @@ import {
   ShapeGeometry,
   SRGBColorSpace,
   TorusGeometry,
-  TubeGeometry,
   Vector2,
-  Vector3,
 } from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { DEFAULT_PHYSICS_CONFIG, type PhysicsConfig } from '../physics/PhysicsWorld'
@@ -219,54 +216,21 @@ function addPocketBag(
   x: number,
   z: number,
   mouthRadius: number,
-  leather: MeshStandardMaterial,
+  _leather: MeshStandardMaterial,
 ): void {
-  const netMaterial = new MeshStandardMaterial({
-    color: '#090807',
-    roughness: 0.94,
-    metalness: 0,
-  })
-  const topY = -TABLE_BED_THICKNESS - 0.01
-  const middleY = topY - 0.105
-  const bottomY = topY - 0.22
-  const ringData = [
-    { y: middleY, radius: mouthRadius * 0.59 },
-    { y: bottomY, radius: mouthRadius * 0.39 },
-  ]
-
-  for (const ring of ringData) {
-    const hoop = new Mesh(
-      new TorusGeometry(ring.radius, 0.0032, 6, 28),
-      leather,
-    )
-    hoop.rotation.x = -Math.PI / 2
-    hoop.position.set(x, ring.y, z)
-    hoop.castShadow = false
-    hoop.visible = false
-    group.add(hoop)
-  }
-
-  // Fine net cords taper into a compact hanging pocket bag.
-  for (let index = 0; index < 12; index += 1) {
-    const angle = (Math.PI * 2 * index) / 12
-    const cos = Math.cos(angle)
-    const sin = Math.sin(angle)
-    const curve = new CatmullRomCurve3([
-      new Vector3(x + cos * mouthRadius * 0.78, topY, z + sin * mouthRadius * 0.78),
-      new Vector3(x + cos * ringData[0].radius, middleY, z + sin * ringData[0].radius),
-      new Vector3(x + cos * ringData[1].radius, bottomY, z + sin * ringData[1].radius),
-    ])
-    const cord = new Mesh(new TubeGeometry(curve, 12, 0.0004, 4, false), netMaterial)
-    cord.castShadow = false
-    group.add(cord)
-  }
-
+  // Keep the opening visually clean from the top: a dark recessed bag reads
+  // like a real pocket instead of twelve bright radial spokes.
+  const bottomY = -TABLE_BED_THICKNESS - 0.23
   const pocketBottom = new Mesh(
-    new CircleGeometry(mouthRadius * 0.38, 32),
-    new MeshStandardMaterial({ color: '#080a08', roughness: 1, metalness: 0 }),
+    new CircleGeometry(mouthRadius * 0.48, 40),
+    new MeshStandardMaterial({
+      color: '#020403',
+      roughness: 1,
+      metalness: 0,
+    }),
   )
   pocketBottom.rotation.x = -Math.PI / 2
-  pocketBottom.position.set(x, bottomY - 0.006, z)
+  pocketBottom.position.set(x, bottomY, z)
   pocketBottom.castShadow = false
   pocketBottom.receiveShadow = false
   group.add(pocketBottom)
@@ -575,7 +539,7 @@ export function createPoolTableModel(maxAnisotropy = 4): Group {
     metalness: 0,
   })
   const leather = new MeshStandardMaterial({
-    color: '#171310',
+    color: '#050706',
     roughness: 0.88,
     metalness: 0.015,
   })
