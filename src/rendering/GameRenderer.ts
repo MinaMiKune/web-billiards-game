@@ -17,6 +17,9 @@ import {
   PlaneGeometry,
   Scene,
   SphereGeometry,
+  Shape,
+  ShapeGeometry,
+  Path,
   SpotLight,
   Vector3,
   WebGLRenderer,
@@ -281,7 +284,28 @@ export class GameRenderer {
     body.receiveShadow = true
     this.scene.add(body)
 
-    const feltMesh = new Mesh(new PlaneGeometry(TABLE_LENGTH, TABLE_WIDTH), felt)
+    // Build the cloth as a true cut-out shape. A full rectangle with black
+    // discs painted over it looks like a blocked pocket and leaves no visual
+    // opening in oblique views.
+    const halfLength = TABLE_LENGTH / 2
+    const halfWidth = TABLE_WIDTH / 2
+    const feltShape = new Shape()
+    feltShape.moveTo(-halfLength, -halfWidth)
+    feltShape.lineTo(halfLength, -halfWidth)
+    feltShape.lineTo(halfLength, halfWidth)
+    feltShape.lineTo(-halfLength, halfWidth)
+    feltShape.closePath()
+    const pocketRadius = Math.max(DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius * 0.82, DEFAULT_PHYSICS_CONFIG.ballRadius * 1.45)
+    const pocketCenters: Array<[number, number]> = [
+      [-halfLength, -halfWidth], [0, -halfWidth], [halfLength, -halfWidth],
+      [-halfLength, halfWidth], [0, halfWidth], [halfLength, halfWidth],
+    ]
+    for (const [x, z] of pocketCenters) {
+      const cutout = new Path()
+      cutout.absarc(x, -z, pocketRadius, 0, Math.PI * 2, true)
+      feltShape.holes.push(cutout)
+    }
+    const feltMesh = new Mesh(new ShapeGeometry(feltShape, 48), felt)
     feltMesh.rotation.x = -Math.PI / 2
     feltMesh.position.y = -0.015
     feltMesh.receiveShadow = true
@@ -325,18 +349,11 @@ export class GameRenderer {
     ]
 
     for (const [x, z] of pocketPositions) {
-      const rim = new Mesh(new CircleGeometry(0.083, 32), pocketRim)
-      rim.rotation.x = -Math.PI / 2
-      rim.position.set(x, -0.004, z)
-      this.scene.add(rim)
-
-      const hole = new Mesh(new CircleGeometry(0.068, 32), pocket)
-      hole.rotation.x = -Math.PI / 2
-      hole.position.set(x, 0.001, z)
-      this.scene.add(hole)
-
-      const drop = new Mesh(new CylinderGeometry(0.067, 0.045, 0.065, 32), pocket)
-      drop.position.set(x, -0.052, z)
+      // The well sits below the cloth opening; no disc or raised rim overlaps
+      // the playable surface, so a ball can visibly enter from the table edge.
+      const drop = new Mesh(new CylinderGeometry(pocketRadius, pocketRadius * 0.72, 0.085, 40), pocket)
+      drop.position.set(x, -0.072, z)
+      drop.receiveShadow = true
       this.scene.add(drop)
     }
 
@@ -411,10 +428,10 @@ export class GameRenderer {
           x: xSign * halfLength,
           z: zSign * (halfWidth - pocketCaptureRadius),
         }
-        this.addAngledJaw(railWood, longRailJawStart, innerTip, railY, 0.13, 0.09)
-        this.addAngledJaw(cushion, longRailJawStart, innerTip, railY + 0.035, 0.045, 0.035)
-        this.addAngledJaw(railWood, endRailJawStart, innerTip, railY, 0.13, 0.09)
-        this.addAngledJaw(cushion, endRailJawStart, innerTip, railY + 0.035, 0.045, 0.035)
+        this.addAngledJaw(railWood, longRailJawStart, innerTip, railY, 0.13, 0.035)
+        this.addAngledJaw(cushion, longRailJawStart, innerTip, railY + 0.035, 0.045, 0.018)
+        this.addAngledJaw(railWood, endRailJawStart, innerTip, railY, 0.13, 0.035)
+        this.addAngledJaw(cushion, endRailJawStart, innerTip, railY + 0.035, 0.045, 0.018)
       }
     }
 
@@ -429,8 +446,8 @@ export class GameRenderer {
           x: xSign * (sideJawInnerX + pocketJawDepth),
           z: zSign * halfWidth,
         }
-        this.addAngledJaw(railWood, start, end, railY, 0.13, 0.09)
-        this.addAngledJaw(cushion, start, end, railY + 0.035, 0.045, 0.035)
+        this.addAngledJaw(railWood, start, end, railY, 0.13, 0.035)
+        this.addAngledJaw(cushion, start, end, railY + 0.035, 0.045, 0.018)
       }
     }
   }
