@@ -313,16 +313,28 @@ export class GameRenderer {
     const sideJawInnerX = DEFAULT_PHYSICS_CONFIG.sidePocketHalfWidth +
       DEFAULT_PHYSICS_CONFIG.ballRadius
     const sideJawOuterX = sideJawInnerX + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
-    const longSegmentLength = halfL - sideJawOuterX
+    // Long rails must stop before BOTH corner pockets and the side pocket.
+    // The old two-piece layout started at the table corners, laying solid wood
+    // directly across the corner-pocket mouths (visible as rectangular blockers).
+    const cornerRailClearance = pocketRadius + railDepth / 2 + 0.008
+    const railSegments = [
+      { start: -halfL + cornerRailClearance, end: -sideJawOuterX },
+      { start: sideJawOuterX, end: halfL - cornerRailClearance },
+    ].filter((segment) => segment.end > segment.start)
 
     for (const side of [-1, 1]) {
-      for (const segmentCenter of [-(halfL - longSegmentLength / 2), halfL - longSegmentLength / 2]) {
-        this.addBox(railWood, longSegmentLength, railHeight, railDepth, segmentCenter, railY, side * (halfW + 0.065))
-        this.addBox(cushion, longSegmentLength, 0.045, 0.035, segmentCenter, railY + 0.035, side * (halfW + 0.005))
+      for (const segment of railSegments) {
+        const segmentLength = segment.end - segment.start
+        const segmentCenter = (segment.start + segment.end) / 2
+        this.addBox(railWood, segmentLength, railHeight, railDepth, segmentCenter, railY, side * (halfW + 0.065))
+        this.addBox(cushion, segmentLength, 0.045, 0.035, segmentCenter, railY + 0.035, side * (halfW + 0.005))
       }
 
-      this.addBox(railWood, railDepth, railHeight, TABLE_WIDTH - 0.24, side * (halfL + 0.065), railY, 0)
-      this.addBox(cushion, 0.035, 0.045, TABLE_WIDTH - 0.24, side * (halfL + 0.005), railY + 0.035, 0)
+      // Short end rails sit between the two corner pockets; they do not cross
+      // either mouth because their length is already inset from both corners.
+      const endRailLength = TABLE_WIDTH - 2 * cornerRailClearance
+      this.addBox(railWood, railDepth, railHeight, endRailLength, side * (halfL + 0.065), railY, 0)
+      this.addBox(cushion, 0.035, 0.045, endRailLength, side * (halfL + 0.005), railY + 0.035, 0)
     }
 
     this.addPocketJaws(railWood, cushion, halfL, halfW, railY)
