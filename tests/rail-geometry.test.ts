@@ -51,10 +51,21 @@ describe('reference-matched table finish', () => {
       new URL('../src/rendering/GameRenderer.ts', import.meta.url),
       'utf8',
     )
-    expect(rendererSource).toContain("color: '#852820'")
-    expect(rendererSource).toContain("color: '#078b49'")
+    expect(rendererSource).toContain("color: '#a33b2c'")
+    expect(rendererSource).toContain("color: '#12a85a'")
     expect(rendererSource).toContain('addDiamondSight(sight')
     expect(rendererSource).toContain('new BoxGeometry(0.025, 0.006, 0.025)')
     expect(rendererSource).not.toContain('Math.random()')
   })
+  it('uses rounded connected rails and removes harsh full-scene shadows', () => {
+    const rendererSource = readFileSync(
+      new URL('../src/rendering/GameRenderer.ts', import.meta.url),
+      'utf8',
+    )
+    expect(rendererSource).toContain('new RoundedBoxGeometry')
+    expect(rendererSource).toContain('Rounded diagonal corner assemblies')
+    expect(rendererSource).toContain('this.renderer.shadowMap.enabled = false')
+    expect(rendererSource).not.toContain('const outerTrim = new Mesh(new BoxGeometry(TABLE_LENGTH + 0.46')
+  })
+
 })
