@@ -1,6 +1,7 @@
 import {
   CanvasTexture,
   CatmullRomCurve3,
+  CircleGeometry,
   CylinderGeometry,
   ExtrudeGeometry,
   Group,
@@ -44,7 +45,7 @@ export const POOL_TABLE_VISUAL_SPEC = {
   railDepth: 0.15,
   apronHeight: 0.18,
   floorY: -1.05,
-  woodColor: '#542719',
+  woodColor: '#75432f',
   feltColor: '#0d6842',
   cushionColor: '#174b35',
 } as const
@@ -218,7 +219,7 @@ function addPocketBag(
   leather: MeshStandardMaterial,
 ): void {
   const netMaterial = new MeshStandardMaterial({
-    color: '#4a392b',
+    color: '#211a16',
     roughness: 0.94,
     metalness: 0,
   })
@@ -226,7 +227,6 @@ function addPocketBag(
   const middleY = topY - 0.105
   const bottomY = topY - 0.22
   const ringData = [
-    { y: topY, radius: mouthRadius * 0.78 },
     { y: middleY, radius: mouthRadius * 0.59 },
     { y: bottomY, radius: mouthRadius * 0.39 },
   ]
@@ -239,6 +239,7 @@ function addPocketBag(
     hoop.rotation.x = -Math.PI / 2
     hoop.position.set(x, ring.y, z)
     hoop.castShadow = false
+    hoop.visible = false
     group.add(hoop)
   }
 
@@ -248,14 +249,24 @@ function addPocketBag(
     const cos = Math.cos(angle)
     const sin = Math.sin(angle)
     const curve = new CatmullRomCurve3([
-      new Vector3(x + cos * ringData[0].radius, topY, z + sin * ringData[0].radius),
-      new Vector3(x + cos * ringData[1].radius, middleY, z + sin * ringData[1].radius),
-      new Vector3(x + cos * ringData[2].radius, bottomY, z + sin * ringData[2].radius),
+      new Vector3(x + cos * mouthRadius * 0.78, topY, z + sin * mouthRadius * 0.78),
+      new Vector3(x + cos * ringData[0].radius, middleY, z + sin * ringData[0].radius),
+      new Vector3(x + cos * ringData[1].radius, bottomY, z + sin * ringData[1].radius),
     ])
-    const cord = new Mesh(new TubeGeometry(curve, 12, 0.0018, 4, false), netMaterial)
+    const cord = new Mesh(new TubeGeometry(curve, 12, 0.0012, 4, false), netMaterial)
     cord.castShadow = false
     group.add(cord)
   }
+
+  const pocketBottom = new Mesh(
+    new CircleGeometry(mouthRadius * 0.38, 32),
+    new MeshStandardMaterial({ color: '#080a08', roughness: 1, metalness: 0 }),
+  )
+  pocketBottom.rotation.x = -Math.PI / 2
+  pocketBottom.position.set(x, bottomY - 0.006, z)
+  pocketBottom.castShadow = false
+  pocketBottom.receiveShadow = false
+  group.add(pocketBottom)
 }
 
 function addDiamondSight(
@@ -279,21 +290,28 @@ function addDiamondSight(
   group.add(marker)
 }
 
-function addSidePocketJaw(
+function addCushionJawSegment(
   group: Group,
-  xSign: number,
-  zSign: number,
-  sideGapHalf: number,
+  start: TableSupportPosition,
+  end: TableSupportPosition,
   material: MeshStandardMaterial,
+  startWidth = 0.026,
+  endWidth = 0.010,
 ): void {
-  const innerX = SIDE_JAW_INNER_X
-  const outerX = sideGapHalf
-  const jawInnerZ = HALF_WIDTH - DEFAULT_PHYSICS_CONFIG.pocketJawDepth
+  const dx = end.x - start.x
+  const dz = end.z - start.z
+  const length = Math.hypot(dx, dz)
+  if (length <= 1e-6) return
+
+  const perpendicularX = -dz / length
+  const perpendicularZ = dx / length
+  const startHalf = startWidth / 2
+  const endHalf = endWidth / 2
   const points: Array<[number, number]> = [
-    [xSign * outerX, zSign * (HALF_WIDTH + 0.006)],
-    [xSign * outerX, zSign * (HALF_WIDTH - 0.014)],
-    [xSign * innerX, zSign * (jawInnerZ - 0.008)],
-    [xSign * innerX, zSign * (jawInnerZ + 0.018)],
+    [start.x + perpendicularX * startHalf, start.z + perpendicularZ * startHalf],
+    [end.x + perpendicularX * endHalf, end.z + perpendicularZ * endHalf],
+    [end.x - perpendicularX * endHalf, end.z - perpendicularZ * endHalf],
+    [start.x - perpendicularX * startHalf, start.z - perpendicularZ * startHalf],
   ]
 
   const shape = new Shape()
@@ -307,9 +325,9 @@ function addSidePocketJaw(
     depth: 0.043,
     bevelEnabled: true,
     bevelSegments: 2,
-    bevelSize: 0.003,
-    bevelThickness: 0.003,
-    curveSegments: 6,
+    bevelSize: 0.002,
+    bevelThickness: 0.002,
+    curveSegments: 8,
   })
   geometry.rotateX(-Math.PI / 2)
   const jaw = new Mesh(geometry, material)
@@ -317,6 +335,56 @@ function addSidePocketJaw(
   jaw.castShadow = false
   jaw.receiveShadow = false
   group.add(jaw)
+}
+
+function addSidePocketJaw(
+  group: Group,
+  xSign: number,
+  zSign: number,
+  material: MeshStandardMaterial,
+): void {
+  // This is a narrow tapered rubber nose, not a broad triangular panel.
+  // Its centerline follows the same 45-degree jaw segment used by the
+  // collision solver, while the opening remains clear on the cloth side.
+  const innerX = SIDE_JAW_INNER_X
+  const outerX = SIDE_RAIL_GAP_HALF
+  const jawInnerZ = HALF_WIDTH - DEFAULT_PHYSICS_CONFIG.pocketJawDepth
+  addCushionJawSegment(
+    group,
+    { x: xSign * outerX, z: zSign * HALF_WIDTH },
+    { x: xSign * innerX, z: zSign * jawInnerZ },
+    material,
+    0.020,
+    0.009,
+  )
+}
+
+function addCornerPocketJaws(
+  group: Group,
+  xSign: number,
+  zSign: number,
+  material: MeshStandardMaterial,
+): void {
+  const innerOffset = Math.max(
+    0,
+    DEFAULT_PHYSICS_CONFIG.pocketCaptureRadius - DEFAULT_PHYSICS_CONFIG.pocketJawDepth,
+  )
+  const innerTip = {
+    x: xSign * (HALF_LENGTH - innerOffset),
+    z: zSign * (HALF_WIDTH - innerOffset),
+  }
+  const longRailStart = {
+    x: xSign * (HALF_LENGTH - CORNER_RAIL_CLEARANCE),
+    z: zSign * HALF_WIDTH,
+  }
+  const endRailStart = {
+    x: xSign * HALF_LENGTH,
+    z: zSign * (HALF_WIDTH - CORNER_RAIL_CLEARANCE),
+  }
+
+  // Two rounded rubber noses converge toward the leather corner pocket.
+  addCushionJawSegment(group, longRailStart, innerTip, material, 0.026, 0.009)
+  addCushionJawSegment(group, endRailStart, innerTip, material, 0.026, 0.009)
 }
 
 function addRailRuns(
@@ -348,7 +416,7 @@ function addRailRuns(
     }
 
     for (const xSign of [-1, 1]) {
-      addSidePocketJaw(group, xSign, side, SIDE_RAIL_GAP_HALF, cushion)
+      addSidePocketJaw(group, xSign, side, cushion)
     }
 
     // End rails meet the long rails through open corner pockets.
@@ -429,7 +497,7 @@ function addApronAndSupports(
   for (const position of positions) {
     const supportBlock = addRoundedBox(
       group, darkWood, 0.19, 0.105, 0.17,
-      position.x, -0.335, position.z, 0.018,
+      position.x, -0.350, position.z, 0.018,
     )
     supportBlock.castShadow = true
 
@@ -477,13 +545,13 @@ export function createPoolTableModel(maxAnisotropy = 4): Group {
     metalness: 0.025,
   })
   const darkWood = new MeshStandardMaterial({
-    color: '#32170f',
+    color: '#95664d',
     map: woodTexture,
     roughness: 0.34,
     metalness: 0.02,
   })
   const railWood = new MeshStandardMaterial({
-    color: '#61301f',
+    color: '#d0a286',
     map: woodTexture,
     roughness: 0.27,
     metalness: 0.025,
@@ -528,6 +596,11 @@ export function createPoolTableModel(maxAnisotropy = 4): Group {
   group.add(cloth)
 
   addRailRuns(group, railWood, cushion)
+  for (const xSign of [-1, 1]) {
+    for (const zSign of [-1, 1]) {
+      addCornerPocketJaws(group, xSign, zSign, cushion)
+    }
+  }
   addApronAndSupports(group, wood, darkWood, brass)
 
   const pocketPositions: Array<{ x: number; z: number; radius: number }> = [
