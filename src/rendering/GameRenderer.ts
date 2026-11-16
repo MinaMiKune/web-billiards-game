@@ -328,7 +328,7 @@ export class GameRenderer {
     // Leave the complete pocket radius, ball radius, and rail half-depth clear.
     // The additional 0.10m is a deliberate visual/trajectory margin: rail ends
     // must not hang over the circular mouth from a top or oblique camera.
-    const cornerRailClearance = 0.14
+    const cornerRailClearance = 0.10
     const railSegments = getLongRailSegments(halfL, sideJawOuterX, cornerRailClearance)
 
     for (const side of [-1, 1]) {
@@ -454,8 +454,8 @@ export class GameRenderer {
     railY: number,
     railHeight: number,
   ): void {
-    const outerRadius = 0.18
-    const outerCorner = 0.055
+    const outerRadius = 0.115
+    const outerCorner = 0.09
     const mouthRadius = CORNER_POCKET_MOUTH_RADIUS + 0.009
     const shape = new Shape()
     shape.moveTo(-outerRadius + outerCorner, -outerRadius)
