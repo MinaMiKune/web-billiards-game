@@ -23,8 +23,8 @@ describe('long rail pocket clearance', () => {
     expect(segments[0].end).toBeLessThan(segments[1].start)
     for (const segment of segments) {
       expect(segment.length).toBeGreaterThan(0)
-      expect(segment.center - segment.length / 2).toBe(segment.start)
-      expect(segment.center + segment.length / 2).toBe(segment.end)
+      expect(segment.center - segment.length / 2).toBeCloseTo(segment.start, 12)
+      expect(segment.center + segment.length / 2).toBeCloseTo(segment.end, 12)
     }
   })
 })
