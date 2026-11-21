@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { PhysicsWorld } from '../src/physics/PhysicsWorld'
+import {
+  CORNER_JAW_START_OFFSET,
+  CORNER_POCKET_JAW_TIP_OFFSET,
+  CORNER_POCKET_MOUTH_RADIUS,
+  SIDE_JAW_START_OFFSET,
+  SIDE_POCKET_JAW_TIP_OFFSET,
+} from '../src/physics/tableSpec'
 
 const STEP = 1 / 120
 
@@ -8,15 +15,24 @@ describe('Pocket jaw collisions', () => {
     const world = new PhysicsWorld()
     const cue = world.cueBall
     const halfWidth = world.config.tableWidth / 2
-    const jawDepth = world.config.pocketJawDepth
-    const jawInnerX = world.config.sidePocketHalfWidth + cue.radius
-    const start = { x: jawInnerX, z: halfWidth - jawDepth }
-    const end = { x: jawInnerX + jawDepth, z: halfWidth }
+    // Jaw faces are shared with the renderer via the unified table spec:
+    // they start one jaw depth beyond the visible mouth on the rail line and
+    // taper to the pocket tip.
+    const start = { x: SIDE_JAW_START_OFFSET, z: halfWidth }
+    const end = {
+      x: SIDE_POCKET_JAW_TIP_OFFSET,
+      z: halfWidth - SIDE_POCKET_JAW_TIP_OFFSET,
+    }
     const midpoint = {
       x: (start.x + end.x) / 2,
       z: (start.z + end.z) / 2,
     }
-    const inwardNormal = { x: Math.SQRT1_2, z: -Math.SQRT1_2 }
+    const segmentLength = Math.hypot(end.x - start.x, end.z - start.z)
+    // Playable side of the +x side-pocket jaw faces the table interior.
+    const inwardNormal = {
+      x: (start.z - end.z) / segmentLength,
+      z: (end.x - start.x) / segmentLength,
+    }
 
     cue.position = {
       x: midpoint.x + inwardNormal.x * cue.radius * 0.45,
@@ -27,6 +43,7 @@ describe('Pocket jaw collisions', () => {
 
     world.step(STEP)
 
+    expect(cue.pocketed).toBe(false)
     expect(cue.velocity.x).toBeGreaterThan(0.2)
     expect(cue.position.z).toBeLessThan(halfWidth - cue.radius)
   })
@@ -36,11 +53,11 @@ describe('Pocket jaw collisions', () => {
     const cue = world.cueBall
     const halfLength = world.config.tableLength / 2
     const halfWidth = world.config.tableWidth / 2
-    const mouthRadius = world.config.pocketCaptureRadius
-    const jawDepth = world.config.pocketJawDepth
-    const innerOffset = Math.max(0, mouthRadius - jawDepth)
-    const start = { x: halfLength - mouthRadius, z: halfWidth }
-    const end = { x: halfLength - innerOffset, z: halfWidth - innerOffset }
+    const start = { x: halfLength - CORNER_JAW_START_OFFSET, z: halfWidth }
+    const end = {
+      x: halfLength - CORNER_POCKET_JAW_TIP_OFFSET,
+      z: halfWidth - CORNER_POCKET_JAW_TIP_OFFSET,
+    }
     const segmentLength = Math.hypot(end.x - start.x, end.z - start.z)
     const inwardNormal = {
       x: (end.z - start.z) / segmentLength,
@@ -56,6 +73,7 @@ describe('Pocket jaw collisions', () => {
 
     world.step(STEP)
 
+    expect(cue.pocketed).toBe(false)
     expect(cue.velocity.x).toBeLessThan(0)
     expect(cue.velocity.z).toBeLessThan(0)
   })
@@ -72,5 +90,44 @@ describe('Pocket jaw collisions', () => {
 
     expect(cue.pocketed).toBe(true)
     expect(cue.active).toBe(false)
+  })
+
+  it('captures a ball that enters within the visible side-pocket mouth', () => {
+    const world = new PhysicsWorld()
+    const cue = world.cueBall
+    const zLimit = world.config.tableWidth / 2 - cue.radius
+    // Just inside the visible 5 in mouth: the ball must drop, not bounce.
+    const entryX = world.config.sidePocketHalfWidth - cue.radius * 0.9
+    cue.position = { x: entryX, z: zLimit - 0.001 }
+    cue.previousPosition = { ...cue.position }
+    cue.velocity = { x: 0, z: 1 }
+
+    world.step(STEP)
+
+    expect(cue.pocketed).toBe(true)
+    expect(cue.active).toBe(false)
+  })
+
+  it('bounces a ball that strikes rubber just outside the visible corner mouth', () => {
+    const world = new PhysicsWorld()
+    const cue = world.cueBall
+    const halfLength = world.config.tableLength / 2
+    const halfWidth = world.config.tableWidth / 2
+    // Approach the corner mouth along the end-rail jaw: just outside the
+    // visible 4.5 in circle the jaw face must bounce the ball back, proving
+    // nothing vanishes over solid rubber.
+    const entryOffset = CORNER_POCKET_MOUTH_RADIUS + cue.radius * 0.8
+    cue.position = {
+      x: halfLength - 0.002,
+      z: halfWidth - entryOffset,
+    }
+    cue.previousPosition = { ...cue.position }
+    cue.velocity = { x: 1, z: 0 }
+
+    world.step(STEP)
+
+    expect(cue.pocketed).toBe(false)
+    expect(cue.active).toBe(true)
+    expect(cue.velocity.x).toBeLessThan(0)
   })
 })

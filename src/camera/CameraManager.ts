@@ -5,8 +5,15 @@ import {
   type Camera,
 } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { DEFAULT_PHYSICS_CONFIG } from '../physics/PhysicsWorld'
 
 export type CameraMode = 'top' | 'angled' | 'side' | 'free'
+
+/**
+ * Margin around the table in top view: rails + apron plus breathing room, in
+ * world units. Without this the top camera cropped the rails off the frame.
+ */
+const TOP_VIEW_MARGIN = 0.45
 
 export class CameraManager {
   private readonly topCamera = new OrthographicCamera(-1.7, 1.7, 1, -1, 0.1, 30)
@@ -77,11 +84,16 @@ export class CameraManager {
 
   resize(width: number, height: number): void {
     const aspect = Math.max(0.1, width / Math.max(height, 1))
-    const viewHeight = Math.max(1.9, 2.9 / aspect)
-    const viewWidth = viewHeight * aspect
+    // Fit the whole table: half extents come from the physics table
+    // configuration so the frame can never crop the table as it resizes.
+    const halfLength = DEFAULT_PHYSICS_CONFIG.tableLength / 2 + TOP_VIEW_MARGIN
+    const halfWidth = DEFAULT_PHYSICS_CONFIG.tableWidth / 2 + TOP_VIEW_MARGIN
+    // `Math.max` is enough: when aspect ≥ halfLength/halfWidth the height
+    // term dominates and the width term fits automatically.
+    const viewHeight = Math.max(2 * halfWidth, (2 * halfLength) / aspect)
 
-    this.topCamera.left = -viewWidth / 2
-    this.topCamera.right = viewWidth / 2
+    this.topCamera.left = (-viewHeight * aspect) / 2
+    this.topCamera.right = (viewHeight * aspect) / 2
     this.topCamera.top = viewHeight / 2
     this.topCamera.bottom = -viewHeight / 2
     this.topCamera.updateProjectionMatrix()

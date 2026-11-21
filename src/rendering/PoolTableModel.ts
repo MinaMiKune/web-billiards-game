@@ -5,7 +5,9 @@ import {
   Group,
   LatheGeometry,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
+  Path,
   RepeatWrapping,
   DoubleSide,
   Shape,
@@ -16,13 +18,22 @@ import {
 } from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { DEFAULT_PHYSICS_CONFIG, type PhysicsConfig } from '../physics/PhysicsWorld'
+import {
+  CORNER_JAW_START_OFFSET,
+  CORNER_POCKET_JAW_TIP_OFFSET,
+  CORNER_POCKET_MOUTH_RADIUS,
+  SIDE_JAW_START_OFFSET,
+  SIDE_POCKET_JAW_TIP_OFFSET,
+  SIDE_POCKET_MOUTH_RADIUS,
+  getCornerJawSegments,
+  getSideJawSegments,
+} from '../physics/tableSpec'
 import { getLongRailSegments } from './RailGeometry'
 import {
-  CORNER_POCKET_MOUTH_RADIUS,
-  SIDE_POCKET_MOUTH_RADIUS,
   TABLE_BED_THICKNESS,
-  createPocketThroatGeometry,
   createClothGeometry,
+  createClothMarkingsGeometry,
+  createPocketThroatGeometry,
   createTableBedGeometry,
 } from './TableGeometry'
 
@@ -58,16 +69,22 @@ const TABLE_LENGTH = DEFAULT_PHYSICS_CONFIG.tableLength
 const TABLE_WIDTH = DEFAULT_PHYSICS_CONFIG.tableWidth
 const HALF_LENGTH = TABLE_LENGTH / 2
 const HALF_WIDTH = TABLE_WIDTH / 2
+const BALL_RADIUS = DEFAULT_PHYSICS_CONFIG.ballRadius
 const RAIL_HEIGHT = POOL_TABLE_VISUAL_SPEC.railHeight
 const RAIL_DEPTH = POOL_TABLE_VISUAL_SPEC.railDepth
 const RAIL_Y = RAIL_HEIGHT / 2
-export const CORNER_RAIL_CLEARANCE = CORNER_POCKET_MOUTH_RADIUS + 0.045
-// Visual mouth width follows the real 5-inch cut-out. Physics keeps a wider
-// capture window for forgiving gameplay, so that tuning does not stretch the
-// visible hole into an oversized slot.
-export const SIDE_POCKET_JAW_INNER_X = SIDE_POCKET_MOUTH_RADIUS * Math.SQRT1_2
-export const CORNER_POCKET_JAW_INNER_OFFSET = CORNER_POCKET_MOUTH_RADIUS * Math.SQRT1_2
-export const SIDE_RAIL_GAP_HALF = SIDE_POCKET_MOUTH_RADIUS + DEFAULT_PHYSICS_CONFIG.pocketJawDepth
+// Cushion noses sit exactly on the physics boundary line (half size minus
+// ball radius), so a ball resting on a cushion visually touches the rubber.
+const CUSHION_NOSE_TOP = 0.052
+const CUSHION_BACK_TOP = 0.040
+const CUSHION_BACK_OFFSET = 0.024
+const JAW_HEIGHT = 0.046
+// Rail/cushion geometry is derived from the shared physics table spec, so the
+// visible gaps always line up with the simulated pocket jaws.
+export const CORNER_RAIL_CLEARANCE = CORNER_JAW_START_OFFSET
+export const SIDE_POCKET_JAW_INNER_X = SIDE_POCKET_JAW_TIP_OFFSET
+export const CORNER_POCKET_JAW_INNER_OFFSET = CORNER_POCKET_JAW_TIP_OFFSET
+export const SIDE_RAIL_GAP_HALF = SIDE_JAW_START_OFFSET
 
 export function getPoolTableLongRailSegments() {
   return getLongRailSegments(HALF_LENGTH, SIDE_RAIL_GAP_HALF, CORNER_RAIL_CLEARANCE)
@@ -214,17 +231,17 @@ function addPocketCollar(
   mouthRadius: number,
   leather: MeshStandardMaterial,
 ): void {
-  // The inner rim is deliberately outside the actual cut-out; it never bridges
-  // the six openings in the cloth or slate bed.
-  const collar = new Mesh(
-    new TorusGeometry(mouthRadius + 0.012, 0.009, 12, 56),
+  // Nothing here may rise above the cloth plane: a leather lip just below the
+  // bed lines the mouth without ever bridging the playing surface.
+  const linerRim = new Mesh(
+    new TorusGeometry(mouthRadius * 0.96, 0.0045, 10, 48),
     leather,
   )
-  collar.rotation.x = -Math.PI / 2
-  collar.position.set(x, 0.002, z)
-  collar.castShadow = false
-  collar.receiveShadow = false
-  group.add(collar)
+  linerRim.rotation.x = -Math.PI / 2
+  linerRim.position.set(x, -0.006, z)
+  linerRim.castShadow = false
+  linerRim.receiveShadow = false
+  group.add(linerRim)
 
   const throat = new Mesh(createPocketThroatGeometry(mouthRadius), leather)
   throat.position.set(x, -TABLE_BED_THICKNESS - 0.15, z)
@@ -285,93 +302,176 @@ function addCushionJawSegment(
   start: TableSupportPosition,
   end: TableSupportPosition,
   material: MeshStandardMaterial,
-  startWidth = 0.026,
-  endWidth = 0.010,
+  startWidth = 0.022,
+  endWidth = 0.012,
 ): void {
   const dx = end.x - start.x
   const dz = end.z - start.z
   const length = Math.hypot(dx, dz)
   if (length <= 1e-6) return
 
-  const perpendicularX = -dz / length
-  const perpendicularZ = dx / length
-  const startHalf = startWidth / 2
-  const endHalf = endWidth / 2
-  const points: Array<[number, number]> = [
-    [start.x + perpendicularX * startHalf, start.z + perpendicularZ * startHalf],
-    [end.x + perpendicularX * endHalf, end.z + perpendicularZ * endHalf],
-    [end.x - perpendicularX * endHalf, end.z - perpendicularZ * endHalf],
-    [start.x - perpendicularX * startHalf, start.z - perpendicularZ * startHalf],
-  ]
+  // The physics collision segment is the inner face of this rubber wedge. The
+  // wedge body extends away from the table center, tucked under the rail, so
+  // the surface a ball bounces off is exactly the surface it sees.
+  const midX = (start.x + end.x) / 2
+  const midZ = (start.z + end.z) / 2
+  let bodyX = dz / length
+  let bodyZ = -dx / length
+  if (bodyX * midX + bodyZ * midZ < 0) {
+    bodyX = -bodyX
+    bodyZ = -bodyZ
+  }
 
   const shape = new Shape()
-  shape.moveTo(points[0][0], -points[0][1])
-  for (let index = 1; index < points.length; index += 1) {
-    shape.lineTo(points[index][0], -points[index][1])
-  }
+  shape.moveTo(start.x, -start.z)
+  shape.lineTo(end.x, -end.z)
+  shape.lineTo(end.x + bodyX * endWidth, -(end.z + bodyZ * endWidth))
+  shape.lineTo(start.x + bodyX * startWidth, -(start.z + bodyZ * startWidth))
   shape.closePath()
 
   const geometry = new ExtrudeGeometry(shape, {
-    depth: 0.039,
+    depth: JAW_HEIGHT,
     bevelEnabled: true,
     bevelSegments: 2,
-    bevelSize: 0.002,
-    bevelThickness: 0.002,
+    bevelSize: 0.0015,
+    bevelThickness: 0.0015,
     curveSegments: 8,
   })
   geometry.rotateX(-Math.PI / 2)
   const jaw = new Mesh(geometry, material)
-  jaw.position.y = 0.002
-  jaw.castShadow = false
-  jaw.receiveShadow = false
+  jaw.position.y = 0.001
+  jaw.castShadow = true
+  jaw.receiveShadow = true
   group.add(jaw)
 }
 
-function addSidePocketJaw(
-  group: Group,
-  xSign: number,
-  zSign: number,
-  material: MeshStandardMaterial,
-): void {
-  // Broad tapered rubber noses form the visible 45-degree pocket cheeks.
-  // Its centerline follows the same 45-degree jaw segment used by the
-  // collision solver, while the opening remains clear on the cloth side.
-  const innerX = SIDE_POCKET_JAW_INNER_X
-  const outerX = SIDE_RAIL_GAP_HALF
-  const jawInnerZ = HALF_WIDTH - DEFAULT_PHYSICS_CONFIG.pocketJawDepth
-  addCushionJawSegment(
-    group,
-    { x: xSign * outerX, z: zSign * HALF_WIDTH },
-    { x: xSign * innerX, z: zSign * jawInnerZ },
-    material,
-    0.042,
-    0.014,
-  )
+/**
+ * Profiled cushion whose nose face sits exactly on the physics rail boundary
+ * (half size minus ball radius). The vertical nose reaches above ball-contact
+ * height and the top slopes back toward the rail, like a real L-profile
+ * cushion rubber. The geometry is centered on the origin: profile x extends
+ * behind the nose along +z, length runs along x.
+ */
+function createCushionGeometry(length: number): ExtrudeGeometry {
+  const shape = new Shape()
+  shape.moveTo(0, 0)
+  shape.lineTo(0, CUSHION_NOSE_TOP)
+  shape.lineTo(CUSHION_BACK_OFFSET, CUSHION_BACK_TOP)
+  shape.lineTo(CUSHION_BACK_OFFSET, 0)
+  shape.closePath()
+  const geometry = new ExtrudeGeometry(shape, {
+    depth: length,
+    bevelEnabled: false,
+    curveSegments: 4,
+  })
+  geometry.rotateY(-Math.PI / 2)
+  geometry.translate(length / 2, 0, 0)
+  return geometry
 }
 
-function addCornerPocketJaws(
+function addCushionRun(
   group: Group,
-  xSign: number,
-  zSign: number,
+  material: MeshStandardMaterial,
+  length: number,
+  centerX: number,
+  centerZ: number,
+  rotationY: number,
+): void {
+  const cushion = new Mesh(createCushionGeometry(length), material)
+  cushion.position.set(centerX, 0.001, centerZ)
+  cushion.rotation.y = rotationY
+  cushion.castShadow = true
+  cushion.receiveShadow = true
+  group.add(cushion)
+}
+
+function addPocketJawSet(
+  group: Group,
   material: MeshStandardMaterial,
 ): void {
-  const innerOffset = CORNER_POCKET_JAW_INNER_OFFSET
-  const innerTip = {
-    x: xSign * (HALF_LENGTH - innerOffset),
-    z: zSign * (HALF_WIDTH - innerOffset),
+  for (const xSign of [-1, 1]) {
+    for (const zSign of [-1, 1]) {
+      for (const jaw of getCornerJawSegments(HALF_LENGTH, HALF_WIDTH, xSign, zSign)) {
+        addCushionJawSegment(group, jaw.start, jaw.end, material)
+      }
+    }
   }
-  const longRailStart = {
-    x: xSign * (HALF_LENGTH - CORNER_RAIL_CLEARANCE),
-    z: zSign * HALF_WIDTH,
+  for (const zSign of [-1, 1]) {
+    for (const jaw of getSideJawSegments(HALF_WIDTH, zSign)) {
+      addCushionJawSegment(group, jaw.start, jaw.end, material)
+    }
   }
-  const endRailStart = {
-    x: xSign * HALF_LENGTH,
-    z: zSign * (HALF_WIDTH - CORNER_RAIL_CLEARANCE),
+}
+
+/**
+ * Low wooden frame plate around each pocket. It closes the rail gap below the
+ * cloth plane (its top stays 2 mm under the bed) so no background shows
+ * through the pocket openings, while the mouth hole keeps the drop path open.
+ */
+function addPocketSurrounds(
+  group: Group,
+  frameWood: MeshStandardMaterial,
+): void {
+  const outerX = HALF_LENGTH + RAIL_DEPTH + 0.002
+  const outerZ = HALF_WIDTH + RAIL_DEPTH + 0.002
+  const innerGap = 0.028
+  const pad = 0.006
+  const depth = 0.046
+
+  const buildPlate = (
+    x0: number,
+    x1: number,
+    z0: number,
+    z1: number,
+    holeX: number,
+    holeZ: number,
+    holeRadius: number,
+  ): void => {
+    const shape = new Shape()
+    shape.moveTo(x0, -z0)
+    shape.lineTo(x1, -z0)
+    shape.lineTo(x1, -z1)
+    shape.lineTo(x0, -z1)
+    shape.closePath()
+    const hole = new Path()
+    hole.absarc(holeX, -holeZ, holeRadius, 0, Math.PI * 2, true)
+    shape.holes.push(hole)
+    const geometry = new ExtrudeGeometry(shape, {
+      depth,
+      bevelEnabled: false,
+      curveSegments: 40,
+    })
+    geometry.rotateX(-Math.PI / 2)
+    const plate = new Mesh(geometry, frameWood)
+    plate.position.y = -0.002 - depth
+    plate.castShadow = false
+    plate.receiveShadow = true
+    group.add(plate)
   }
 
-  // Two rounded rubber noses converge toward the leather corner pocket.
-  addCushionJawSegment(group, longRailStart, innerTip, material, 0.040, 0.014)
-  addCushionJawSegment(group, endRailStart, innerTip, material, 0.040, 0.014)
+  for (const side of [-1, 1]) {
+    const gapHalf = SIDE_RAIL_GAP_HALF + pad
+    buildPlate(
+      -gapHalf,
+      gapHalf,
+      Math.min(side * (HALF_WIDTH - innerGap), side * outerZ),
+      Math.max(side * (HALF_WIDTH - innerGap), side * outerZ),
+      0,
+      side * HALF_WIDTH,
+      SIDE_POCKET_MOUTH_RADIUS,
+    )
+    for (const xSign of [-1, 1]) {
+      buildPlate(
+        Math.min(xSign * (HALF_LENGTH - innerGap), xSign * outerX),
+        Math.max(xSign * (HALF_LENGTH - innerGap), xSign * outerX),
+        Math.min(side * (HALF_WIDTH - innerGap), side * outerZ),
+        Math.max(side * (HALF_WIDTH - innerGap), side * outerZ),
+        xSign * HALF_LENGTH,
+        side * HALF_WIDTH,
+        CORNER_POCKET_MOUTH_RADIUS,
+      )
+    }
+  }
 }
 
 function addRailRuns(
@@ -379,51 +479,44 @@ function addRailRuns(
   railWood: MeshStandardMaterial,
   cushion: MeshStandardMaterial,
   pocketJaw: MeshStandardMaterial,
+  frameWood: MeshStandardMaterial,
 ): void {
   const longSegments = getPoolTableLongRailSegments().map(({ start, end }) => [start, end] as const)
 
-  // Long rails: the cushion nose is on the cloth-facing edge, not outside it.
+  const noseZ = HALF_WIDTH - BALL_RADIUS
+  const noseX = HALF_LENGTH - BALL_RADIUS
   for (const side of [-1, 1]) {
     const railZ = side * (HALF_WIDTH + RAIL_DEPTH / 2 - 0.004)
-    const cushionZ = side * (HALF_WIDTH - 0.006)
     for (const [start, end] of longSegments) {
       const length = end - start
       const center = (start + end) / 2
       addRoundedBox(group, railWood, length, RAIL_HEIGHT, RAIL_DEPTH, center, RAIL_Y, railZ)
-      addRoundedBox(
+      addCushionRun(
         group,
         cushion,
-        Math.max(0.04, length - 0.018),
-        0.039,
-        0.036,
+        length,
         center,
-        0.022,
-        cushionZ,
-        0.007,
+        side * noseZ,
+        side > 0 ? 0 : Math.PI,
       )
-    }
-
-    for (const xSign of [-1, 1]) {
-      addSidePocketJaw(group, xSign, side, pocketJaw)
     }
 
     // End rails meet the long rails through open corner pockets.
     const endRailX = side * (HALF_LENGTH + RAIL_DEPTH / 2 - 0.004)
-    const endCushionX = side * (HALF_LENGTH - 0.006)
     const endLength = TABLE_WIDTH - 2 * CORNER_RAIL_CLEARANCE
     addRoundedBox(group, railWood, RAIL_DEPTH, RAIL_HEIGHT, endLength, endRailX, RAIL_Y, 0)
-    addRoundedBox(
+    addCushionRun(
       group,
       cushion,
-      0.036,
-      0.039,
-      endLength - 0.018,
-      endCushionX,
-      0.022,
+      endLength,
+      side * noseX,
       0,
-      0.007,
+      side > 0 ? Math.PI / 2 : -Math.PI / 2,
     )
   }
+
+  addPocketJawSet(group, pocketJaw)
+  addPocketSurrounds(group, frameWood)
 }
 
 function addApronAndSupports(
@@ -603,12 +696,25 @@ export function createPoolTableModel(maxAnisotropy = 4): Group {
   cloth.receiveShadow = true
   group.add(cloth)
 
-  addRailRuns(group, railWood, cushion, pocketJaw)
-  for (const xSign of [-1, 1]) {
-    for (const zSign of [-1, 1]) {
-      addCornerPocketJaws(group, xSign, zSign, pocketJaw)
-    }
-  }
+  // Printed bed markings: head string, break "D", foot and head spots. They
+  // share the physics coordinates (head string at -tableLength/4, foot spot
+  // at the rack apex) so the visuals match the ruled lines exactly.
+  const markings = new Mesh(
+    createClothMarkingsGeometry(),
+    new MeshBasicMaterial({
+      color: '#dce6d2',
+      transparent: true,
+      opacity: 0.42,
+      depthWrite: false,
+    }),
+  )
+  markings.rotation.x = -Math.PI / 2
+  markings.position.y = 0.0016
+  markings.castShadow = false
+  markings.receiveShadow = false
+  group.add(markings)
+
+  addRailRuns(group, railWood, cushion, pocketJaw, darkWood)
   addApronAndSupports(group, wood, darkWood, brass)
 
   const pocketPositions: Array<{ x: number; z: number; radius: number }> = [

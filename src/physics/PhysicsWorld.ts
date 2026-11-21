@@ -1,3 +1,13 @@
+import {
+  CORNER_POCKET_CAPTURE_RADIUS,
+  CORNER_POCKET_MOUTH_RADIUS,
+  POCKET_JAW_DEPTH,
+  SIDE_POCKET_CAPTURE_HALF_WIDTH,
+  SIDE_POCKET_MOUTH_RADIUS,
+  getCornerJawSegments,
+  getSideJawSegments,
+} from './tableSpec'
+
 export interface Vec2 {
   x: number
   z: number
@@ -100,9 +110,12 @@ export const DEFAULT_PHYSICS_CONFIG: PhysicsConfig = {
   cushionFriction: 0.12,
   ballRestitution: 0.96,
   cushionRestitution: 0.88,
-  pocketCaptureRadius: 0.098,
-  sidePocketHalfWidth: 0.095,
-  pocketJawDepth: 0.045,
+  // Pocket capture geometry mirrors the visible pocket mouths exactly; both
+  // come from the shared table spec so a ball is pocketed precisely when it
+  // crosses the cloth boundary inside the visible hole.
+  pocketCaptureRadius: CORNER_POCKET_CAPTURE_RADIUS,
+  sidePocketHalfWidth: SIDE_POCKET_CAPTURE_HALF_WIDTH,
+  pocketJawDepth: POCKET_JAW_DEPTH,
   pocketDropDuration: 0.42,
   stopSpeed: 0.008,
   maxShotSpeed: 2.8,
@@ -558,9 +571,11 @@ export class PhysicsWorld {
     halfLength: number,
     halfWidth: number,
   ): void {
-    const jawDepth = Math.max(0, this.config.pocketJawDepth)
-    const cornerMouthRadius = this.config.pocketCaptureRadius
-    const innerCornerOffset = Math.max(0, cornerMouthRadius - jawDepth)
+    // Jaw segments are the same ones the renderer draws as rubber: they start
+    // one jaw depth beyond the visible pocket mouth (measured along the rail)
+    // and taper to the pocket tip. Importing them from the shared spec keeps
+    // the collision surfaces aligned with the visible cushions.
+    const cornerSkipRadius = CORNER_POCKET_MOUTH_RADIUS
 
     for (const xSign of [-1, 1]) {
       for (const zSign of [-1, 1]) {
@@ -569,38 +584,22 @@ export class PhysicsWorld {
           ball.position.x - pocket.x,
           ball.position.z - pocket.z,
         )
-        if (pocketDistance <= cornerMouthRadius) continue
+        if (pocketDistance <= cornerSkipRadius) continue
 
-        const innerTip = {
-          x: xSign * (halfLength - innerCornerOffset),
-          z: zSign * (halfWidth - innerCornerOffset),
+        for (const jaw of getCornerJawSegments(halfLength, halfWidth, xSign, zSign)) {
+          if (this.resolveSegmentCushionImpact(ball, jaw.start, jaw.end)) return
         }
-        const longRailJawStart = {
-          x: xSign * (halfLength - cornerMouthRadius),
-          z: zSign * halfWidth,
-        }
-        const endRailJawStart = {
-          x: xSign * halfLength,
-          z: zSign * (halfWidth - cornerMouthRadius),
-        }
-
-        if (this.resolveSegmentCushionImpact(ball, longRailJawStart, innerTip)) return
-        if (this.resolveSegmentCushionImpact(ball, endRailJawStart, innerTip)) return
       }
     }
 
-    const sideJawInnerX = this.config.sidePocketHalfWidth + ball.radius
+    const sideSkipDistance = Math.hypot(
+      ball.position.x,
+      ball.position.z - Math.sign(ball.position.z || 1) * halfWidth,
+    )
+    if (sideSkipDistance <= SIDE_POCKET_MOUTH_RADIUS) return
     for (const zSign of [-1, 1]) {
-      for (const xSign of [-1, 1]) {
-        const jawStart = {
-          x: xSign * sideJawInnerX,
-          z: zSign * (halfWidth - jawDepth),
-        }
-        const jawEnd = {
-          x: xSign * (sideJawInnerX + jawDepth),
-          z: zSign * halfWidth,
-        }
-        if (this.resolveSegmentCushionImpact(ball, jawStart, jawEnd)) return
+      for (const jaw of getSideJawSegments(halfWidth, zSign)) {
+        if (this.resolveSegmentCushionImpact(ball, jaw.start, jaw.end)) return
       }
     }
   }

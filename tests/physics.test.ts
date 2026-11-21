@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PhysicsWorld } from '../src/physics/PhysicsWorld'
+import { SIDE_JAW_START_OFFSET } from '../src/physics/tableSpec'
 
 const STEP = 1 / 120
 
@@ -256,7 +257,8 @@ describe('PhysicsWorld', () => {
     const world = new PhysicsWorld()
     const cue = world.cueBall
     const zLimit = world.config.tableWidth / 2 - cue.radius
-    cue.position = { x: world.config.sidePocketHalfWidth + 0.025, z: zLimit - 0.001 }
+    // Beyond the mouth and past where the angled jaws reach: flat cushion.
+    cue.position = { x: SIDE_JAW_START_OFFSET + 0.03, z: zLimit - 0.001 }
     cue.previousPosition = { ...cue.position }
     cue.velocity = { x: 0, z: 1 }
 

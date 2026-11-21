@@ -14,7 +14,7 @@ import {
   Group,
   MeshStandardMaterial,
   PlaneGeometry,
-  PCFSoftShadowMap,
+  PCFShadowMap,
   Scene,
   SphereGeometry,
   SpotLight,
@@ -52,7 +52,7 @@ export class GameRenderer {
     // Keep contact and furniture shadows, but use soft filtered maps rather
     // than the hard, nearly-black silhouettes from the previous renderer.
     this.renderer.shadowMap.enabled = true
-    this.renderer.shadowMap.type = PCFSoftShadowMap
+    this.renderer.shadowMap.type = PCFShadowMap
     this.renderer.shadowMap.autoUpdate = false
     this.renderer.shadowMap.needsUpdate = true
     this.renderer.setSize(host.clientWidth, host.clientHeight, false)
