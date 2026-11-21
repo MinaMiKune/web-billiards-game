@@ -258,8 +258,10 @@ export class GameRenderer {
     overhead.shadow.bias = -0.00015
     this.scene.add(overhead, overhead.target)
 
-    const fill = new DirectionalLight('#9ed5b2', 0.9)
-    fill.position.set(3.5, 2.5, -3)
+    // Front fill faces the +z side so the apron and rail fronts stay readable
+    // in the side camera instead of falling to a near-black silhouette.
+    const fill = new DirectionalLight('#9ed5b2', 1.6)
+    fill.position.set(0.8, 2.4, 4.2)
     this.scene.add(fill)
   }
 

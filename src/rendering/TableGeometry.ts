@@ -1,4 +1,4 @@
-import { CylinderGeometry, ExtrudeGeometry, Path, Shape, ShapeGeometry } from 'three'
+import { BufferAttribute, CylinderGeometry, ExtrudeGeometry, Path, Shape, ShapeGeometry } from 'three'
 import { DEFAULT_PHYSICS_CONFIG, type PhysicsConfig } from '../physics/PhysicsWorld'
 import {
   CORNER_POCKET_MOUTH_RADIUS,
@@ -71,10 +71,26 @@ export function createTableBedGeometry(
 export function createClothGeometry(
   config: PhysicsConfig = DEFAULT_PHYSICS_CONFIG,
 ): ShapeGeometry {
-  return new ShapeGeometry(
+  const geometry = new ShapeGeometry(
     createPocketCutoutShape(config, SIDE_POCKET_MOUTH_RADIUS + 0.006),
     48,
   )
+  // ShapeGeometry keeps the shape's world-space xy as UVs, which clamps the
+  // texture sampling to the canvas border for most of the bed. Re-map UVs to
+  // [0, 1] over the cloth extents so the canvas texture covers the full bed.
+  const positions = geometry.attributes.position
+  const uvs = geometry.attributes.uv as BufferAttribute
+  const halfLength = config.tableLength / 2
+  const halfWidth = config.tableWidth / 2
+  for (let index = 0; index < positions.count; index += 1) {
+    uvs.setXY(
+      index,
+      (positions.getX(index) + halfLength) / config.tableLength,
+      (positions.getY(index) + halfWidth) / config.tableWidth,
+    )
+  }
+  uvs.needsUpdate = true
+  return geometry
 }
 
 

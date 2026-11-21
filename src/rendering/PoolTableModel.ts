@@ -59,10 +59,10 @@ export const POOL_TABLE_VISUAL_SPEC = {
   centreSupportZFraction: 0.36,
   crossBracePocketClearance: 0.012,
   floorY: -0.78,
-  woodColor: '#75432f',
-  feltColor: '#0d6842',
-  cushionColor: '#113c2a',
-  pocketJawColor: '#236b45',
+  woodColor: '#8a6a3e',
+  feltColor: '#1a7a4f',
+  cushionColor: '#0a3d27',
+  pocketJawColor: '#04110a',
 } as const
 
 const TABLE_LENGTH = DEFAULT_PHYSICS_CONFIG.tableLength
@@ -124,12 +124,14 @@ function createWoodTexture(maxAnisotropy: number): CanvasTexture {
   const context = canvas.getContext('2d')
   if (!context) throw new Error('Could not create the pool-table wood texture')
 
+  // Warm light oak in the same family as the reference table (#8a6a3e), so
+  // the rails read tan instead of the old near-black mahogany.
   const base = context.createLinearGradient(0, 0, 0, 512)
-  base.addColorStop(0, '#24100b')
-  base.addColorStop(0.18, '#63301f')
-  base.addColorStop(0.48, '#7b402a')
-  base.addColorStop(0.72, '#4b2117')
-  base.addColorStop(1, '#1d0d09')
+  base.addColorStop(0, '#7d5f38')
+  base.addColorStop(0.18, '#a8845c')
+  base.addColorStop(0.48, '#c39a6b')
+  base.addColorStop(0.72, '#8a6a3e')
+  base.addColorStop(1, '#63502c')
   context.fillStyle = base
   context.fillRect(0, 0, 1024, 512)
 
@@ -145,16 +147,16 @@ function createWoodTexture(maxAnisotropy: number): CanvasTexture {
       1024, y + ((index % 7) - 3) * 2,
     )
     context.strokeStyle = index % 6 === 0
-      ? 'rgba(18, 6, 3, 0.24)'
-      : 'rgba(244, 190, 137, 0.10)'
+      ? 'rgba(62, 40, 18, 0.28)'
+      : 'rgba(255, 224, 180, 0.12)'
     context.lineWidth = index % 4 === 0 ? 2 : 1
     context.stroke()
   }
 
   const sheen = context.createLinearGradient(0, 0, 0, 512)
-  sheen.addColorStop(0, 'rgba(255, 226, 190, 0.13)')
-  sheen.addColorStop(0.5, 'rgba(255, 226, 190, 0.015)')
-  sheen.addColorStop(1, 'rgba(0, 0, 0, 0.23)')
+  sheen.addColorStop(0, 'rgba(255, 236, 205, 0.10)')
+  sheen.addColorStop(0.5, 'rgba(255, 236, 205, 0.012)')
+  sheen.addColorStop(1, 'rgba(40, 22, 8, 0.18)')
   context.fillStyle = sheen
   context.fillRect(0, 0, 1024, 512)
 
@@ -167,29 +169,38 @@ function createWoodTexture(maxAnisotropy: number): CanvasTexture {
 }
 
 function createClothTexture(maxAnisotropy: number): CanvasTexture {
+  // ShapeGeometry UVs equal the shape's world-space meters, so size the
+  // canvas to the cloth extents at 100 px/m to keep 1 texture px = 1 cm and
+  // stop UV clamping from flattening the whole bed to the gradient border.
   const canvas = document.createElement('canvas')
-  canvas.width = 512
-  canvas.height = 512
+  canvas.width = 256
+  canvas.height = 128
   const context = canvas.getContext('2d')
   if (!context) throw new Error('Could not create the billiard-cloth texture')
 
-  const cloth = context.createRadialGradient(256, 256, 18, 256, 256, 390)
-  cloth.addColorStop(0, '#13794b')
-  cloth.addColorStop(0.7, '#0d6842')
-  cloth.addColorStop(1, '#08462f')
+  // Near-white green-tinted sheen: the felt material color (#1a7a4f) carries
+  // the cloth green, so multiplying stays in the reference palette instead
+  // of squaring into the old near-black felt.
+  const cloth = context.createRadialGradient(128, 64, 8, 128, 64, 165)
+  cloth.addColorStop(0, '#f4fff8')
+  cloth.addColorStop(0.55, '#e9f6ee')
+  cloth.addColorStop(1, '#cfe0d6')
   context.fillStyle = cloth
-  context.fillRect(0, 0, 512, 512)
+  context.fillRect(0, 0, 256, 128)
 
-  // Subtle woven nap instead of the previous high-contrast checker pattern.
-  for (let y = 0; y < 512; y += 2) {
-    context.fillStyle = y % 4 === 0
-      ? 'rgba(220, 255, 230, 0.025)'
-      : 'rgba(0, 20, 12, 0.025)'
-    context.fillRect(0, y, 512, 1)
+  // Reference-style vertical nap stripes (#ffffff09), spaced 0.0914 m
+  // (= 2.54 m * 36/1000) starting at 0.061 m (= 2.54 m * 24/1000).
+  context.fillStyle = 'rgba(255, 255, 255, 0.035)'
+  for (let x = Math.round(0.061 * 100); x < 256; x += Math.round(0.0914 * 100)) {
+    context.fillRect(x, 0, 1, 128)
   }
-  for (let x = 0; x < 512; x += 4) {
-    context.fillStyle = 'rgba(230, 255, 235, 0.018)'
-    context.fillRect(x, 0, 1, 512)
+
+  // Fine woven nap noise, kept isotropic for the 1 cm pixel grid.
+  for (let y = 0; y < 128; y += 2) {
+    context.fillStyle = y % 4 === 0
+      ? 'rgba(220, 255, 230, 0.03)'
+      : 'rgba(0, 20, 12, 0.03)'
+    context.fillRect(0, y, 256, 1)
   }
 
   const texture = new CanvasTexture(canvas)
@@ -641,7 +652,7 @@ export function createPoolTableModel(maxAnisotropy = 4): Group {
     metalness: 0.025,
   })
   const darkWood = new MeshStandardMaterial({
-    color: '#95664d',
+    color: '#8a6a3e',
     map: woodTexture,
     roughness: 0.34,
     metalness: 0.02,
@@ -702,9 +713,9 @@ export function createPoolTableModel(maxAnisotropy = 4): Group {
   const markings = new Mesh(
     createClothMarkingsGeometry(),
     new MeshBasicMaterial({
-      color: '#dce6d2',
+      color: '#ffffff',
       transparent: true,
-      opacity: 0.42,
+      opacity: 0.30,
       depthWrite: false,
     }),
   )
