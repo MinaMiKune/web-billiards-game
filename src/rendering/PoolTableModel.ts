@@ -242,20 +242,17 @@ function addPocketCollar(
   mouthRadius: number,
   leather: MeshStandardMaterial,
 ): void {
-  // Nothing here may rise above the cloth plane: a leather lip just below the
-  // bed lines the mouth without ever bridging the playing surface.
-  const linerRim = new Mesh(
-    new TorusGeometry(mouthRadius * 0.96, 0.0045, 10, 48),
-    leather,
-  )
-  linerRim.rotation.x = -Math.PI / 2
-  linerRim.position.set(x, -0.006, z)
-  linerRim.castShadow = false
-  linerRim.receiveShadow = false
-  group.add(linerRim)
-
-  const throat = new Mesh(createPocketThroatGeometry(mouthRadius), leather)
-  throat.position.set(x, -TABLE_BED_THICKNESS - 0.15, z)
+  // Nothing here may rise above the cloth plane. A dark open-ended funnel
+  // starts just under the cloth so every sightline through the mouth lands
+  // on the pocket interior, never on the wooden frame or floor beneath the
+  // bed. The interior is unlit flat black so it reads as an open void, not
+  // a shaded dome.
+  const throatMaterial = new MeshBasicMaterial({
+    color: '#030504',
+    side: DoubleSide,
+  })
+  const throat = new Mesh(createPocketThroatGeometry(mouthRadius), throatMaterial)
+  throat.position.set(x, -0.004 - 0.17, z)
   throat.castShadow = false
   throat.receiveShadow = false
   group.add(throat)
@@ -415,19 +412,22 @@ function addPocketJawSet(
 }
 
 /**
- * Low wooden frame plate around each pocket. It closes the rail gap below the
- * cloth plane (its top stays 2 mm under the bed) so no background shows
- * through the pocket openings, while the mouth hole keeps the drop path open.
+ * Raised wooden pocket frame. Each plate tops out 1.5 mm above the cloth so
+ * the rail gaps around the mouths read as wood — like the reference table —
+ * instead of exposed cloth, and the rubber jaw wedges stand on the frame.
+ * Corner pockets get an L-shaped frame that tucks 12 mm under the rail ends.
+ * The mouth hole keeps the drop path open; the dark funnel below lines the
+ * interior so the opening never shows background through it.
  */
 function addPocketSurrounds(
   group: Group,
   frameWood: MeshStandardMaterial,
 ): void {
-  const outerX = HALF_LENGTH + RAIL_DEPTH + 0.002
-  const outerZ = HALF_WIDTH + RAIL_DEPTH + 0.002
-  const innerGap = 0.028
-  const pad = 0.006
+  const outerX = HALF_LENGTH + RAIL_DEPTH - 0.004
+  const outerZ = HALF_WIDTH + RAIL_DEPTH - 0.004
+  const pad = 0.012
   const depth = 0.046
+  const cornerTuck = CORNER_RAIL_CLEARANCE + 0.012
 
   const buildPlate = (
     x0: number,
@@ -454,31 +454,51 @@ function addPocketSurrounds(
     })
     geometry.rotateX(-Math.PI / 2)
     const plate = new Mesh(geometry, frameWood)
-    plate.position.y = -0.002 - depth
+    plate.position.y = 0.0015 - depth
     plate.castShadow = false
     plate.receiveShadow = true
     group.add(plate)
   }
 
+  const span = (from: number, to: number): [number, number] =>
+    from < to ? [from, to] : [to, from]
+
   for (const side of [-1, 1]) {
     const gapHalf = SIDE_RAIL_GAP_HALF + pad
+    // Side pocket: frame across the rail gap, tucked under the rail ends.
     buildPlate(
       -gapHalf,
       gapHalf,
-      Math.min(side * (HALF_WIDTH - innerGap), side * outerZ),
-      Math.max(side * (HALF_WIDTH - innerGap), side * outerZ),
+      ...span(side * HALF_WIDTH, side * outerZ),
       0,
       side * HALF_WIDTH,
       SIDE_POCKET_MOUTH_RADIUS,
     )
     for (const xSign of [-1, 1]) {
+      const cornerX = xSign * HALF_LENGTH
+      const cornerZ = side * HALF_WIDTH
+      // Outer corner square.
       buildPlate(
-        Math.min(xSign * (HALF_LENGTH - innerGap), xSign * outerX),
-        Math.max(xSign * (HALF_LENGTH - innerGap), xSign * outerX),
-        Math.min(side * (HALF_WIDTH - innerGap), side * outerZ),
-        Math.max(side * (HALF_WIDTH - innerGap), side * outerZ),
-        xSign * HALF_LENGTH,
-        side * HALF_WIDTH,
+        ...span(cornerX, xSign * outerX),
+        ...span(cornerZ, side * outerZ),
+        cornerX,
+        cornerZ,
+        CORNER_POCKET_MOUTH_RADIUS,
+      )
+      // Band along the long rail from under its end face to the corner line.
+      buildPlate(
+        ...span(xSign * (HALF_LENGTH - cornerTuck), cornerX),
+        ...span(cornerZ, side * outerZ),
+        cornerX,
+        cornerZ,
+        CORNER_POCKET_MOUTH_RADIUS,
+      )
+      // Band along the end rail from under its end face to the corner line.
+      buildPlate(
+        ...span(cornerX, xSign * outerX),
+        ...span(side * (HALF_WIDTH - cornerTuck), cornerZ),
+        cornerX,
+        cornerZ,
         CORNER_POCKET_MOUTH_RADIUS,
       )
     }
@@ -663,6 +683,14 @@ export function createPoolTableModel(maxAnisotropy = 4): Group {
     roughness: 0.27,
     metalness: 0.025,
   })
+  // Pocket frame rings use the reference table's dark pocket brown so the
+  // openings read as wood-framed holes like the 2D original.
+  const pocketFrame = new MeshStandardMaterial({
+    color: '#6b4c2b',
+    map: woodTexture,
+    roughness: 0.33,
+    metalness: 0.02,
+  })
   const felt = new MeshStandardMaterial({
     color: POOL_TABLE_VISUAL_SPEC.feltColor,
     map: clothTexture,
@@ -683,6 +711,10 @@ export function createPoolTableModel(maxAnisotropy = 4): Group {
     color: '#050706',
     roughness: 0.88,
     metalness: 0.015,
+    // The pocket funnel is seen from both sides: looking into a mouth shows
+    // its inner wall, so backfaces must render or sightlines would fall
+    // through to the floor beyond.
+    side: DoubleSide,
   })
   const sightMaterial = new MeshStandardMaterial({
     color: '#e4d2a5',
@@ -725,7 +757,7 @@ export function createPoolTableModel(maxAnisotropy = 4): Group {
   markings.receiveShadow = false
   group.add(markings)
 
-  addRailRuns(group, railWood, cushion, pocketJaw, darkWood)
+  addRailRuns(group, railWood, cushion, pocketJaw, pocketFrame)
   addApronAndSupports(group, wood, darkWood, brass)
 
   const pocketPositions: Array<{ x: number; z: number; radius: number }> = [

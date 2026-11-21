@@ -95,14 +95,17 @@ export function createClothGeometry(
 
 
 /**
- * Open-ended throat under a pocket mouth. Both ends remain open; the bag is
+ * Open-ended funnel under a pocket mouth. Both ends remain open; the bag is
  * a hanging cavity, never a flat disk that visually seals the pocket.
+ * The lip starts just under the cloth and matches the mouth radius, so every
+ * sightline through the opening lands on dark leather instead of escaping
+ * past a narrow sleeve onto the wood frame or floor below.
  */
 export function createPocketThroatGeometry(mouthRadius: number): CylinderGeometry {
   return new CylinderGeometry(
-    mouthRadius * 0.86,
+    mouthRadius * 0.9975,
     mouthRadius * 0.55,
-    0.30,
+    0.34,
     48,
     2,
     true,
